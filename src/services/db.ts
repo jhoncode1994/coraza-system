@@ -7,13 +7,26 @@ dotenv.config();
 
 // Configuración de conexión a la base de datos
 let poolConfig: any = {
-  connectionString: process.env["DATABASE_URL"] || "postgres://localhost:5432/coraza"
+  host: process.env["PGHOST"],
+  database: process.env["PGDATABASE"],
+  user: process.env["PGUSER"],
+  password: process.env["PGPASSWORD"],
+  port: 5432,
+  ssl: true
 };
 
-// Siempre usar SSL para Neon, independientemente del entorno
-poolConfig.ssl = { 
-  rejectUnauthorized: false // Necesario para conexiones a Neon
-};
+// Configurar SSL y channel binding según variables de entorno
+if (process.env["PGSSLMODE"] === 'require') {
+  poolConfig.ssl = { 
+    rejectUnauthorized: false 
+  };
+}
+
+if (process.env["PGCHANNELBINDING"] === 'require') {
+  // Asegurarse que el SSL está configurado correctamente
+  poolConfig.ssl = poolConfig.ssl || {};
+  poolConfig.ssl.rejectUnauthorized = false;
+}
 
 const pool = new Pool(poolConfig);
 
