@@ -151,7 +151,8 @@ export class UsersComponent implements OnInit {
   
   // Método para cargar usuarios del servicio
   loadUsers(): void {
-    this.users = this.usersService.getUsers();
+    // El servicio ahora maneja la carga de usuarios automáticamente
+    this.usersService.loadUsers();
   }
 
   // Método para mostrar el formulario
@@ -180,22 +181,36 @@ export class UsersComponent implements OnInit {
           : new Date(this.userForm.value.fechaIngreso)
       };
       
-      if (this.editIndex !== null) {
-        // Actualizar usuario existente usando el servicio
-        this.usersService.updateUser(this.editIndex, userData);
-        console.log('Usuario actualizado:', userData);
-        this.editIndex = null;
+      if (this.editIndex !== null && this.users[this.editIndex]) {
+        const userId = this.users[this.editIndex].id;
+        
+        // Actualizar usuario existente usando el servicio (ahora retorna Observable)
+        this.usersService.updateUser(userId, userData).subscribe({
+          next: (updatedUser) => {
+            console.log('Usuario actualizado:', updatedUser);
+            this.editIndex = null;
+            this.userForm.reset();
+            this.showForm = false;
+          },
+          error: (error) => {
+            console.error('Error al actualizar usuario:', error);
+            // Aquí podrías mostrar un mensaje de error
+          }
+        });
       } else {
-        // Agregar nuevo usuario usando el servicio
-        this.usersService.addUser(userData);
-        console.log('Agregando usuario:', userData);
+        // Agregar nuevo usuario usando el servicio (ahora retorna Observable)
+        this.usersService.addUser(userData).subscribe({
+          next: (newUser) => {
+            console.log('Usuario agregado:', newUser);
+            this.userForm.reset();
+            this.showForm = false;
+          },
+          error: (error) => {
+            console.error('Error al agregar usuario:', error);
+            // Aquí podrías mostrar un mensaje de error
+          }
+        });
       }
-      
-      // No es necesario recargar los usuarios manualmente gracias a la suscripción
-      
-      this.userForm.reset();
-      // Ocultar formulario después de agregar/editar
-      this.showForm = false;
     } else {
       console.log('Formulario inválido', this.userForm.errors);
       
@@ -237,15 +252,25 @@ export class UsersComponent implements OnInit {
   }
 
   deleteUser(index: number) {
-    // Eliminar usuario usando el servicio
-    this.usersService.deleteUser(index);
-    
-    // No es necesario recargar los usuarios manualmente gracias a la suscripción
-    
-    if (this.editIndex === index) {
-      this.editIndex = null;
-      this.userForm.reset();
-      this.showForm = false;
+    if (index >= 0 && this.users[index]) {
+      const userId = this.users[index].id;
+      
+      // Eliminar usuario usando el servicio (ahora retorna Observable)
+      this.usersService.deleteUser(userId).subscribe({
+        next: (deletedUser) => {
+          console.log('Usuario eliminado:', deletedUser);
+          
+          if (this.editIndex === index) {
+            this.editIndex = null;
+            this.userForm.reset();
+            this.showForm = false;
+          }
+        },
+        error: (error) => {
+          console.error('Error al eliminar usuario:', error);
+          // Aquí podrías mostrar un mensaje de error
+        }
+      });
     }
   }
 }
