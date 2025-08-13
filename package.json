@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "node server.js",
     "build": "npm install && npm install -g @angular/cli && ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
