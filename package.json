@@ -5,9 +5,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-  "build": "ng build --configuration production",
+    "build": "npx ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test":  "ng test",
     "backend:build": "tsc -p src/services/tsconfig.json",
     "backend:start": "node ./src/services/dist/server.js",
     "backend:dev": "nodemon --watch src/services -e ts --exec ts-node -P src/services/tsconfig.json src/services/server.ts"
