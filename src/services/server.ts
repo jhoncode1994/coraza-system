@@ -50,14 +50,14 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
 app.post('/api/users', async (req: Request, res: Response) => {
   try {
     const newUser = await createUser(req.body);
-    res.status(201).json(newUser);
+    return res.status(201).json(newUser);
   } catch (err: any) {
     console.error('Error creando usuario:', err);
     // Manejo de error de cédula duplicada
     if (err.code === '23505' && err.constraint === 'usuarios_cedula_key') {
       return res.status(400).json({ error: 'Ya existe un usuario con esa cédula' });
     }
-    res.status(500).json({ error: 'Error al crear usuario' });
+    return res.status(500).json({ error: 'Error al crear usuario' });
   }
 });
 
@@ -66,9 +66,9 @@ app.put('/api/users/:id', async (req: Request, res: Response) => {
   try {
     const updatedUser = await updateUser(Number(req.params["id"]), req.body);
     if (updatedUser) {
-      res.json(updatedUser);
+      return res.json(updatedUser);
     } else {
-      res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
   } catch (err: any) {
     console.error('Error actualizando usuario:', err);
@@ -76,7 +76,7 @@ app.put('/api/users/:id', async (req: Request, res: Response) => {
     if (err.code === '23505' && err.constraint === 'usuarios_cedula_key') {
       return res.status(400).json({ error: 'Ya existe un usuario con esa cédula' });
     }
-    res.status(500).json({ error: 'Error al actualizar usuario' });
+    return res.status(500).json({ error: 'Error al actualizar usuario' });
   }
 });
 
