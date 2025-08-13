@@ -5,7 +5,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "npx ng build --configuration production",
+    "build": "npm install -g @angular/cli && ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "backend:build": "tsc -p src/services/tsconfig.json",
