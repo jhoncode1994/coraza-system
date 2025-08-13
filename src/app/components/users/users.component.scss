@@ -1,0 +1,135 @@
+.user-form-container {
+  max-width: 800px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 0 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.example-form {
+  min-width: 150px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.example-full-width {
+  flex: 1 1 200px;
+  width: 100%;
+}
+
+.user-form {
+  width: 100%;
+}
+
+::ng-deep mat-card {
+  margin-bottom: 20px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep mat-card-title {
+  margin-bottom: 16px !important;
+  padding: 16px !important;
+  background-color: #f5f5f5 !important;
+  border-radius: 4px 4px 0 0 !important;
+  font-size: 1.2rem !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+::ng-deep mat-card-content {
+  padding: 16px !important;
+}
+
+::ng-deep mat-hint {
+  color: #666 !important;
+}
+
+::ng-deep mat-error {
+  font-size: 12px !important;
+}
+
+/* Estilos para el DatePicker */
+::ng-deep .mat-datepicker-toggle {
+  color: #666 !important;
+}
+
+::ng-deep .mat-datepicker-toggle:hover {
+  color: #3f51b5 !important;
+}
+
+::ng-deep .mat-calendar {
+  border-radius: 4px !important;
+}
+
+::ng-deep .mat-calendar-body-selected {
+  background-color: #3f51b5 !important;
+}
+
+::ng-deep .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+  border-color: #3f51b5 !important;
+}
+
+::ng-deep mat-card-actions {
+  padding: 16px !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+::ng-deep table.mat-table {
+  width: 100% !important;
+  margin-bottom: 20px !important;
+}
+
+::ng-deep .mat-elevation-z8 {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Estilo para filas de tabla */
+::ng-deep .mat-row:hover {
+  background-color: #f5f5f5 !important;
+}
+
+/* Mensaje cuando no hay datos */
+::ng-deep .mat-table-message {
+  text-align: center !important;
+  padding: 16px !important;
+  font-style: italic !important;
+  color: #888 !important;
+}
+
+/* Estilo adicional para botones de acción */
+::ng-deep .mat-icon-button {
+  line-height: 24px !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* Estilos para el botón de añadir */
+.add-button {
+  margin-left: 16px !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.26) !important;
+}
+
+/* Estilos para el botón de cerrar */
+.close-button {
+  margin-left: auto !important;
+}
+
+::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
+  color: rgba(0, 0, 0, 0.12) !important;
+}
+
+::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline {
+  color: #3f51b5 !important;
+}
