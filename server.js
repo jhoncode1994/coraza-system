@@ -20,6 +20,14 @@ app.use('/api', createProxyMiddleware({
 // Servir archivos estáticos desde la carpeta dist
 app.use(express.static(path.join(__dirname, 'dist/coraza-system-angular')));
 
+// Servir archivos estáticos desde la carpeta public para pruebas
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Ruta especial para la página de prueba de API
+app.get('/test-api', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/test-api.html'));
+});
+
 // Enviar todas las solicitudes no-api a index.html para que Angular Router funcione
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist/coraza-system-angular/index.html'));

@@ -18,6 +18,22 @@ body {
 }
 
 /* Estilos para las tarjetas y formularios */
+
+/* Estilos para las notificaciones */
+.success-snackbar {
+  background-color: #4caf50;
+  color: white;
+}
+
+.error-snackbar {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Personalización de los botones de acción en snackbar */
+.mat-simple-snackbar-action {
+  color: white;
+}
 mat-card {
   margin: 16px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;

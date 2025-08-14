@@ -22,6 +22,7 @@ import { NgIf, DatePipe, AsyncPipe } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { UsersService } from './users.service';
+import { NotificationService } from '../../services/notification.service';
 
 export interface User {
   id: number;
@@ -119,7 +120,8 @@ export class UsersComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private usersService: UsersService,
-    private dateAdapter: DateAdapter<Date>
+    private dateAdapter: DateAdapter<Date>,
+    private notificationService: NotificationService
   ) {
     // Configurar el adaptador de fechas para usar el formato español
     this.dateAdapter.setLocale('es-ES');
@@ -191,10 +193,17 @@ export class UsersComponent implements OnInit {
             this.editIndex = null;
             this.userForm.reset();
             this.showForm = false;
+            this.notificationService.success('¡Usuario actualizado correctamente!');
           },
           error: (error) => {
             console.error('Error al actualizar usuario:', error);
-            // Aquí podrías mostrar un mensaje de error
+            let errorMessage = 'Error al actualizar usuario';
+            
+            if (error?.error?.error) {
+              errorMessage = error.error.error;
+            }
+            
+            this.notificationService.error(errorMessage);
           }
         });
       } else {
@@ -204,15 +213,25 @@ export class UsersComponent implements OnInit {
             console.log('Usuario agregado:', newUser);
             this.userForm.reset();
             this.showForm = false;
+            this.notificationService.success('¡Usuario registrado correctamente en la base de datos!');
           },
           error: (error) => {
             console.error('Error al agregar usuario:', error);
-            // Aquí podrías mostrar un mensaje de error
+            let errorMessage = 'Error al registrar usuario';
+            
+            if (error?.error?.error) {
+              errorMessage = error.error.error;
+            }
+            
+            this.notificationService.error(errorMessage);
           }
         });
       }
     } else {
       console.log('Formulario inválido', this.userForm.errors);
+      
+      // Mostrar notificación de error
+      this.notificationService.error('El formulario contiene errores. Por favor, revisa los campos.');
       
       // Marcar todos los campos como tocados para mostrar errores
       Object.keys(this.userForm.controls).forEach(field => {
@@ -265,10 +284,18 @@ export class UsersComponent implements OnInit {
             this.userForm.reset();
             this.showForm = false;
           }
+          
+          this.notificationService.success('Usuario eliminado correctamente');
         },
         error: (error) => {
           console.error('Error al eliminar usuario:', error);
-          // Aquí podrías mostrar un mensaje de error
+          let errorMessage = 'Error al eliminar usuario';
+            
+          if (error?.error?.error) {
+            errorMessage = error.error.error;
+          }
+          
+          this.notificationService.error(errorMessage);
         }
       });
     }

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vista de Usuarios Coraza</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #3f51b5;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .actions {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      background-color: #3f51b5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #303f9f;
+    }
+    .status {
+      margin: 20px 0;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #3f51b5;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+    .debug-section {
+      margin-top: 40px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vista de Usuarios Coraza System</h1>
+  
+  <div class="actions">
+    <button id="loadUsers">Cargar Usuarios</button>
+    <button id="clearData">Limpiar Datos</button>
+    <button id="toggleDebug">Mostrar/Ocultar Debug</button>
+  </div>
+  
+  <div id="status" class="status"></div>
+  
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>Cédula</th>
+        <th>Zona</th>
+        <th>Fecha de Ingreso</th>
+      </tr>
+    </thead>
+    <tbody id="usersTableBody">
+      <tr>
+        <td colspan="6" style="text-align:center">No hay datos disponibles</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <div id="debugSection" class="debug-section" style="display: none;">
+    <h2>Información de Depuración</h2>
+    <div id="apiResponse"></div>
+    <div id="mappedData"></div>
+  </div>
+  
+  <script>
+    // Elementos del DOM
+    const loadUsersBtn = document.getElementById('loadUsers');
+    const clearDataBtn = document.getElementById('clearData');
+    const toggleDebugBtn = document.getElementById('toggleDebug');
+    const statusDiv = document.getElementById('status');
+    const usersTableBody = document.getElementById('usersTableBody');
+    const debugSection = document.getElementById('debugSection');
+    const apiResponseDiv = document.getElementById('apiResponse');
+    const mappedDataDiv = document.getElementById('mappedData');
+    
+    // Función para mostrar mensaje de estado
+    function showStatus(message, type = 'info') {
+      statusDiv.textContent = message;
+      statusDiv.className = `status ${type}`;
+    }
+    
+    // Función para formatear fecha
+    function formatDate(date) {
+      if (!date) return 'N/A';
+      
+      try {
+        const d = new Date(date);
+        return isNaN(d.getTime()) 
+          ? 'Fecha inválida' 
+          : `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+      } catch (e) {
+        return 'Error de formato';
+      }
+    }
+    
+    // Función para mapear usuario de API a formato de aplicación
+    function mapApiUserToAppUser(apiUser) {
+      if (!apiUser) {
+        console.error('Error: apiUser es undefined o null');
+        return null;
+      }
+      
+      try {
+        // Crear usuario mapeado con todos los posibles formatos de fecha
+        const user = {
+          id: apiUser.id,
+          nombre: apiUser.nombre || '',
+          apellido: apiUser.apellido || '',
+          cedula: apiUser.cedula || '',
+          zona: apiUser.zona || 0,
+          fechaIngreso: null
+        };
+        
+        // Intentar obtener la fecha de todos los posibles campos
+        if (apiUser.fecha_ingreso) {
+          user.fechaIngreso = new Date(apiUser.fecha_ingreso);
+        } else if (apiUser.fechaingreso) {
+          user.fechaIngreso = new Date(apiUser.fechaingreso);
+        } else if (apiUser.fechaIngreso) {
+          user.fechaIngreso = new Date(apiUser.fechaIngreso);
+        } else {
+          console.warn('No se encontró campo de fecha para el usuario:', apiUser.id);
+          user.fechaIngreso = new Date(); // Fecha actual como respaldo
+        }
+        
+        return user;
+      } catch (error) {
+        console.error('Error al mapear el usuario:', error, apiUser);
+        return null;
+      }
+    }
+    
+    // Función para cargar usuarios desde la API
+    async function loadUsers() {
+      showStatus('Cargando usuarios...', 'info');
+      
+      try {
+        const response = await fetch('/api/users');
+        
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const apiData = await response.json();
+        
+        // Información de depuración
+        apiResponseDiv.innerHTML = `
+          <h3>Respuesta de la API</h3>
+          <p>Status: ${response.status}</p>
+          <p>Tipo: ${Array.isArray(apiData) ? `Array (${apiData.length} elementos)` : typeof apiData}</p>
+          <pre>${JSON.stringify(apiData, null, 2)}</pre>
+        `;
+        
+        // Mapear usuarios
+        const mappedUsers = Array.isArray(apiData) 
+          ? apiData.map(user => mapApiUserToAppUser(user)).filter(Boolean)
+          : [];
+          
+        // Información de depuración para los datos mapeados
+        mappedDataDiv.innerHTML = `
+          <h3>Datos Mapeados</h3>
+          <p>Usuarios mapeados: ${mappedUsers.length}</p>
+          <pre>${JSON.stringify(mappedUsers, null, 2)}</pre>
+        `;
+        
+        // Actualizar tabla
+        if (mappedUsers.length > 0) {
+          usersTableBody.innerHTML = '';
+          
+          mappedUsers.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${user.id}</td>
+              <td>${user.nombre}</td>
+              <td>${user.apellido}</td>
+              <td>${user.cedula}</td>
+              <td>${user.zona}</td>
+              <td>${formatDate(user.fechaIngreso)}</td>
+            `;
+            usersTableBody.appendChild(row);
+          });
+          
+          showStatus(`${mappedUsers.length} usuarios cargados correctamente`, 'success');
+        } else {
+          usersTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center">No hay usuarios para mostrar</td></tr>';
+          showStatus('No se encontraron usuarios', 'info');
+        }
+      } catch (error) {
+        console.error('Error al cargar usuarios:', error);
+        usersTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center">Error al cargar usuarios</td></tr>';
+        showStatus(`Error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Función para limpiar datos
+    function clearData() {
+      usersTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center">No hay datos disponibles</td></tr>';
+      apiResponseDiv.innerHTML = '';
+      mappedDataDiv.innerHTML = '';
+      statusDiv.textContent = '';
+      statusDiv.className = 'status';
+    }
+    
+    // Función para alternar sección de depuración
+    function toggleDebug() {
+      if (debugSection.style.display === 'none') {
+        debugSection.style.display = 'block';
+      } else {
+        debugSection.style.display = 'none';
+      }
+    }
+    
+    // Event listeners
+    loadUsersBtn.addEventListener('click', loadUsers);
+    clearDataBtn.addEventListener('click', clearData);
+    toggleDebugBtn.addEventListener('click', toggleDebug);
+    
+    // Cargar usuarios al inicio
+    document.addEventListener('DOMContentLoaded', loadUsers);
+  </script>
+</body>
+</html>
