@@ -1,0 +1,142 @@
+<div class="login-container">
+  <div class="login-background">
+    <div class="background-overlay"></div>
+  </div>
+  
+  <div class="login-content">
+    <!-- Logo y título del sistema -->
+    <div class="system-header">
+      <div class="logo-container">
+        <mat-icon class="system-logo">security</mat-icon>
+      </div>
+      <h1>Sistema de Gestión de Dotación</h1>
+      <p class="system-subtitle">Control y administración de recursos</p>
+    </div>
+
+    <!-- Formulario de login -->
+    <mat-card class="login-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>login</mat-icon>
+          Iniciar Sesión
+        </mat-card-title>
+        <mat-card-subtitle>
+          Ingrese sus credenciales para acceder al sistema
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <!-- Campo de usuario -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Usuario</mat-label>
+            <input 
+              matInput 
+              formControlName="username" 
+              placeholder="Ingrese su usuario"
+              autocomplete="username"
+              [disabled]="isLoading">
+            <mat-icon matSuffix>person</mat-icon>
+            <mat-error *ngIf="usernameError">{{ usernameError }}</mat-error>
+          </mat-form-field>
+
+          <!-- Campo de contraseña -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Contraseña</mat-label>
+            <input 
+              matInput 
+              [type]="hidePassword ? 'password' : 'text'" 
+              formControlName="password"
+              placeholder="Ingrese su contraseña"
+              autocomplete="current-password"
+              [disabled]="isLoading">
+            <button 
+              mat-icon-button 
+              matSuffix 
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [disabled]="isLoading"
+              [attr.aria-label]="'Hide password'" 
+              [attr.aria-pressed]="hidePassword">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="passwordError">{{ passwordError }}</mat-error>
+          </mat-form-field>
+
+          <!-- Botón de acceso -->
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit" 
+            class="login-button full-width"
+            [disabled]="isLoading || loginForm.invalid">
+            <span *ngIf="!isLoading">
+              <mat-icon>login</mat-icon>
+              Iniciar Sesión
+            </span>
+            <span *ngIf="isLoading" class="loading-content">
+              <mat-spinner diameter="20"></mat-spinner>
+              Verificando...
+            </span>
+          </button>
+        </form>
+      </mat-card-content>
+
+      <mat-card-actions class="login-actions">
+        <button 
+          mat-button 
+          color="accent" 
+          type="button" 
+          (click)="onForgotPassword()"
+          [disabled]="isLoading">
+          <mat-icon>help</mat-icon>
+          ¿Olvidó su contraseña?
+        </button>
+      </mat-card-actions>
+
+      <mat-divider></mat-divider>
+
+      <!-- Sección de demo (solo para desarrollo) -->
+      <mat-card-content class="demo-section">
+        <p class="demo-title">
+          <mat-icon>info</mat-icon>
+          Credenciales de Demo
+        </p>
+        <div class="demo-credentials">
+          <span><strong>Usuario:</strong> admin</span>
+          <span><strong>Contraseña:</strong> coraza2025</span>
+        </div>
+        <button 
+          mat-stroked-button 
+          color="accent" 
+          (click)="loadDemoCredentials()"
+          [disabled]="isLoading"
+          class="demo-button">
+          <mat-icon>cloud_download</mat-icon>
+          Cargar Credenciales Demo
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del sistema -->
+    <div class="system-info">
+      <div class="info-item">
+        <mat-icon>info</mat-icon>
+        <span>Versión {{ systemInfo.version }}</span>
+      </div>
+      <div class="info-item">
+        <mat-icon>update</mat-icon>
+        <span>Actualizado en {{ systemInfo.lastUpdate }}</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p>&copy; 2025 Sistema Coraza - Gestión de Dotación</p>
+      <p class="security-notice">
+        <mat-icon>shield</mat-icon>
+        Conexión segura SSL/TLS
+      </p>
+    </div>
+  </div>
+</div>

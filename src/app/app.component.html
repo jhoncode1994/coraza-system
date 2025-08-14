@@ -1,3 +1,9 @@
-<!-- <app-main-menu></app-main-menu> -->
-
-<router-outlet></router-outlet>
+<div class="app-container">
+  <!-- Navbar solo si está autenticado -->
+  <app-navbar *ngIf="isAuthenticated"></app-navbar>
+  
+  <!-- Contenido principal -->
+  <main class="main-content" [ngClass]="{'with-navbar': isAuthenticated, 'no-navbar': !isAuthenticated}">
+    <router-outlet></router-outlet>
+  </main>
+</div>

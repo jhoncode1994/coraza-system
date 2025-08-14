@@ -1,0 +1,83 @@
+.inventory-container {
+  padding: 20px;
+
+  mat-card {
+    margin-bottom: 20px;
+  }
+
+  .filters-container {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      flex: 1;
+      min-width: 200px;
+      max-width: 400px;
+    }
+  }
+
+  table {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .quantity-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .quantity {
+      min-width: 40px;
+      text-align: center;
+      font-weight: bold;
+    }
+  }
+
+  .mat-mdc-card-header {
+    margin-bottom: 20px;
+  }
+
+  .mat-mdc-card-title {
+    font-size: 24px;
+    color: #1976d2;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .low-stock {
+    background-color: rgba(244, 67, 54, 0.1);
+  }
+
+  .loading-container, .error-message, .no-data-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .error-message {
+    color: #f44336;
+  }
+
+  mat-chip-listbox {
+    margin-left: 8px;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 600px) {
+    .filters-container {
+      flex-direction: column;
+      align-items: stretch;
+
+      mat-form-field {
+        max-width: none;
+      }
+    }
+  }
+}

@@ -15,14 +15,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NgIf, DatePipe, AsyncPipe } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { UsersService } from './users.service';
-import { NotificationService } from '../../services/notification.service';
+import { HistoryDialogComponent } from './history-dialog.component';
+import { EntregaDotacionDialogComponent, EntregaDotacion } from './entrega-dotacion-dialog.component';
+import { EntregaDotacionService } from '../../services/entrega-dotacion.service';
+import { SupplyInventoryService } from '../../services/supply-inventory.service';
 
 export interface User {
   id: number;
@@ -48,6 +53,7 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -57,6 +63,7 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatTooltipModule,
     NgIf,
     DatePipe
   ],
@@ -121,7 +128,10 @@ export class UsersComponent implements OnInit {
     private fb: FormBuilder,
     private usersService: UsersService,
     private dateAdapter: DateAdapter<Date>,
-    private notificationService: NotificationService
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private entregaDotacionService: EntregaDotacionService,
+    private supplyInventoryService: SupplyInventoryService
   ) {
     // Configurar el adaptador de fechas para usar el formato español
     this.dateAdapter.setLocale('es-ES');
@@ -153,8 +163,7 @@ export class UsersComponent implements OnInit {
   
   // Método para cargar usuarios del servicio
   loadUsers(): void {
-    // El servicio ahora maneja la carga de usuarios automáticamente
-    this.usersService.loadUsers();
+    this.users = this.usersService.getUsers();
   }
 
   // Método para mostrar el formulario
@@ -183,55 +192,24 @@ export class UsersComponent implements OnInit {
           : new Date(this.userForm.value.fechaIngreso)
       };
       
-      if (this.editIndex !== null && this.users[this.editIndex]) {
-        const userId = this.users[this.editIndex].id;
-        
-        // Actualizar usuario existente usando el servicio (ahora retorna Observable)
-        this.usersService.updateUser(userId, userData).subscribe({
-          next: (updatedUser) => {
-            console.log('Usuario actualizado:', updatedUser);
-            this.editIndex = null;
-            this.userForm.reset();
-            this.showForm = false;
-            this.notificationService.success('¡Usuario actualizado correctamente!');
-          },
-          error: (error) => {
-            console.error('Error al actualizar usuario:', error);
-            let errorMessage = 'Error al actualizar usuario';
-            
-            if (error?.error?.error) {
-              errorMessage = error.error.error;
-            }
-            
-            this.notificationService.error(errorMessage);
-          }
-        });
+      if (this.editIndex !== null) {
+        // Actualizar usuario existente usando el servicio
+        this.usersService.updateUser(this.editIndex, userData);
+        console.log('Usuario actualizado:', userData);
+        this.editIndex = null;
       } else {
-        // Agregar nuevo usuario usando el servicio (ahora retorna Observable)
-        this.usersService.addUser(userData).subscribe({
-          next: (newUser) => {
-            console.log('Usuario agregado:', newUser);
-            this.userForm.reset();
-            this.showForm = false;
-            this.notificationService.success('¡Usuario registrado correctamente en la base de datos!');
-          },
-          error: (error) => {
-            console.error('Error al agregar usuario:', error);
-            let errorMessage = 'Error al registrar usuario';
-            
-            if (error?.error?.error) {
-              errorMessage = error.error.error;
-            }
-            
-            this.notificationService.error(errorMessage);
-          }
-        });
+        // Agregar nuevo usuario usando el servicio
+        this.usersService.addUser(userData);
+        console.log('Agregando usuario:', userData);
       }
+      
+      // No es necesario recargar los usuarios manualmente gracias a la suscripción
+      
+      this.userForm.reset();
+      // Ocultar formulario después de agregar/editar
+      this.showForm = false;
     } else {
       console.log('Formulario inválido', this.userForm.errors);
-      
-      // Mostrar notificación de error
-      this.notificationService.error('El formulario contiene errores. Por favor, revisa los campos.');
       
       // Marcar todos los campos como tocados para mostrar errores
       Object.keys(this.userForm.controls).forEach(field => {
@@ -271,33 +249,118 @@ export class UsersComponent implements OnInit {
   }
 
   deleteUser(index: number) {
-    if (index >= 0 && this.users[index]) {
-      const userId = this.users[index].id;
-      
-      // Eliminar usuario usando el servicio (ahora retorna Observable)
-      this.usersService.deleteUser(userId).subscribe({
-        next: (deletedUser) => {
-          console.log('Usuario eliminado:', deletedUser);
-          
-          if (this.editIndex === index) {
-            this.editIndex = null;
-            this.userForm.reset();
-            this.showForm = false;
-          }
-          
-          this.notificationService.success('Usuario eliminado correctamente');
-        },
-        error: (error) => {
-          console.error('Error al eliminar usuario:', error);
-          let errorMessage = 'Error al eliminar usuario';
-            
-          if (error?.error?.error) {
-            errorMessage = error.error.error;
-          }
-          
-          this.notificationService.error(errorMessage);
-        }
-      });
+    // Eliminar usuario usando el servicio
+    this.usersService.deleteUser(index);
+    
+    // No es necesario recargar los usuarios manualmente gracias a la suscripción
+    
+    if (this.editIndex === index) {
+      this.editIndex = null;
+      this.userForm.reset();
+      this.showForm = false;
     }
+  }
+
+  verHistorial(user: User) {
+    this.dialog.open(HistoryDialogComponent, {
+      width: '600px',
+      data: { user }
+    });
+  }
+
+  entregarDotacion(user: User) {
+    const dialogRef = this.dialog.open(EntregaDotacionDialogComponent, {
+      width: '500px',
+      data: { user }
+    });
+
+    dialogRef.afterClosed().subscribe((result: EntregaDotacion) => {
+      if (result) {
+        // Aquí procesaremos la entrega de dotación
+        this.procesarEntregaDotacion(user, result);
+      }
+    });
+  }
+
+  private procesarEntregaDotacion(user: User, entrega: EntregaDotacion) {
+    // Primero validar que hay stock suficiente
+    this.supplyInventoryService.validateStock(entrega.elemento, entrega.cantidad).subscribe({
+      next: (validation) => {
+        if (!validation.valid) {
+          this.snackBar.open(
+            `Stock insuficiente. Disponible: ${validation.availableQuantity}, Solicitado: ${entrega.cantidad}`,
+            'Cerrar',
+            {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            }
+          );
+          return;
+        }
+
+        // Si hay stock suficiente, proceder con el descuento
+        this.supplyInventoryService.decreaseStock(entrega.elemento, entrega.cantidad).subscribe({
+          next: (success) => {
+            if (success) {
+              // Crear el registro de entrega para el historial
+              const registroEntrega = {
+                userId: user.id,
+                elemento: entrega.elemento,
+                cantidad: entrega.cantidad,
+                fechaEntrega: entrega.fechaEntrega,
+                observaciones: entrega.observaciones,
+                tipo: 'entrega' as const
+              };
+
+              // Guardar la entrega usando el servicio
+              this.entregaDotacionService.addEntrega(registroEntrega);
+              
+              console.log('Entrega procesada y stock descontado:', registroEntrega);
+              
+              // Mostrar mensaje de éxito
+              this.snackBar.open(
+                `✅ Entrega exitosa: ${entrega.cantidad} ${entrega.elemento}(s) para ${user.nombre} ${user.apellido}. Stock actualizado.`,
+                'Cerrar',
+                {
+                  duration: 6000,
+                  panelClass: ['success-snackbar']
+                }
+              );
+            } else {
+              this.snackBar.open(
+                'Error al actualizar el inventario',
+                'Cerrar',
+                {
+                  duration: 3000,
+                  panelClass: ['error-snackbar']
+                }
+              );
+            }
+          },
+          error: (error) => {
+            console.error('Error al descontar stock:', error);
+            this.snackBar.open(
+              'Error al procesar la entrega',
+              'Cerrar',
+              {
+                duration: 3000,
+                panelClass: ['error-snackbar']
+              }
+            );
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al validar stock:', error);
+        this.snackBar.open(
+          'Error al validar el inventario',
+          'Cerrar',
+          {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          }
+        );
+      }
+    });
   }
 }

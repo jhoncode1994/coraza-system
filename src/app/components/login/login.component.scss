@@ -1,0 +1,365 @@
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fondo animado */
+.login-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 1;
+}
+
+.login-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+  animation: backgroundMove 20s ease-in-out infinite;
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+/* Contenido principal */
+.login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+  position: relative;
+  z-index: 3;
+}
+
+/* Header del sistema */
+.system-header {
+  text-align: center;
+  margin-bottom: 32px;
+  color: white;
+}
+
+.logo-container {
+  margin-bottom: 16px;
+}
+
+.system-logo {
+  font-size: 72px;
+  width: 72px;
+  height: 72px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.system-header h1 {
+  font-size: 2.5rem;
+  font-weight: 300;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.system-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  font-weight: 300;
+}
+
+/* Tarjeta de login */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.login-card mat-card-header {
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  color: white;
+  padding: 24px;
+  text-align: center;
+}
+
+.login-card mat-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.login-card mat-card-subtitle {
+  margin-top: 8px;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+/* Formulario */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.login-button {
+  margin-top: 16px;
+  padding: 12px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Acciones */
+.login-actions {
+  display: flex;
+  justify-content: center;
+  padding: 0 24px 16px;
+}
+
+.login-actions button {
+  font-size: 0.9rem;
+}
+
+/* Sección demo */
+.demo-section {
+  background: #f8f9fa;
+  padding: 16px 24px !important;
+  text-align: center;
+}
+
+.demo-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  color: #666;
+  font-weight: 500;
+}
+
+.demo-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.demo-button {
+  font-size: 0.9rem;
+}
+
+/* Información del sistema */
+.system-info {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.info-item mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Footer */
+.login-footer {
+  text-align: center;
+  margin-top: 32px;
+  color: white;
+  opacity: 0.7;
+}
+
+.login-footer p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.security-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.85rem !important;
+}
+
+.security-notice mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-content {
+    padding: 16px;
+  }
+  
+  .system-header h1 {
+    font-size: 2rem;
+  }
+  
+  .system-logo {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    padding: 12px;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+  
+  .system-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .system-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .system-subtitle {
+    font-size: 1rem;
+  }
+  
+  .login-card mat-card-header {
+    padding: 20px 16px;
+  }
+  
+  .login-form {
+    padding: 16px 0;
+  }
+  
+  .demo-credentials {
+    font-size: 0.85rem;
+  }
+}
+
+/* Animaciones */
+@keyframes backgroundMove {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-20px) translateY(-20px); }
+  50% { transform: translateX(20px) translateY(-10px); }
+  75% { transform: translateX(-10px) translateY(20px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.system-header {
+  animation: slideInDown 0.8s ease-out;
+}
+
+.login-card {
+  animation: fadeInUp 0.8s ease-out 0.2s;
+  animation-fill-mode: both;
+}
+
+.system-info {
+  animation: fadeInUp 0.8s ease-out 0.4s;
+  animation-fill-mode: both;
+}
+
+.login-footer {
+  animation: fadeInUp 0.8s ease-out 0.6s;
+  animation-fill-mode: both;
+}
+
+/* Estados de error */
+::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-outline {
+  color: #f44336 !important;
+}
+
+::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-label {
+  color: #f44336 !important;
+}
+
+/* Spinner personalizado */
+::ng-deep .loading-content .mat-progress-spinner circle {
+  stroke: white;
+}
+
+/* Hover effects */
+.login-button:hover:not([disabled]) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
+}
+
+.demo-button:hover {
+  background-color: rgba(255, 64, 129, 0.1);
+}
+
+/* Focus styles */
+.login-card mat-form-field.mat-focused .mat-form-field-outline {
+  color: #1976d2 !important;
+}

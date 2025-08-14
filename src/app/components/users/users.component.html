@@ -109,11 +109,17 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let user; let i = index">
-            <button mat-icon-button color="accent" (click)="editUser(i)">
+            <button mat-icon-button color="accent" (click)="editUser(i)" matTooltip="Editar usuario">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button color="warn" (click)="deleteUser(i)">
+            <button mat-icon-button color="warn" (click)="deleteUser(i)" matTooltip="Eliminar usuario">
               <mat-icon>delete</mat-icon>
+            </button>
+            <button mat-icon-button color="primary" (click)="verHistorial(user)" matTooltip="Ver historial">
+              <mat-icon>history</mat-icon>
+            </button>
+            <button mat-icon-button style="color: #4CAF50;" (click)="entregarDotacion(user)" matTooltip="Entregar dotación">
+              <mat-icon>inventory</mat-icon>
             </button>
           </td>
         </ng-container>

@@ -1,0 +1,326 @@
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+}
+
+.navbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Logo y marca */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+
+.navbar-logo {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.navbar-title {
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Navegación */
+.navbar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.navbar-nav button {
+  color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.navbar-nav button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.navbar-nav button.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-nav button mat-icon {
+  margin-right: 8px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* Usuario */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: white;
+}
+
+.user-greeting {
+  font-size: 0.95rem;
+  font-weight: 400;
+  opacity: 0.9;
+  display: none;
+}
+
+.user-menu-trigger {
+  padding: 4px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.user-menu-trigger:hover .user-avatar {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Menú de usuario */
+::ng-deep .user-menu {
+  margin-top: 8px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.user-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-bottom: 1px solid #dee2e6;
+}
+
+.user-avatar-large {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-info p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.user-email {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.user-role {
+  font-size: 0.85rem;
+  color: #1976d2;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.last-login {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* Items del menú */
+::ng-deep .user-menu .mat-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+::ng-deep .user-menu .mat-menu-item:hover {
+  background-color: #f8f9fa;
+  transform: translateX(4px);
+}
+
+::ng-deep .user-menu .mat-menu-item mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #666;
+}
+
+::ng-deep .user-menu .logout-item {
+  color: #d32f2f;
+}
+
+::ng-deep .user-menu .logout-item mat-icon {
+  color: #d32f2f;
+}
+
+::ng-deep .user-menu .logout-item:hover {
+  background-color: rgba(211, 47, 47, 0.05);
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .user-greeting {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-content {
+    padding: 0 12px;
+  }
+  
+  .navbar-title {
+    font-size: 1.1rem;
+  }
+  
+  .navbar-nav {
+    display: none;
+  }
+  
+  .navbar-nav button {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .navbar-nav button mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+  }
+  
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-brand {
+    gap: 8px;
+  }
+  
+  .navbar-logo {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .navbar-title {
+    font-size: 1rem;
+  }
+  
+  .user-menu-header {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .user-avatar-large {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+}
+
+/* Animaciones */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-navbar {
+  animation: slideDown 0.5s ease-out;
+}
+
+/* Estados activos */
+::ng-deep .mat-toolbar.mat-primary {
+  background: linear-gradient(135deg, #1976d2, #42a5f5) !important;
+  color: white !important;
+}
+
+/* Efectos hover mejorados */
+.navbar-nav button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.navbar-nav button:hover::before {
+  opacity: 1;
+}
+
+/* Indicador de página activa */
+.navbar-nav button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+}

@@ -1,0 +1,225 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>
+      <mat-icon>dashboard</mat-icon>
+      Dashboard - Sistema de Dotación
+    </h1>
+    <button mat-raised-button color="primary" (click)="refreshData()" [disabled]="isLoading">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Cargando datos del dashboard...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="dashboard-content">
+    <!-- Métricas principales -->
+    <div class="metrics-grid">
+      <mat-card class="metric-card primary">
+        <mat-card-content>
+          <div class="metric-content">
+            <div class="metric-icon">
+              <mat-icon>group</mat-icon>
+            </div>
+            <div class="metric-info">
+              <h3>{{ metrics.totalEmployees }}</h3>
+              <p>Empleados Registrados</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="metric-card accent">
+        <mat-card-content>
+          <div class="metric-content">
+            <div class="metric-icon">
+              <mat-icon>inventory</mat-icon>
+            </div>
+            <div class="metric-info">
+              <h3>{{ metrics.totalSupplies }}</h3>
+              <p>Artículos en Inventario</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="metric-card warn">
+        <mat-card-content>
+          <div class="metric-content">
+            <div class="metric-icon">
+              <mat-icon [matBadge]="metrics.lowStockItems" matBadgeColor="warn" [matBadgeHidden]="metrics.lowStockItems === 0">warning</mat-icon>
+            </div>
+            <div class="metric-info">
+              <h3>{{ metrics.lowStockItems }}</h3>
+              <p>Artículos con Stock Bajo</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="metric-card success">
+        <mat-card-content>
+          <div class="metric-content">
+            <div class="metric-icon">
+              <mat-icon>local_shipping</mat-icon>
+            </div>
+            <div class="metric-info">
+              <h3>{{ metrics.deliveriesToday }}</h3>
+              <p>Entregas de Hoy</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Gráficos y estadísticas -->
+    <div class="charts-grid">
+      <!-- Empleados por zona -->
+      <mat-card class="chart-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>location_on</mat-icon>
+            Empleados por Zona
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="zone-stats" *ngIf="getZoneKeys().length > 0; else noZoneData">
+            <div class="zone-item" *ngFor="let zone of getZoneKeys()">
+              <div class="zone-info">
+                <span class="zone-label">Zona {{ zone }}</span>
+                <span class="zone-count">{{ metrics.employeesByZone[zone] }} empleados</span>
+              </div>
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="(metrics.employeesByZone[zone] / metrics.totalEmployees) * 100"
+                color="primary">
+              </mat-progress-bar>
+            </div>
+          </div>
+          <ng-template #noZoneData>
+            <p class="no-data">No hay datos de empleados por zona</p>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Artículos más entregados -->
+      <mat-card class="chart-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>trending_up</mat-icon>
+            Artículos Más Entregados
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="supply-stats" *ngIf="metrics.topSuppliesUsed.length > 0; else noSupplyData">
+            <div class="supply-item" *ngFor="let supply of metrics.topSuppliesUsed">
+              <div class="supply-info">
+                <span class="supply-name">{{ supply.name | titlecase }}</span>
+                <span class="supply-count">{{ supply.count }} unidades</span>
+              </div>
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="(supply.count / metrics.topSuppliesUsed[0].count) * 100"
+                color="accent">
+              </mat-progress-bar>
+            </div>
+          </div>
+          <ng-template #noSupplyData>
+            <p class="no-data">No hay datos de entregas</p>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Alertas y acciones rápidas -->
+    <div class="alerts-section">
+      <!-- Stock crítico -->
+      <mat-card class="alert-card" *ngIf="metrics.criticalStockItems.length > 0">
+        <mat-card-header>
+          <mat-card-title class="alert-title">
+            <mat-icon color="warn">warning</mat-icon>
+            Alerta: Stock Crítico
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="critical-items">
+            <mat-chip-listbox>
+              <mat-chip *ngFor="let item of metrics.criticalStockItems" 
+                       [color]="getStockColor(item.stock, item.minStock)"
+                       selected>
+                <mat-icon matChipAvatar>inventory_2</mat-icon>
+                {{ item.name | titlecase }}: {{ item.stock }} unidades
+              </mat-chip>
+            </mat-chip-listbox>
+          </div>
+          <mat-card-actions>
+            <button mat-raised-button color="warn" routerLink="/inventory">
+              <mat-icon>add_shopping_cart</mat-icon>
+              Gestionar Inventario
+            </button>
+          </mat-card-actions>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Acciones rápidas -->
+      <mat-card class="quick-actions-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>flash_on</mat-icon>
+            Acciones Rápidas
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="quick-actions">
+            <button mat-raised-button color="primary" routerLink="/users">
+              <mat-icon>group_add</mat-icon>
+              Gestionar Empleados
+            </button>
+            <button mat-raised-button color="accent" routerLink="/inventory">
+              <mat-icon>inventory</mat-icon>
+              Ver Inventario
+            </button>
+            <button mat-raised-button routerLink="/reports">
+              <mat-icon>assessment</mat-icon>
+              Ver Reportes
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Resumen de entregas -->
+    <div class="summary-section">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>today</mat-icon>
+            Resumen de Entregas
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="delivery-summary">
+            <div class="summary-item">
+              <mat-icon color="primary">today</mat-icon>
+              <div class="summary-info">
+                <h4>Entregas de Hoy</h4>
+                <p>{{ metrics.deliveriesToday }} entregas realizadas</p>
+              </div>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="summary-item">
+              <mat-icon color="accent">date_range</mat-icon>
+              <div class="summary-info">
+                <h4>Entregas del Mes</h4>
+                <p>{{ metrics.deliveriesThisMonth }} entregas este mes</p>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

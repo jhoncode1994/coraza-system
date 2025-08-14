@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://renderdesboard.onrender.com",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

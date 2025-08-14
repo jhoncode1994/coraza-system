@@ -1,0 +1,370 @@
+.reports-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.reports-header {
+  margin-bottom: 24px;
+}
+
+.reports-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: #1976d2;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+/* Filtros */
+.filters-card {
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filters-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1976d2;
+}
+
+.filters-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-row mat-form-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.filter-actions button {
+  min-width: 120px;
+}
+
+/* Tabs */
+.reports-tabs {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .mat-tab-group.reports-tabs {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .mat-tab-header {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+::ng-deep .mat-tab-label {
+  padding: 0 24px;
+  min-width: 120px;
+}
+
+/* Reportes */
+.report-card {
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.report-card mat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.report-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1976d2;
+  margin: 0;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.card-actions button {
+  color: #666;
+}
+
+.card-actions button:hover {
+  color: #1976d2;
+}
+
+/* Tablas */
+.table-container {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.delivery-table,
+.inventory-table,
+.consumption-table {
+  width: 100%;
+  background: white;
+}
+
+.delivery-table th,
+.inventory-table th,
+.consumption-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.delivery-table td,
+.inventory-table td,
+.consumption-table td {
+  border-bottom: 1px solid #e8e8e8;
+  padding: 12px 8px;
+}
+
+/* Estados de stock */
+.stock-ok {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.stock-low {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.stock-critical {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-ok {
+  background-color: #e8f5e8;
+  color: #4caf50;
+}
+
+.status-low {
+  background-color: #fff3e0;
+  color: #ff9800;
+}
+
+.status-critical {
+  background-color: #ffebee;
+  color: #f44336;
+}
+
+.status-badge mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Sin datos */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #999;
+}
+
+.no-data mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.no-data p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  gap: 20px;
+}
+
+.loading-container p {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Filas de tabla hover */
+::ng-deep .mat-row:hover {
+  background-color: #f8f9fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reports-container {
+    padding: 16px;
+  }
+  
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-row mat-form-field {
+    min-width: auto;
+  }
+  
+  .filter-actions {
+    margin-left: 0;
+    justify-content: stretch;
+  }
+  
+  .filter-actions button {
+    flex: 1;
+  }
+  
+  .report-card mat-card-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .card-actions {
+    justify-content: center;
+  }
+  
+  .table-container {
+    font-size: 0.9rem;
+  }
+  
+  .delivery-table td,
+  .inventory-table td,
+  .consumption-table td {
+    padding: 8px 4px;
+  }
+}
+
+@media (max-width: 600px) {
+  .reports-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  ::ng-deep .mat-tab-label {
+    padding: 0 12px;
+    min-width: 80px;
+    font-size: 0.9rem;
+  }
+  
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+  
+  .status-badge mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reports-tabs {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.report-card {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Impresión */
+@media print {
+  .reports-container {
+    padding: 0;
+    background: white;
+  }
+  
+  .filters-card,
+  .card-actions,
+  .reports-header button {
+    display: none !important;
+  }
+  
+  .reports-tabs,
+  .report-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  ::ng-deep .mat-tab-header {
+    display: none !important;
+  }
+  
+  ::ng-deep .mat-tab-body-wrapper {
+    padding: 0 !important;
+  }
+  
+  .table-container {
+    overflow: visible !important;
+  }
+  
+  .delivery-table,
+  .inventory-table,
+  .consumption-table {
+    font-size: 10px;
+  }
+  
+  .delivery-table th,
+  .inventory-table th,
+  .consumption-table th {
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
