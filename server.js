@@ -190,6 +190,100 @@ app.get('/api/users/:id', async (req, res) => {
   }
 });
 
+// Get all supply inventory items
+app.get('/api/supply-inventory', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM supply_inventory ORDER BY category, name');
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching supply inventory:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener inventario',
+      details: error.message
+    });
+  }
+});
+
+// Update supply quantity (main operation since items are fixed)
+app.put('/api/supply-inventory/:id/quantity', async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const { id } = req.params;
+    
+    if (quantity < 0) {
+      return res.status(400).json({ error: 'La cantidad no puede ser negativa' });
+    }
+    
+    const client = await pool.connect();
+    const result = await client.query(
+      'UPDATE supply_inventory SET quantity = $1, last_update = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [quantity, id]
+    );
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Elemento no encontrado' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating quantity:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar cantidad',
+      details: error.message
+    });
+  }
+});
+
+// Get low stock items (quantity <= minimum_quantity)
+app.get('/api/supply-inventory/low-stock', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(
+      'SELECT * FROM supply_inventory WHERE quantity <= minimum_quantity ORDER BY category, name'
+    );
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching low stock items:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener elementos con stock bajo',
+      details: error.message
+    });
+  }
+});
+
+// Get supply statistics
+app.get('/api/supply-inventory/stats', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    
+    const totalItems = await client.query('SELECT COUNT(*) as total FROM supply_inventory');
+    const lowStockItems = await client.query('SELECT COUNT(*) as low_stock FROM supply_inventory WHERE quantity <= minimum_quantity');
+    const categories = await client.query('SELECT category, COUNT(*) as count FROM supply_inventory GROUP BY category ORDER BY category');
+    const totalValue = await client.query('SELECT SUM(quantity * unit_price) as total_value FROM supply_inventory');
+    
+    client.release();
+    
+    res.json({
+      total_items: totalItems.rows[0].total,
+      low_stock_count: lowStockItems.rows[0].low_stock,
+      categories: categories.rows,
+      total_value: totalValue.rows[0].total_value || 0
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener estadísticas',
+      details: error.message
+    });
+  }
+});
+
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
