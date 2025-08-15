@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import SignaturePad from 'signature_pad';
+import * as SignaturePadImport from 'signature_pad';
+
+// Workaround para compatibilidad con diferentes tipos de importación
+const SignaturePad = (SignaturePadImport as any).default || SignaturePadImport;
 
 @Component({
   selector: 'app-signature-pad',
@@ -173,7 +176,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   @Input() showError = false;
   @Input() required = true;
 
-  private signaturePad!: SignaturePad;
+  private signaturePad!: any; // Tipo genérico para compatibilidad
   isEmpty = true;
   isDrawing = false;
 
