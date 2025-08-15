@@ -1,6 +1,18 @@
 const express = require('express');
 const path = require('path');
+const cors = require('cors');
+
+// Import dotenv for database connection
+require('dotenv').config();
+
 const app = express();
+
+// Enable CORS
+app.use(cors());
+app.use(express.json());
+
+// Backend API routes
+app.use('/api', require('./src/services/api-routes'));
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist/coraza-system-angular')));
@@ -15,4 +27,6 @@ const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log(`Frontend: http://localhost:${port}`);
+  console.log(`API: http://localhost:${port}/api`);
 });
