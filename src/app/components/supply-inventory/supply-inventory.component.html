@@ -26,11 +26,6 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" (click)="openAddSupplyDialog()">
-          <mat-icon>add</mat-icon>
-          Agregar Elemento
-        </button>
-
         <button mat-raised-button color="primary" (click)="exportToExcel()">
           <mat-icon>download</mat-icon>
           Exportar a Excel
@@ -92,14 +87,9 @@
         <ng-container matColumnDef="quantity">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Cantidad </th>
           <td mat-cell *matCellDef="let element" class="quantity-cell">
-            <button mat-icon-button color="warn" (click)="updateQuantity(element, -1)"
-                    [disabled]="element.quantity <= 0">
-              <mat-icon>remove</mat-icon>
-            </button>
-            <span class="quantity">{{element.quantity}}</span>
-            <button mat-icon-button color="primary" (click)="updateQuantity(element, 1)">
-              <mat-icon>add</mat-icon>
-            </button>
+            <span class="quantity" [ngClass]="{'low-stock': element.quantity < element.minimumQuantity}">
+              {{element.quantity}}
+            </span>
           </td>
         </ng-container>
 
@@ -115,17 +105,15 @@
           <td mat-cell *matCellDef="let element"> {{element.lastUpdate | date:'short'}} </td>
         </ng-container>
 
-        <!-- Acciones Column -->
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef> Acciones </th>
+        <!-- Agregar Stock Column -->
+        <ng-container matColumnDef="addStock">
+          <th mat-header-cell *matHeaderCellDef> Agregar Stock </th>
           <td mat-cell *matCellDef="let element">
-            <button mat-icon-button color="primary" 
-                    [matTooltip]="'Ver detalles de ' + element.name">
-              <mat-icon>info</mat-icon>
-            </button>
-            <button mat-icon-button color="accent" 
-                    [matTooltip]="'Editar ' + element.name">
-              <mat-icon>edit</mat-icon>
+            <button mat-raised-button color="primary" 
+                    (click)="openAddStockDialog(element)"
+                    [matTooltip]="'Agregar stock a ' + element.name">
+              <mat-icon>add_box</mat-icon>
+              Agregar
             </button>
           </td>
         </ng-container>

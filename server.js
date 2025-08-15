@@ -79,6 +79,21 @@ app.post('/api/init-database', async (req, res) => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Create inventory movements table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS inventory_movements (
+        id SERIAL PRIMARY KEY,
+        supply_id INTEGER REFERENCES supply_inventory(id),
+        movement_type VARCHAR(20) NOT NULL CHECK (movement_type IN ('entrada', 'salida')),
+        quantity INTEGER NOT NULL,
+        reason VARCHAR(100) NOT NULL,
+        notes TEXT,
+        previous_quantity INTEGER NOT NULL,
+        new_quantity INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
     
     // Insert sample users
     await client.query(`
@@ -425,6 +440,128 @@ app.put('/api/users/:id', async (req, res) => {
     console.error('Error updating user:', error);
     res.status(500).json({ 
       error: 'Error al actualizar usuario',
+      details: error.message
+    });
+  }
+});
+
+// Add stock to inventory item with movement tracking
+app.post('/api/inventory-movements/add-stock', async (req, res) => {
+  try {
+    const { supplyId, quantity, reason, notes } = req.body;
+    
+    if (!supplyId || !quantity || !reason) {
+      return res.status(400).json({ 
+        error: 'Faltan datos requeridos: supplyId, quantity, reason' 
+      });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+      // Start transaction
+      await client.query('BEGIN');
+      
+      // Get current quantity
+      const currentResult = await client.query(
+        'SELECT quantity FROM supply_inventory WHERE id = $1',
+        [supplyId]
+      );
+      
+      if (currentResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Elemento de inventario no encontrado' });
+      }
+      
+      const previousQuantity = currentResult.rows[0].quantity;
+      const newQuantity = previousQuantity + quantity;
+      
+      // Update inventory quantity
+      await client.query(
+        'UPDATE supply_inventory SET quantity = $1, last_update = CURRENT_TIMESTAMP WHERE id = $2',
+        [newQuantity, supplyId]
+      );
+      
+      // Record movement
+      await client.query(
+        'INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [supplyId, 'entrada', quantity, reason, notes, previousQuantity, newQuantity]
+      );
+      
+      // Commit transaction
+      await client.query('COMMIT');
+      
+      res.json({
+        success: true,
+        message: 'Stock agregado exitosamente',
+        previousQuantity,
+        newQuantity,
+        quantityAdded: quantity
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('Error adding stock:', error);
+    res.status(500).json({ 
+      error: 'Error al agregar stock',
+      details: error.message
+    });
+  }
+});
+
+// Get inventory movements
+app.get('/api/inventory-movements', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT 
+        im.*,
+        si.name as supply_name,
+        si.code as supply_code
+      FROM inventory_movements im
+      JOIN supply_inventory si ON im.supply_id = si.id
+      ORDER BY im.created_at DESC
+    `);
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching inventory movements:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener movimientos de inventario',
+      details: error.message
+    });
+  }
+});
+
+// Get inventory movements for specific supply item
+app.get('/api/inventory-movements/supply/:supplyId', async (req, res) => {
+  try {
+    const { supplyId } = req.params;
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT 
+        im.*,
+        si.name as supply_name,
+        si.code as supply_code
+      FROM inventory_movements im
+      JOIN supply_inventory si ON im.supply_id = si.id
+      WHERE im.supply_id = $1
+      ORDER BY im.created_at DESC
+    `, [supplyId]);
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching supply movements:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener movimientos del elemento',
       details: error.message
     });
   }

@@ -9,16 +9,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { AddSupplyDialogComponent } from './add-supply-dialog.component';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
-// Dynamic import for file-saver to avoid build issues
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
+import { InventoryMovementsService } from '../../services/inventory-movements.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
+import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.component';
 
 @Component({
   selector: 'app-supply-inventory',
@@ -42,12 +42,13 @@ import { SupplyItem } from '../../interfaces/supply-item.interface';
     MatBadgeModule,
     FormsModule,
     ReactiveFormsModule,
-    MatDialogModule
+    MatDialogModule,
+    AddStockDialogComponent
   ]
 })
 export class SupplyInventoryComponent implements OnInit {
   dataSource: MatTableDataSource<SupplyItem>;
-  displayedColumns: string[] = ['code', 'name', 'category', 'quantity', 'minimumQuantity', 'lastUpdate', 'actions'];
+  displayedColumns: string[] = ['code', 'name', 'category', 'quantity', 'minimumQuantity', 'lastUpdate', 'addStock'];
   isLoading = false;
   error: string | null = null;
   categories = ['uniforme', 'accesorios'];
@@ -58,6 +59,7 @@ export class SupplyInventoryComponent implements OnInit {
 
   constructor(
     private supplyInventoryService: SupplyInventoryService,
+    private movementsService: InventoryMovementsService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {
@@ -83,25 +85,6 @@ export class SupplyInventoryComponent implements OnInit {
         this.isLoading = false;
       }
     });
-  }
-
-  updateQuantity(supply: SupplyItem, change: number) {
-    const newQuantity = Math.max(0, supply.quantity + change);
-    this.supplyInventoryService.updateSupplyQuantity(supply.id, newQuantity)
-      .subscribe({
-        next: (updatedSupply) => {
-          const data = this.dataSource.data;
-          const index = data.findIndex(s => s.id === updatedSupply.id);
-          if (index !== -1) {
-            data[index] = updatedSupply;
-            this.dataSource.data = [...data];
-            this.checkLowStock();
-          }
-        },
-        error: (error) => {
-          this.snackBar.open('Error al actualizar la cantidad', 'Cerrar', { duration: 3000 });
-        }
-      });
   }
 
   applyFilter(event: Event) {
@@ -155,28 +138,34 @@ export class SupplyInventoryComponent implements OnInit {
     window.URL.revokeObjectURL(url);
   }
 
-  openAddSupplyDialog(): void {
-    const dialogRef = this.dialog.open(AddSupplyDialogComponent, {
-      width: '500px'
+  openAddStockDialog(item: SupplyItem): void {
+    const dialogData: AddStockDialogData = {
+      supply: item
+    };
+
+    const dialogRef = this.dialog.open(AddStockDialogComponent, {
+      width: '500px',
+      data: dialogData
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // result contains: { elementId: number, quantityToAdd: number, selectedItem: SupplyItem }
-        this.supplyInventoryService.addSupply(result.elementId, result.quantityToAdd).subscribe({
-          next: (response) => {
-            this.snackBar.open(
-              `Se agregaron ${result.quantityToAdd} unidades de ${result.selectedItem.name}`, 
-              'Cerrar', 
-              { duration: 3000 }
-            );
-            this.loadSupplies();
-          },
-          error: (error) => {
-            console.error('Error adding supply:', error);
-            this.snackBar.open('Error al agregar elementos al inventario', 'Cerrar', { duration: 3000 });
-          }
-        });
+        // result contains: { quantity: number, reason: string, notes?: string }
+        this.movementsService.addStock(item.id, result.quantity, result.reason, result.notes)
+          .subscribe({
+            next: (response) => {
+              this.snackBar.open(
+                `Se agregaron ${result.quantity} unidades de ${item.name}`, 
+                'Cerrar', 
+                { duration: 3000 }
+              );
+              this.loadSupplies();
+            },
+            error: (error) => {
+              console.error('Error adding stock:', error);
+              this.snackBar.open('Error al agregar stock al inventario', 'Cerrar', { duration: 3000 });
+            }
+          });
       }
     });
   }
