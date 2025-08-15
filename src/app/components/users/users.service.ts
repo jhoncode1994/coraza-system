@@ -271,28 +271,28 @@ export class UsersService {
       try {
         if (appUser.fechaIngreso instanceof Date) {
           // Si es una instancia de Date, convertir a formato ISO y tomar solo la parte de la fecha
-          apiUser.fecha_ingreso = appUser.fechaIngreso.toISOString().split('T')[0];
-          console.log(`Fecha convertida: ${appUser.fechaIngreso} → ${apiUser.fecha_ingreso}`);
+          apiUser.fechaIngreso = appUser.fechaIngreso.toISOString().split('T')[0];
+          console.log(`Fecha convertida: ${appUser.fechaIngreso} → ${apiUser.fechaIngreso}`);
         } else if (typeof appUser.fechaIngreso === 'string') {
           // Si es un string, intentar parsear como Date y luego convertir
           const date = new Date(appUser.fechaIngreso);
           if (!isNaN(date.getTime())) {
-            apiUser.fecha_ingreso = date.toISOString().split('T')[0];
-            console.log(`Fecha string convertida: ${appUser.fechaIngreso} → ${apiUser.fecha_ingreso}`);
+            apiUser.fechaIngreso = date.toISOString().split('T')[0];
+            console.log(`Fecha string convertida: ${appUser.fechaIngreso} → ${apiUser.fechaIngreso}`);
           } else {
             // Si no se puede parsear, usar el string directamente
-            apiUser.fecha_ingreso = appUser.fechaIngreso;
-            console.log(`Usando fecha string directamente: ${apiUser.fecha_ingreso}`);
+            apiUser.fechaIngreso = appUser.fechaIngreso;
+            console.log(`Usando fecha string directamente: ${apiUser.fechaIngreso}`);
           }
         } else {
           // Si no es Date ni string, usar fecha actual como respaldo
-          apiUser.fecha_ingreso = new Date().toISOString().split('T')[0];
-          console.log(`Usando fecha actual como respaldo: ${apiUser.fecha_ingreso}`);
+          apiUser.fechaIngreso = new Date().toISOString().split('T')[0];
+          console.log(`Usando fecha actual como respaldo: ${apiUser.fechaIngreso}`);
         }
       } catch (error) {
         console.error('Error al convertir fecha:', error);
         // En caso de error, usar la fecha actual
-        apiUser.fecha_ingreso = new Date().toISOString().split('T')[0];
+        apiUser.fechaIngreso = new Date().toISOString().split('T')[0];
       }
     }
     
