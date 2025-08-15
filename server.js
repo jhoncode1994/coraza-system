@@ -287,11 +287,11 @@ app.get('/api/supply-inventory/stats', async (req, res) => {
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
-    console.log('📝 POST /api/users - Datos recibidos:', req.body);
+    console.log('POST /api/users - Request body:', req.body);
     
     const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
     
-    console.log('📋 Campos extraídos:', {
+    console.log('Extracted fields:', {
       nombre,
       apellido, 
       cedula,
@@ -301,7 +301,7 @@ app.post('/api/users', async (req, res) => {
     
     // Validar que todos los campos requeridos estén presentes
     if (!nombre || !apellido || !cedula || !zona || !fechaIngreso) {
-      console.log('❌ Campos faltantes:', { nombre, apellido, cedula, zona, fechaIngreso });
+      console.log('Missing fields:', { nombre, apellido, cedula, zona, fechaIngreso });
       return res.status(400).json({ 
         error: 'Todos los campos son requeridos',
         received: { nombre, apellido, cedula, zona, fechaIngreso }
@@ -309,7 +309,7 @@ app.post('/api/users', async (req, res) => {
     }
     
     const client = await pool.connect();
-    console.log('🔗 Conectado a la base de datos');
+    console.log('Connected to database');
     
     const result = await client.query(
       'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso) VALUES ($1, $2, $3, $4, $5) RETURNING *',
@@ -317,7 +317,7 @@ app.post('/api/users', async (req, res) => {
     );
     client.release();
     
-    console.log('✅ Usuario insertado:', result.rows[0]);
+    console.log('User inserted:', result.rows[0]);
     
     const user = result.rows[0];
     const mappedUser = {
@@ -333,9 +333,8 @@ app.post('/api/users', async (req, res) => {
     
     res.status(201).json(mappedUser);
   } catch (error) {
-    console.error('❌ Error creating user:', error);
-    console.error('❌ Error details:', error.message);
-    console.error('❌ Error stack:', error.stack);
+    console.error('Error creating user:', error);
+    console.error('Error details:', error.message);
     res.status(500).json({ 
       error: 'Error al crear usuario',
       details: error.message
@@ -420,6 +419,20 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message 
+  });
+});
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist/coraza-system-angular')));
 
@@ -431,7 +444,7 @@ app.get('*', (req, res) => {
 // Get port from environment variable or default to 3000
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Frontend: http://localhost:${port}`);
   console.log(`API: http://localhost:${port}/api`);
@@ -439,5 +452,20 @@ app.listen(port, () => {
     PGHOST: process.env.PGHOST ? 'Set' : 'Not set',
     PGDATABASE: process.env.PGDATABASE ? 'Set' : 'Not set',
     PGUSER: process.env.PGUSER ? 'Set' : 'Not set'
+  });
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
   });
 });
