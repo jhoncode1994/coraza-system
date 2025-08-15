@@ -13,7 +13,8 @@ const routes: Routes = [
   { path: '', component: MainMenuComponent, canActivate: [AuthGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
-  { path: 'inventory', component: SupplyInventoryComponent, canActivate: [AuthGuard] },
+  { path: 'supply-inventory', component: SupplyInventoryComponent, canActivate: [AuthGuard] },
+  { path: 'inventory', redirectTo: 'supply-inventory' }, // Redirect para compatibilidad
   { path: '**', redirectTo: '' }
 ];
 

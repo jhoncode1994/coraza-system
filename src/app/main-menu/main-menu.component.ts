@@ -1,17 +1,32 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-main-menu',
   templateUrl: './main-menu.component.html',
   styleUrls: ['./main-menu.component.scss'],
   standalone: true,
-  imports: [MatButtonModule, MatIconModule]
+  imports: [
+    CommonModule,
+    MatButtonModule, 
+    MatIconModule,
+    MatMenuModule,
+    MatToolbarModule
+  ]
 })
 export class MainMenuComponent {
-  constructor(private router: Router) {}
+  currentUser$ = this.authService.currentUser$;
+
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   goToDashboard() {
     this.router.navigate(['/dashboard']);
@@ -22,6 +37,11 @@ export class MainMenuComponent {
   }
 
   goToInventory() {
-    this.router.navigate(['/inventory']);
+    this.router.navigate(['/supply-inventory']);
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

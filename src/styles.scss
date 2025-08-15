@@ -73,3 +73,186 @@ button.mat-button {
   color: #d32f2f !important;
   font-weight: 500;
 }
+
+/* ===========================================
+   RESPONSIVE DESIGN & PWA STYLES
+   =========================================== */
+
+/* Container responsive */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Utilidades responsive */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+/* Grid system responsive */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-1 { grid-template-columns: 1fr; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Responsive breakpoints */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Ajustar cards en móvil */
+  mat-card {
+    margin: 8px 0;
+  }
+  
+  /* Ajustar formularios en móvil */
+  .mat-form-field {
+    margin-bottom: 8px;
+  }
+  
+  /* Ajustar tablas en móvil */
+  .mat-table {
+    font-size: 14px;
+  }
+  
+  .mat-cell, .mat-header-cell {
+    padding: 8px 12px !important;
+  }
+  
+  /* Botones más grandes en móvil */
+  .mat-raised-button {
+    min-height: 48px;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 8px;
+  }
+  
+  /* Cards de ancho completo en móviles pequeños */
+  mat-card {
+    margin: 8px 0;
+    border-radius: 8px;
+  }
+  
+  /* Texto más pequeño en móviles */
+  .mat-table {
+    font-size: 12px;
+  }
+}
+
+/* ===========================================
+   PWA SPECIFIC STYLES
+   =========================================== */
+
+/* Estilos para cuando la app está instalada como PWA */
+@media (display-mode: standalone) {
+  body {
+    /* Añadir padding superior para evitar conflictos con la barra de estado */
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* Ocultar elementos no necesarios en PWA */
+  .pwa-hide {
+    display: none !important;
+  }
+}
+
+/* Estilos para diferentes orientaciones */
+@media (orientation: landscape) {
+  .landscape-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (orientation: portrait) {
+  .portrait-stack {
+    flex-direction: column;
+  }
+}
+
+/* ===========================================
+   LOADING STATES & ANIMATIONS
+   =========================================== */
+
+/* Loading spinner responsive */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+/* Animaciones suaves */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===========================================
+   TOUCH FRIENDLY DESIGN
+   =========================================== */
+
+/* Hacer botones más fáciles de tocar en móvil */
+@media (hover: none) and (pointer: coarse) {
+  .mat-icon-button {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .mat-menu-item {
+    min-height: 48px;
+  }
+  
+  /* Aumentar área de toque para elementos pequeños */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
