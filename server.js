@@ -287,14 +287,37 @@ app.get('/api/supply-inventory/stats', async (req, res) => {
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
+    console.log('📝 POST /api/users - Datos recibidos:', req.body);
+    
     const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
     
+    console.log('📋 Campos extraídos:', {
+      nombre,
+      apellido, 
+      cedula,
+      zona,
+      fechaIngreso
+    });
+    
+    // Validar que todos los campos requeridos estén presentes
+    if (!nombre || !apellido || !cedula || !zona || !fechaIngreso) {
+      console.log('❌ Campos faltantes:', { nombre, apellido, cedula, zona, fechaIngreso });
+      return res.status(400).json({ 
+        error: 'Todos los campos son requeridos',
+        received: { nombre, apellido, cedula, zona, fechaIngreso }
+      });
+    }
+    
     const client = await pool.connect();
+    console.log('🔗 Conectado a la base de datos');
+    
     const result = await client.query(
       'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [nombre, apellido, cedula, zona, fechaIngreso]
     );
     client.release();
+    
+    console.log('✅ Usuario insertado:', result.rows[0]);
     
     const user = result.rows[0];
     const mappedUser = {
@@ -310,7 +333,9 @@ app.post('/api/users', async (req, res) => {
     
     res.status(201).json(mappedUser);
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('❌ Error creating user:', error);
+    console.error('❌ Error details:', error.message);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Error al crear usuario',
       details: error.message
