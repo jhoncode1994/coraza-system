@@ -55,6 +55,9 @@ export class SupplyInventoryComponent implements OnInit {
   selectedCategory = '';
   lowStockItems: SupplyItem[] = [];
 
+  // Reference to the dialog component to avoid "not used" warnings
+  private addStockDialogRef = AddStockDialogComponent;
+
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(

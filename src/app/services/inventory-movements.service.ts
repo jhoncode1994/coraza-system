@@ -60,16 +60,17 @@ export class InventoryMovementsService {
   }
 
   // Método específico para agregar stock con confirmación
-  addStock(supplyId: number, quantity: number, reason: string, notes?: string): Observable<InventoryMovement> {
-    const movement: InventoryMovementCreate = {
-      supply_id: supplyId,
-      movement_type: 'entrada',
+  addStock(supplyId: number, quantity: number, reason: string, notes?: string): Observable<any> {
+    const payload = {
+      supplyId,
       quantity,
       reason,
       notes
     };
     
-    return this.addMovement(movement);
+    return this.http.post<any>(`${this.apiUrl}/add-stock`, payload).pipe(
+      tap(() => this.loadMovements())
+    );
   }
 
   // Método específico para reducir stock (usado en entregas)
