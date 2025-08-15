@@ -9,7 +9,6 @@ import { UsersComponent } from './components/users/users.component';
 import { MainMenuComponent } from './main-menu/main-menu.component';
 import { SupplyInventoryComponent } from './components/supply-inventory/supply-inventory.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { ReportsComponent } from './components/reports/reports.component';
 import { LoginComponent } from './components/login/login.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 
@@ -26,7 +25,6 @@ import { NavbarComponent } from './components/navbar/navbar.component';
     UsersComponent,
     SupplyInventoryComponent,
     DashboardComponent,
-    ReportsComponent,
     LoginComponent,
     NavbarComponent
   ],

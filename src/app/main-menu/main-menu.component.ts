@@ -24,8 +24,4 @@ export class MainMenuComponent {
   goToInventory() {
     this.router.navigate(['/inventory']);
   }
-
-  goToReports() {
-    this.router.navigate(['/reports']);
-  }
 }
