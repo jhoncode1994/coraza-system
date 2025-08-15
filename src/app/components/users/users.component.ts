@@ -21,7 +21,7 @@ import { MatNativeDateModule, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } f
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NgIf, DatePipe, AsyncPipe } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { UsersService } from './users.service';
 import { HistoryDialogComponent } from './history-dialog.component';
@@ -348,106 +348,116 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  private procesarEntregaDotacion(user: User, entrega: EntregaDotacion) {
-    // Primero validar que hay stock suficiente para todos los elementos
-    let validationPromises = entrega.elementos.map(elemento => 
-      this.supplyInventoryService.validateStock(elemento.elemento, elemento.cantidad)
-    );
-
-    // Usar Promise.all para validar todos los elementos simultáneamente
-    Promise.all(validationPromises.map(obs => obs.toPromise())).then(validations => {
-      // Verificar si alguna validación falló
-      const failedValidations = validations.filter((validation, index) => {
-        if (!validation.valid) {
-          const elemento = entrega.elementos[index];
+  private async procesarEntregaDotacion(user: User, entrega: EntregaDotacion) {
+    try {
+      // Primero validar que hay stock suficiente para todos los elementos
+      console.log('Iniciando validación de stock para:', entrega.elementos);
+      
+      for (const elemento of entrega.elementos) {
+        try {
+          const validation = await firstValueFrom(
+            this.supplyInventoryService.validateStock(elemento.elemento, elemento.cantidad)
+          );
+          
+          if (!validation.valid) {
+            this.snackBar.open(
+              `Stock insuficiente para ${elemento.elemento}. Disponible: ${validation.availableQuantity}, Solicitado: ${elemento.cantidad}`,
+              'Cerrar',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+            return; // Cancelar toda la operación si falla alguna validación
+          }
+        } catch (error) {
+          console.error(`Error validando stock para ${elemento.elemento}:`, error);
           this.snackBar.open(
-            `Stock insuficiente para ${elemento.elemento}. Disponible: ${validation.availableQuantity}, Solicitado: ${elemento.cantidad}`,
+            `Error al validar stock para ${elemento.elemento}`,
             'Cerrar',
             {
               duration: 5000,
               panelClass: ['error-snackbar']
             }
           );
-          return true;
+          return;
         }
-        return false;
-      });
-
-      // Si alguna validación falló, cancelar toda la operación
-      if (failedValidations.length > 0) {
-        return;
       }
 
       // Si todas las validaciones pasaron, proceder con los descuentos
-      let decreasePromises = entrega.elementos.map(elemento => 
-        this.supplyInventoryService.decreaseStock(elemento.elemento, elemento.cantidad)
-      );
-
-      Promise.all(decreasePromises.map(obs => obs.toPromise())).then(results => {
-        const allSuccessful = results.every(result => result === true);
-        
-        if (allSuccessful) {
-          // Crear los registros de entrega para el historial
-          entrega.elementos.forEach(elemento => {
-            const registroEntrega = {
-              userId: user.id,
-              elemento: elemento.elemento,
-              cantidad: elemento.cantidad,
-              fechaEntrega: entrega.fechaEntrega,
-              observaciones: entrega.observaciones || '',
-              tipo: 'entrega' as const,
-              firma: entrega.firma // Incluir la firma digital
-            };
-
-            // Guardar cada entrega usando el servicio
-            this.entregaDotacionService.addEntrega(registroEntrega);
-          });
-          
-          console.log('Entrega múltiple procesada y stock descontado:', entrega);
-          
-          // Crear mensaje de resumen
-          const elementosTexto = entrega.elementos.map(el => `${el.cantidad} ${el.elemento}(s)`).join(', ');
-          
-          // Mostrar mensaje de éxito
-          this.snackBar.open(
-            `✅ Entrega exitosa para ${user.nombre} ${user.apellido}: ${elementosTexto}. Stock actualizado.`,
-            'Cerrar',
-            {
-              duration: 6000,
-              panelClass: ['success-snackbar']
-            }
+      console.log('Todas las validaciones pasaron, procediendo con descuentos...');
+      
+      for (const elemento of entrega.elementos) {
+        try {
+          const success = await firstValueFrom(
+            this.supplyInventoryService.decreaseStock(elemento.elemento, elemento.cantidad)
           );
-        } else {
+          
+          if (!success) {
+            this.snackBar.open(
+              `Error al actualizar stock para ${elemento.elemento}`,
+              'Cerrar',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+            return;
+          }
+          
+          // Crear el registro de entrega para el historial
+          const registroEntrega = {
+            userId: user.id,
+            elemento: elemento.elemento,
+            cantidad: elemento.cantidad,
+            fechaEntrega: entrega.fechaEntrega,
+            observaciones: entrega.observaciones || '',
+            tipo: 'entrega' as const,
+            firma: entrega.firma // Incluir la firma digital
+          };
+
+          // Guardar cada entrega usando el servicio
+          this.entregaDotacionService.addEntrega(registroEntrega);
+          
+        } catch (error) {
+          console.error(`Error al procesar descuento para ${elemento.elemento}:`, error);
           this.snackBar.open(
-            'Error al actualizar el stock de algunos elementos.',
+            `Error al procesar descuento para ${elemento.elemento}`,
             'Cerrar',
             {
               duration: 5000,
               panelClass: ['error-snackbar']
             }
           );
+          return;
         }
-      }).catch(error => {
-        console.error('Error al procesar descuentos de stock:', error);
-        this.snackBar.open(
-          'Error al procesar la entrega.',
-          'Cerrar',
-          {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          }
-        );
-      });
-    }).catch(error => {
-      console.error('Error al validar stock:', error);
+      }
+      
+      console.log('Entrega múltiple procesada exitosamente:', entrega);
+      
+      // Crear mensaje de resumen
+      const elementosTexto = entrega.elementos.map(el => `${el.cantidad} ${el.elemento}(s)`).join(', ');
+      
+      // Mostrar mensaje de éxito
       this.snackBar.open(
-        'Error al validar el stock disponible.',
+        `✅ Entrega exitosa para ${user.nombre} ${user.apellido}: ${elementosTexto}. Stock actualizado.`,
+        'Cerrar',
+        {
+          duration: 6000,
+          panelClass: ['success-snackbar']
+        }
+      );
+      
+    } catch (error) {
+      console.error('Error general al procesar entrega:', error);
+      this.snackBar.open(
+        'Error inesperado al procesar la entrega',
         'Cerrar',
         {
           duration: 5000,
           panelClass: ['error-snackbar']
         }
       );
-    });
+    }
   }
 }
