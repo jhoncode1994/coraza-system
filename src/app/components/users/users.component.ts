@@ -395,7 +395,8 @@ export class UsersComponent implements OnInit {
               cantidad: elemento.cantidad,
               fechaEntrega: entrega.fechaEntrega,
               observaciones: entrega.observaciones || '',
-              tipo: 'entrega' as const
+              tipo: 'entrega' as const,
+              firma: entrega.firma // Incluir la firma digital
             };
 
             // Guardar cada entrega usando el servicio

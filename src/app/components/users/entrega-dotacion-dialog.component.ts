@@ -15,6 +15,7 @@ import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } 
 import { User } from './users.component';
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
+import { SignaturePadComponent } from '../signature-pad/signature-pad.component';
 
 export interface EntregaDotacionItem {
   elemento: string;
@@ -26,6 +27,7 @@ export interface EntregaDotacion {
   elementos: EntregaDotacionItem[];
   fechaEntrega: Date;
   observaciones?: string;
+  firma?: string; // Firma digital en base64
 }
 
 @Component({
@@ -115,6 +117,14 @@ export interface EntregaDotacion {
       <div class="no-elements" *ngIf="selectedElements.length === 0">
         <p>No hay elementos agregados para la entrega.</p>
         <p>Selecciona elementos de dotación usando el formulario de arriba.</p>
+      </div>
+
+      <!-- Componente de Firma Digital -->
+      <div class="signature-section" *ngIf="selectedElements.length > 0">
+        <app-signature-pad 
+          (signatureChange)="onSignatureChange($event)"
+          [showError]="showSignatureError">
+        </app-signature-pad>
       </div>
     </mat-dialog-content>
     
@@ -225,6 +235,29 @@ export interface EntregaDotacion {
     mat-divider {
       margin: 20px 0;
     }
+
+    .signature-section {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    /* Optimizaciones para tablet */
+    @media (max-width: 768px) {
+      mat-dialog-content {
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+      
+      .form-row {
+        flex-direction: column;
+      }
+      
+      .form-row mat-form-field {
+        width: 100%;
+        margin-bottom: 16px;
+      }
+    }
   `],
   standalone: true,
   imports: [
@@ -241,7 +274,8 @@ export interface EntregaDotacion {
     MatDividerModule,
     MatChipsModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    SignaturePadComponent
   ]
 })
 export class EntregaDotacionDialogComponent implements OnInit {
@@ -250,6 +284,8 @@ export class EntregaDotacionDialogComponent implements OnInit {
   availableItems: SupplyItem[] = [];
   selectedElements: EntregaDotacionItem[] = [];
   selectedItemStock: number = 0;
+  signature: string | null = null;
+  showSignatureError: boolean = false;
   
   elementosDotacion = [
     { name: 'camisa', code: 'CAM' },
@@ -353,7 +389,14 @@ export class EntregaDotacionDialogComponent implements OnInit {
   }
 
   canSubmit(): boolean {
-    return this.selectedElements.length > 0 && this.deliveryForm.valid;
+    return this.selectedElements.length > 0 && 
+           this.deliveryForm.valid && 
+           this.signature !== null;
+  }
+
+  onSignatureChange(signature: string | null): void {
+    this.signature = signature;
+    this.showSignatureError = false; // Limpiar error cuando se capture firma
   }
 
   onCancel(): void {
@@ -361,11 +404,18 @@ export class EntregaDotacionDialogComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Validar que hay firma
+    if (!this.signature) {
+      this.showSignatureError = true;
+      return;
+    }
+
     if (this.canSubmit()) {
       const entrega: EntregaDotacion = {
         elementos: this.selectedElements,
         fechaEntrega: this.deliveryForm.get('fechaEntrega')?.value,
-        observaciones: this.deliveryForm.get('observaciones')?.value || ''
+        observaciones: this.deliveryForm.get('observaciones')?.value || '',
+        firma: this.signature
       };
       this.dialogRef.close(entrega);
     }

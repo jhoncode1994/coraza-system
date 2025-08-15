@@ -9,6 +9,7 @@ export interface EntregaHistorial {
   fechaEntrega: Date;
   observaciones?: string;
   tipo: 'entrega' | 'devolucion';
+  firma?: string; // Firma digital en base64
 }
 
 @Injectable({
