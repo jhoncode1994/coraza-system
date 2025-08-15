@@ -287,25 +287,23 @@ app.get('/api/supply-inventory/stats', async (req, res) => {
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
-    const { firstName, lastName, email, position, department } = req.body;
+    const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
     
     const client = await pool.connect();
     const result = await client.query(
-      'INSERT INTO users (first_name, last_name, email, position, department, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [firstName, lastName, email, position, department, 'active']
+      'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nombre, apellido, cedula, zona, fechaIngreso]
     );
     client.release();
     
     const user = result.rows[0];
     const mappedUser = {
       id: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      email: user.email,
-      position: user.position,
-      department: user.department,
-      hireDate: user.hire_date,
-      status: user.status,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      cedula: user.cedula,
+      zona: user.zona,
+      fechaIngreso: user.fecha_ingreso,
       createdAt: user.created_at,
       updatedAt: user.updated_at
     };
@@ -315,6 +313,83 @@ app.post('/api/users', async (req, res) => {
     console.error('Error creating user:', error);
     res.status(500).json({ 
       error: 'Error al crear usuario',
+      details: error.message
+    });
+  }
+});
+
+// Update user
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
+    
+    const client = await pool.connect();
+    const result = await client.query(
+      'UPDATE users SET nombre = $1, apellido = $2, cedula = $3, zona = $4, fecha_ingreso = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *',
+      [nombre, apellido, cedula, zona, fechaIngreso, id]
+    );
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    const user = result.rows[0];
+    const mappedUser = {
+      id: user.id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      cedula: user.cedula,
+      zona: user.zona,
+      fechaIngreso: user.fecha_ingreso,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at
+    };
+    
+    res.json(mappedUser);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar usuario',
+      details: error.message
+    });
+  }
+});
+
+// Delete user
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const client = await pool.connect();
+    const result = await client.query(
+      'DELETE FROM users WHERE id = $1 RETURNING *',
+      [id]
+    );
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    const user = result.rows[0];
+    const mappedUser = {
+      id: user.id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      cedula: user.cedula,
+      zona: user.zona,
+      fechaIngreso: user.fecha_ingreso,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at
+    };
+    
+    res.json(mappedUser);
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ 
+      error: 'Error al eliminar usuario',
       details: error.message
     });
   }

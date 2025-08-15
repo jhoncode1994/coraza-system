@@ -194,32 +194,60 @@ export class UsersComponent implements OnInit {
       
       if (this.editIndex !== null) {
         // Actualizar usuario existente usando el servicio
-        this.usersService.updateUser(this.editIndex, userData);
-        console.log('Usuario actualizado:', userData);
-        this.editIndex = null;
+        const userId = this.users[this.editIndex]?.id;
+        if (userId) {
+          this.usersService.updateUser(userId, userData).subscribe({
+            next: (updatedUser) => {
+              console.log('Usuario actualizado:', updatedUser);
+              this.snackBar.open('Usuario actualizado exitosamente', 'Cerrar', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+              this.editIndex = null;
+              this.userForm.reset();
+              this.showForm = false;
+            },
+            error: (error) => {
+              console.error('Error al actualizar usuario:', error);
+              this.snackBar.open('Error al actualizar usuario', 'Cerrar', {
+                duration: 3000,
+                panelClass: ['error-snackbar']
+              });
+            }
+          });
+        } else {
+          console.error('ID de usuario no encontrado');
+          this.snackBar.open('Error: ID de usuario no encontrado', 'Cerrar', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+        }
       } else {
         // Agregar nuevo usuario usando el servicio
-        this.usersService.addUser(userData);
-        console.log('Agregando usuario:', userData);
+        this.usersService.addUser(userData).subscribe({
+          next: (newUser) => {
+            console.log('Usuario agregado:', newUser);
+            this.snackBar.open('Usuario agregado exitosamente', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.userForm.reset();
+            this.showForm = false;
+          },
+          error: (error) => {
+            console.error('Error al agregar usuario:', error);
+            this.snackBar.open('Error al agregar usuario', 'Cerrar', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
       }
-      
-      // No es necesario recargar los usuarios manualmente gracias a la suscripción
-      
-      this.userForm.reset();
-      // Ocultar formulario después de agregar/editar
-      this.showForm = false;
     } else {
-      console.log('Formulario inválido', this.userForm.errors);
-      
-      // Marcar todos los campos como tocados para mostrar errores
-      Object.keys(this.userForm.controls).forEach(field => {
-        const control = this.userForm.get(field);
-        control?.markAsTouched();
-        
-        // Muestra los errores específicos para ayudar en la depuración
-        if (control?.invalid) {
-          console.log(`Campo ${field} inválido:`, control.errors);
-        }
+      console.log('Formulario inválido');
+      this.snackBar.open('Por favor complete todos los campos requeridos', 'Cerrar', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
       });
     }
   }
@@ -249,15 +277,38 @@ export class UsersComponent implements OnInit {
   }
 
   deleteUser(index: number) {
-    // Eliminar usuario usando el servicio
-    this.usersService.deleteUser(index);
-    
-    // No es necesario recargar los usuarios manualmente gracias a la suscripción
-    
-    if (this.editIndex === index) {
-      this.editIndex = null;
-      this.userForm.reset();
-      this.showForm = false;
+    const user = this.users[index];
+    if (user && user.id) {
+      // Eliminar usuario usando el servicio con el ID del usuario
+      this.usersService.deleteUser(user.id).subscribe({
+        next: (deletedUser) => {
+          console.log('Usuario eliminado:', deletedUser);
+          this.snackBar.open('Usuario eliminado exitosamente', 'Cerrar', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          
+          // Si estábamos editando este usuario, limpiar el formulario
+          if (this.editIndex === index) {
+            this.editIndex = null;
+            this.userForm.reset();
+            this.showForm = false;
+          }
+        },
+        error: (error) => {
+          console.error('Error al eliminar usuario:', error);
+          this.snackBar.open('Error al eliminar usuario', 'Cerrar', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+    } else {
+      console.error('Usuario no encontrado o sin ID');
+      this.snackBar.open('Error: Usuario no encontrado', 'Cerrar', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
     }
   }
 
