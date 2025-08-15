@@ -22,17 +22,35 @@
   table {
     width: 100%;
     margin-top: 20px;
+    
+    .mat-mdc-cell {
+      vertical-align: middle;
+      padding: 12px 8px;
+    }
+    
+    .mat-mdc-header-cell {
+      vertical-align: middle;
+      padding: 12px 8px;
+      font-weight: 600;
+    }
   }
 
   .quantity-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    text-align: center;
+    vertical-align: middle;
 
     .quantity {
-      min-width: 40px;
-      text-align: center;
       font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      min-width: 40px;
+      
+      &.low-stock {
+        background-color: rgba(244, 67, 54, 0.1);
+        color: #d32f2f;
+        border: 1px solid rgba(244, 67, 54, 0.3);
+      }
     }
   }
 
