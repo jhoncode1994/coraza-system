@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,18 +7,19 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
+import { SupplyInventoryService } from '../../services/supply-inventory.service';
 
 @Component({
   selector: 'app-add-supply',
   template: `
-    <h2 mat-dialog-title>Agregar Elementos al Inventario</h2>
+    <h2 mat-dialog-title>Agregar Cantidad al Inventario</h2>
     <mat-dialog-content>
       <div class="add-supply-form">
         <mat-form-field>
           <mat-label>Elemento</mat-label>
           <mat-select [(ngModel)]="selectedItem">
             <mat-option *ngFor="let item of supplyItems" [value]="item">
-              {{item.name}}
+              {{item.name}} ({{item.code}}) - Stock actual: {{item.quantity}}
             </mat-option>
           </mat-select>
         </mat-form-field>
@@ -27,6 +28,12 @@ import { SupplyItem } from '../../interfaces/supply-item.interface';
           <mat-label>Cantidad a agregar</mat-label>
           <input matInput type="number" [(ngModel)]="quantity" min="1">
         </mat-form-field>
+
+        <div *ngIf="selectedItem" class="item-info">
+          <p><strong>Elemento seleccionado:</strong> {{selectedItem.name}}</p>
+          <p><strong>Stock actual:</strong> {{selectedItem.quantity}}</p>
+          <p><strong>Stock después:</strong> {{selectedItem.quantity + (quantity || 0)}}</p>
+        </div>
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -34,7 +41,7 @@ import { SupplyItem } from '../../interfaces/supply-item.interface';
       <button mat-raised-button color="primary" 
               (click)="onAdd()" 
               [disabled]="!selectedItem || !quantity || quantity < 1">
-        Agregar
+        Agregar Cantidad
       </button>
     </mat-dialog-actions>
   `,
@@ -43,7 +50,16 @@ import { SupplyItem } from '../../interfaces/supply-item.interface';
       display: flex;
       flex-direction: column;
       gap: 16px;
-      min-width: 300px;
+      min-width: 400px;
+    }
+    .item-info {
+      background-color: #f5f5f5;
+      padding: 16px;
+      border-radius: 4px;
+      border-left: 4px solid #2196f3;
+    }
+    .item-info p {
+      margin: 4px 0;
     }
   `],
   standalone: true,
@@ -57,24 +73,27 @@ import { SupplyItem } from '../../interfaces/supply-item.interface';
     MatDialogModule
   ]
 })
-export class AddSupplyDialogComponent {
-  supplyItems = [
-    { name: 'camisa', code: 'CAM', category: 'uniforme' },
-    { name: 'corbata', code: 'COR', category: 'uniforme' },
-    { name: 'apellido', code: 'APE', category: 'accesorios' },
-    { name: 'pantalon', code: 'PAN', category: 'uniforme' },
-    { name: 'cinturon', code: 'CIN', category: 'accesorios' },
-    { name: 'kepis', code: 'KEP', category: 'uniforme' },
-    { name: 'botas', code: 'BOT', category: 'uniforme' },
-    { name: 'overol', code: 'OVE', category: 'uniforme' },
-    { name: 'reata', code: 'REA', category: 'accesorios' },
-    { name: 'goleana', code: 'GOL', category: 'accesorios' }
-  ];
-
-  selectedItem: any;
+export class AddSupplyDialogComponent implements OnInit {
+  supplyItems: SupplyItem[] = [];
+  selectedItem: SupplyItem | null = null;
   quantity: number = 1;
 
-  constructor(private dialogRef: MatDialogRef<AddSupplyDialogComponent>) {}
+  constructor(
+    private dialogRef: MatDialogRef<AddSupplyDialogComponent>,
+    private supplyService: SupplyInventoryService
+  ) {}
+
+  ngOnInit(): void {
+    // Load real supply items from the database
+    this.supplyService.getAllSupplies().subscribe({
+      next: (items) => {
+        this.supplyItems = items;
+      },
+      error: (error) => {
+        console.error('Error loading supply items:', error);
+      }
+    });
+  }
 
   onCancel(): void {
     this.dialogRef.close();
@@ -83,9 +102,9 @@ export class AddSupplyDialogComponent {
   onAdd(): void {
     if (this.selectedItem && this.quantity > 0) {
       this.dialogRef.close({
-        ...this.selectedItem,
-        quantity: this.quantity,
-        lastUpdate: new Date()
+        elementId: this.selectedItem.id,
+        quantityToAdd: this.quantity,
+        selectedItem: this.selectedItem
       });
     }
   }

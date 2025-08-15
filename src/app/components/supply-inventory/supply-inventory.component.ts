@@ -157,18 +157,24 @@ export class SupplyInventoryComponent implements OnInit {
 
   openAddSupplyDialog(): void {
     const dialogRef = this.dialog.open(AddSupplyDialogComponent, {
-      width: '400px'
+      width: '500px'
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.supplyInventoryService.addSupply(result).subscribe({
+        // result contains: { elementId: number, quantityToAdd: number, selectedItem: SupplyItem }
+        this.supplyInventoryService.addSupply(result.elementId, result.quantityToAdd).subscribe({
           next: (response) => {
-            this.snackBar.open('Elemento agregado exitosamente', 'Cerrar', { duration: 3000 });
+            this.snackBar.open(
+              `Se agregaron ${result.quantityToAdd} unidades de ${result.selectedItem.name}`, 
+              'Cerrar', 
+              { duration: 3000 }
+            );
             this.loadSupplies();
           },
           error: (error) => {
-            this.snackBar.open('Error al agregar el elemento', 'Cerrar', { duration: 3000 });
+            console.error('Error adding supply:', error);
+            this.snackBar.open('Error al agregar elementos al inventario', 'Cerrar', { duration: 3000 });
           }
         });
       }

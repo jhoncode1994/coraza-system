@@ -5,8 +5,13 @@ export interface SupplyItem {
   description?: string;
   lastUpdate?: Date;
   minimumQuantity?: number;
-  code?: string;
-  category?: 'uniforme' | 'accesorios';
+  code: string;
+  category: string;
+  // API response fields (snake_case)
+  minimum_quantity?: number;
+  last_update?: string;
+  unit_price?: number;
+  created_at?: string;
 }
 
 export type SupplyItemType = 
