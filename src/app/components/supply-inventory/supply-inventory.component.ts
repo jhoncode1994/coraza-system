@@ -117,44 +117,16 @@ export class SupplyInventoryComponent implements OnInit {
     };
   }
 
-  async exportToExcel(): Promise<void> {
-    // Dynamic import to avoid build issues
-    try {
-      const fileSaver = await import('file-saver');
-      
-      // Create worksheet headers
-      const headers = ['ID', 'Código', 'Nombre', 'Categoría', 'Cantidad', 'Cantidad Mínima', 'Última Actualización'];
-      
-      // Prepare data for export
-      const exportData = this.dataSource.data.map((item: SupplyItem) => [
-        item.id,
-        item.code,
-        item.name,
-        item.category,
-        item.quantity,
-        item.minimumQuantity,
-        item.lastUpdate
-      ]);
-      
-      // Create CSV content
-      const csvContent = [
-        headers.join(','),
-        ...exportData.map((row: any[]) => row.join(','))
-      ].join('\n');
-      
-      // Create blob and save file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      fileSaver.saveAs(blob, `inventario-suministros-${new Date().toISOString().split('T')[0]}.csv`);
-    } catch (error) {
-      console.error('Error loading file-saver:', error);
-      // Fallback to native download
-      this.fallbackDownload();
-    }
+  exportToExcel(): void {
+    // Use native browser download method for better compatibility
+    this.downloadCSV();
   }
 
-  private fallbackDownload(): void {
-    // Native browser download method
+  private downloadCSV(): void {
+    // Create worksheet headers
     const headers = ['ID', 'Código', 'Nombre', 'Categoría', 'Cantidad', 'Cantidad Mínima', 'Última Actualización'];
+    
+    // Prepare data for export
     const exportData = this.dataSource.data.map((item: SupplyItem) => [
       item.id,
       item.code,
@@ -165,17 +137,21 @@ export class SupplyInventoryComponent implements OnInit {
       item.lastUpdate
     ]);
     
+    // Create CSV content
     const csvContent = [
       headers.join(','),
       ...exportData.map((row: any[]) => row.join(','))
     ].join('\n');
     
+    // Create blob and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `inventario-suministros-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   }
 
