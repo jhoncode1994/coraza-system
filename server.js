@@ -287,7 +287,11 @@ app.get('/api/supply-inventory/stats', async (req, res) => {
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
-    console.log('POST /api/users - Request body:', JSON.stringify(req.body, null, 2));
+    console.log('POST /api/users - Request received');
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Body type:', typeof req.body);
+    console.log('Content-Type:', req.headers['content-type']);
     
     const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
     

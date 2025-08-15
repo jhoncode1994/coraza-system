@@ -92,13 +92,26 @@ export class UsersService {
     // Adaptar el formato de fecha para la API
     const apiUser = this.mapAppUserToApiUser(user as User);
     
+    console.log('UsersService.addUser - Datos originales:', user);
+    console.log('UsersService.addUser - Datos mapeados para API:', apiUser);
+    console.log('UsersService.addUser - Enviando POST a:', this.apiUrl);
+    
     return this.http.post<any>(this.apiUrl, apiUser).pipe(
+      tap(response => {
+        console.log('UsersService.addUser - Respuesta del servidor:', response);
+      }),
       map(user => this.mapApiUserToAppUser(user)),
       tap(newUser => {
         const updatedUsers = [...this.currentUsers, newUser];
         this.usersSubject.next(updatedUsers);
       }),
-      catchError(this.handleError),
+      catchError((error) => {
+        console.error('UsersService.addUser - Error completo:', error);
+        console.error('UsersService.addUser - Error status:', error.status);
+        console.error('UsersService.addUser - Error message:', error.message);
+        console.error('UsersService.addUser - Error body:', error.error);
+        return this.handleError(error);
+      }),
       finalize(() => this.loadingSubject.next(false))
     );
   }
