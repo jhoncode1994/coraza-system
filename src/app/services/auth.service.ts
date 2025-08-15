@@ -25,13 +25,13 @@ export class AuthService {
   // Usuario por defecto del sistema (en producción esto debería venir de una base de datos)
   private readonly defaultUser: User = {
     id: 1,
-    username: 'administrador',
+    username: 'admin',
     email: 'admin@coraza-dotacion.com',
     role: 'admin'
   };
   
   // Contraseña por defecto (en producción debería estar hasheada)
-  private readonly defaultPassword = 'admin123*';
+  private readonly defaultPassword = 'coraza2025';
   
   constructor(private router: Router) {
     // Verificar si hay una sesión activa al inicializar el servicio

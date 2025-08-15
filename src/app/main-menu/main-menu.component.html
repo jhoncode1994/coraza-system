@@ -1,56 +1,22 @@
 <div class="main-menu-container">
-  <!-- Header con usuario y logout -->
-  <mat-toolbar class="app-header" color="primary">
-    <div class="header-content">
-      <div class="app-title">
-        <mat-icon>security</mat-icon>
-        <span>Sistema Coraza</span>
-      </div>
-      
-      <div class="user-section" *ngIf="currentUser$ | async as user">
-        <span class="user-info">{{user.username}}</span>
-        <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Usuario">
-          <mat-icon>account_circle</mat-icon>
-        </button>
-        <mat-menu #userMenu="matMenu">
-          <button mat-menu-item (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Cerrar Sesión</span>
-          </button>
-        </mat-menu>
-      </div>
-    </div>
-  </mat-toolbar>
-
-  <!-- Contenido principal -->
-  <div class="main-content">
-    <h1>Sistema de Gestión de Dotación</h1>
-    <p class="subtitle">Seleccione el módulo que desea usar</p>
+  <h1>Sistema de Gestión de Dotación</h1>
+  <div class="menu-grid">
+    <button mat-raised-button color="primary" class="menu-button" (click)="goToDashboard()">
+      <mat-icon>dashboard</mat-icon>
+      <span>Dashboard</span>
+      <small>Vista general del sistema</small>
+    </button>
     
-    <div class="menu-grid">
-      <button mat-raised-button color="primary" class="menu-button" (click)="goToDashboard()">
-        <div class="button-content">
-          <mat-icon>dashboard</mat-icon>
-          <span class="button-title">Dashboard</span>
-          <small class="button-subtitle">Vista general del sistema</small>
-        </div>
-      </button>
-      
-      <button mat-raised-button color="accent" class="menu-button" (click)="goToUsers()">
-        <div class="button-content">
-          <mat-icon>group</mat-icon>
-          <span class="button-title">Gestión de Empleados</span>
-          <small class="button-subtitle">Administrar empleados y entregas</small>
-        </div>
-      </button>
-      
-      <button mat-raised-button class="menu-button inventory-button" (click)="goToInventory()">
-        <div class="button-content">
-          <mat-icon>inventory</mat-icon>
-          <span class="button-title">Inventario de Dotación</span>
-          <small class="button-subtitle">Control de stock y suministros</small>
-        </div>
-      </button>
-    </div>
+    <button mat-raised-button color="accent" class="menu-button" (click)="goToUsers()">
+      <mat-icon>group</mat-icon>
+      <span>Gestión de Empleados</span>
+      <small>Administrar empleados y entregas</small>
+    </button>
+    
+    <button mat-raised-button color="primary" class="menu-button" (click)="goToInventory()">
+      <mat-icon>inventory</mat-icon>
+      <span>Inventario de Dotación</span>
+      <small>Control de stock y suministros</small>
+    </button>
   </div>
 </div>
