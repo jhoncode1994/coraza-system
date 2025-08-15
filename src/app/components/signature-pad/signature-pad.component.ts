@@ -3,10 +3,117 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import * as SignaturePadImport from 'signature_pad';
 
-// Workaround para compatibilidad con diferentes tipos de importación
-const SignaturePad = (SignaturePadImport as any).default || SignaturePadImport;
+// Implementación nativa de firma digital sin dependencias externas
+class SimpleSignaturePad {
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private isDrawing = false;
+  private lastX = 0;
+  private lastY = 0;
+  private isEmpty = true;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d')!;
+    this.setupCanvas();
+    this.bindEvents();
+  }
+
+  private setupCanvas() {
+    this.ctx.strokeStyle = '#000000';
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.clear();
+  }
+
+  private bindEvents() {
+    // Mouse events
+    this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+    this.canvas.addEventListener('mousemove', this.draw.bind(this));
+    this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+    this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+
+    // Touch events for tablets
+    this.canvas.addEventListener('touchstart', this.handleTouch.bind(this));
+    this.canvas.addEventListener('touchmove', this.handleTouch.bind(this));
+    this.canvas.addEventListener('touchend', this.stopDrawing.bind(this));
+  }
+
+  private startDrawing(e: MouseEvent) {
+    this.isDrawing = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.lastX = e.clientX - rect.left;
+    this.lastY = e.clientY - rect.top;
+    this.isEmpty = false;
+  }
+
+  private draw(e: MouseEvent) {
+    if (!this.isDrawing) return;
+    
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.lastX, this.lastY);
+    this.ctx.lineTo(currentX, currentY);
+    this.ctx.stroke();
+
+    this.lastX = currentX;
+    this.lastY = currentY;
+  }
+
+  private stopDrawing() {
+    this.isDrawing = false;
+  }
+
+  private handleTouch(e: TouchEvent) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    if (e.type === 'touchstart') {
+      this.isDrawing = true;
+      this.lastX = x;
+      this.lastY = y;
+      this.isEmpty = false;
+    } else if (e.type === 'touchmove' && this.isDrawing) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.lastX, this.lastY);
+      this.ctx.lineTo(x, y);
+      this.ctx.stroke();
+      this.lastX = x;
+      this.lastY = y;
+    }
+  }
+
+  clear() {
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.isEmpty = true;
+  }
+
+  toDataURL(type = 'image/png'): string {
+    return this.canvas.toDataURL(type);
+  }
+
+  addEventListener(event: string, handler: () => void) {
+    if (event === 'endStroke') {
+      this.canvas.addEventListener('mouseup', handler);
+      this.canvas.addEventListener('touchend', handler);
+    }
+  }
+
+  get empty(): boolean {
+    return this.isEmpty;
+  }
+}
 
 @Component({
   selector: 'app-signature-pad',
@@ -176,7 +283,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   @Input() showError = false;
   @Input() required = true;
 
-  private signaturePad!: any; // Tipo genérico para compatibilidad
+  private signaturePad!: SimpleSignaturePad;
   isEmpty = true;
   isDrawing = false;
 
@@ -195,23 +302,12 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
     this.resizeCanvas();
     
     // Inicializar SignaturePad con configuración optimizada para tablet
-    this.signaturePad = new SignaturePad(canvas, {
-      backgroundColor: 'rgb(255, 255, 255)',
-      penColor: 'rgb(0, 0, 0)',
-      minWidth: 2,
-      maxWidth: 4,
-      throttle: 16, // Mejor rendimiento en tablets
-      minDistance: 5,
-    });
+    this.signaturePad = new SimpleSignaturePad(canvas);
 
     // Eventos para detectar cuando se está dibujando
-    this.signaturePad.addEventListener('beginStroke', () => {
-      this.isDrawing = true;
-    });
-
     this.signaturePad.addEventListener('endStroke', () => {
       this.isDrawing = false;
-      this.isEmpty = this.signaturePad.isEmpty();
+      this.isEmpty = this.signaturePad.empty;
       this.emitSignature();
     });
 
