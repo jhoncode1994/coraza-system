@@ -127,24 +127,26 @@ app.post('/api/init-database', async (req, res) => {
 // Get all users
 app.get('/api/users', async (req, res) => {
   try {
+    console.log('GET /api/users - Fetching users from database');
     const client = await pool.connect();
     const result = await client.query('SELECT * FROM users ORDER BY id');
     client.release();
     
-    // Map snake_case to camelCase
+    console.log('Users fetched from database:', result.rows);
+    
+    // Map database fields to frontend expected format
     const users = result.rows.map(user => ({
       id: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      email: user.email,
-      position: user.position,
-      department: user.department,
-      hireDate: user.hire_date,
-      status: user.status,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      cedula: user.cedula,
+      zona: user.zona,
+      fechaIngreso: user.fecha_ingreso,
       createdAt: user.created_at,
       updatedAt: user.updated_at
     }));
     
+    console.log('Mapped users for frontend:', users);
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -169,13 +171,11 @@ app.get('/api/users/:id', async (req, res) => {
     const user = result.rows[0];
     const mappedUser = {
       id: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      email: user.email,
-      position: user.position,
-      department: user.department,
-      hireDate: user.hire_date,
-      status: user.status,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      cedula: user.cedula,
+      zona: user.zona,
+      fechaIngreso: user.fecha_ingreso,
       createdAt: user.created_at,
       updatedAt: user.updated_at
     };
