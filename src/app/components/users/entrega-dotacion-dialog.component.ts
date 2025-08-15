@@ -125,10 +125,11 @@ export class EntregaDotacionDialogComponent implements OnInit {
     { name: 'pantalon', code: 'PAN' },
     { name: 'cinturon', code: 'CIN' },
     { name: 'kepis', code: 'KEP' },
-    { name: 'moña', code: 'MOÑ' },
     { name: 'botas', code: 'BOT' },
+    { name: 'overol', code: 'OVE' },
     { name: 'reata', code: 'REA' },
-    { name: 'goleana', code: 'GOL' }
+    { name: 'goleana', code: 'GOL' },
+    { name: 'moña', code: 'MOÑ' }
   ];
 
   constructor(
