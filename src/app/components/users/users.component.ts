@@ -184,13 +184,28 @@ export class UsersComponent implements OnInit {
     if (this.userForm.valid) {
       console.log('Formulario válido', this.userForm.value);
       
-      // Asegurarse de que la fecha de ingreso sea un objeto Date
+      // Procesar la fecha para asegurar el formato correcto
+      let fechaIngreso;
+      if (this.userForm.value.fechaIngreso instanceof Date) {
+        // Formatear fecha como YYYY-MM-DD para PostgreSQL
+        fechaIngreso = this.userForm.value.fechaIngreso.toISOString().split('T')[0];
+      } else if (this.userForm.value.fechaIngreso) {
+        // Si es string, convertir a Date y luego formatear
+        const date = new Date(this.userForm.value.fechaIngreso);
+        fechaIngreso = date.toISOString().split('T')[0];
+      } else {
+        fechaIngreso = new Date().toISOString().split('T')[0]; // Fecha actual como fallback
+      }
+      
       const userData = {
-        ...this.userForm.value,
-        fechaIngreso: this.userForm.value.fechaIngreso instanceof Date 
-          ? this.userForm.value.fechaIngreso 
-          : new Date(this.userForm.value.fechaIngreso)
+        nombre: this.userForm.value.nombre,
+        apellido: this.userForm.value.apellido,
+        cedula: this.userForm.value.cedula,
+        zona: parseInt(this.userForm.value.zona), // Asegurar que zona sea número
+        fechaIngreso: fechaIngreso
       };
+      
+      console.log('Datos procesados para enviar:', userData);
       
       if (this.editIndex !== null) {
         // Actualizar usuario existente usando el servicio
