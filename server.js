@@ -287,37 +287,72 @@ app.get('/api/supply-inventory/stats', async (req, res) => {
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
-    console.log('POST /api/users - Request body:', req.body);
+    console.log('POST /api/users - Request body:', JSON.stringify(req.body, null, 2));
     
     const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
     
-    console.log('Extracted fields:', {
-      nombre,
-      apellido, 
-      cedula,
-      zona,
-      fechaIngreso
-    });
-    
     // Validar que todos los campos requeridos estén presentes
-    if (!nombre || !apellido || !cedula || !zona || !fechaIngreso) {
-      console.log('Missing fields:', { nombre, apellido, cedula, zona, fechaIngreso });
+    if (!nombre || !apellido || !cedula || zona === undefined || zona === null || !fechaIngreso) {
+      console.log('Missing required fields:', { nombre, apellido, cedula, zona, fechaIngreso });
       return res.status(400).json({ 
         error: 'Todos los campos son requeridos',
         received: { nombre, apellido, cedula, zona, fechaIngreso }
       });
     }
     
-    const client = await pool.connect();
-    console.log('Connected to database');
+    // Convertir y validar zona como número entero
+    const zonaInt = parseInt(zona);
+    if (isNaN(zonaInt)) {
+      return res.status(400).json({ 
+        error: 'La zona debe ser un número válido',
+        received: zona 
+      });
+    }
     
+    // Procesar fecha - asegurar formato YYYY-MM-DD
+    let fechaFormatted;
+    try {
+      if (typeof fechaIngreso === 'string' && fechaIngreso.includes('T')) {
+        // Si es ISO string, extraer solo la fecha
+        fechaFormatted = fechaIngreso.split('T')[0];
+      } else if (typeof fechaIngreso === 'string' && fechaIngreso.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Si ya está en formato YYYY-MM-DD
+        fechaFormatted = fechaIngreso;
+      } else {
+        // Intentar parsear como fecha y formatear
+        const date = new Date(fechaIngreso);
+        if (isNaN(date.getTime())) {
+          return res.status(400).json({ 
+            error: 'Formato de fecha inválido',
+            received: fechaIngreso 
+          });
+        }
+        fechaFormatted = date.toISOString().split('T')[0];
+      }
+    } catch (error) {
+      return res.status(400).json({ 
+        error: 'Error al procesar la fecha',
+        received: fechaIngreso,
+        details: error.message
+      });
+    }
+    
+    console.log('Processed data:', {
+      nombre,
+      apellido,
+      cedula,
+      zona: zonaInt,
+      fechaIngreso: fechaFormatted
+    });
+    
+    const client = await pool.connect();
     const result = await client.query(
       'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [nombre, apellido, cedula, zona, fechaIngreso]
+      [nombre, apellido, cedula, zonaInt, fechaFormatted]
     );
     client.release();
     
-    console.log('User inserted:', result.rows[0]);
+    console.log('User inserted successfully:', result.rows[0]);
     
     const user = result.rows[0];
     const mappedUser = {
@@ -335,6 +370,16 @@ app.post('/api/users', async (req, res) => {
   } catch (error) {
     console.error('Error creating user:', error);
     console.error('Error details:', error.message);
+    console.error('Error code:', error.code);
+    
+    // Manejar errores específicos de PostgreSQL
+    if (error.code === '23505') { // Unique constraint violation
+      return res.status(400).json({ 
+        error: 'La cédula ya está registrada',
+        details: 'Ya existe un usuario con esta cédula'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Error al crear usuario',
       details: error.message
