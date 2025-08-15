@@ -349,84 +349,104 @@ export class UsersComponent implements OnInit {
   }
 
   private procesarEntregaDotacion(user: User, entrega: EntregaDotacion) {
-    // Primero validar que hay stock suficiente
-    this.supplyInventoryService.validateStock(entrega.elemento, entrega.cantidad).subscribe({
-      next: (validation) => {
+    // Primero validar que hay stock suficiente para todos los elementos
+    let validationPromises = entrega.elementos.map(elemento => 
+      this.supplyInventoryService.validateStock(elemento.elemento, elemento.cantidad)
+    );
+
+    // Usar Promise.all para validar todos los elementos simultáneamente
+    Promise.all(validationPromises.map(obs => obs.toPromise())).then(validations => {
+      // Verificar si alguna validación falló
+      const failedValidations = validations.filter((validation, index) => {
         if (!validation.valid) {
+          const elemento = entrega.elementos[index];
           this.snackBar.open(
-            `Stock insuficiente. Disponible: ${validation.availableQuantity}, Solicitado: ${entrega.cantidad}`,
+            `Stock insuficiente para ${elemento.elemento}. Disponible: ${validation.availableQuantity}, Solicitado: ${elemento.cantidad}`,
             'Cerrar',
             {
               duration: 5000,
               panelClass: ['error-snackbar']
             }
           );
-          return;
+          return true;
         }
+        return false;
+      });
 
-        // Si hay stock suficiente, proceder con el descuento
-        this.supplyInventoryService.decreaseStock(entrega.elemento, entrega.cantidad).subscribe({
-          next: (success) => {
-            if (success) {
-              // Crear el registro de entrega para el historial
-              const registroEntrega = {
-                userId: user.id,
-                elemento: entrega.elemento,
-                cantidad: entrega.cantidad,
-                fechaEntrega: entrega.fechaEntrega,
-                observaciones: entrega.observaciones,
-                tipo: 'entrega' as const
-              };
+      // Si alguna validación falló, cancelar toda la operación
+      if (failedValidations.length > 0) {
+        return;
+      }
 
-              // Guardar la entrega usando el servicio
-              this.entregaDotacionService.addEntrega(registroEntrega);
-              
-              console.log('Entrega procesada y stock descontado:', registroEntrega);
-              
-              // Mostrar mensaje de éxito
-              this.snackBar.open(
-                `✅ Entrega exitosa: ${entrega.cantidad} ${entrega.elemento}(s) para ${user.nombre} ${user.apellido}. Stock actualizado.`,
-                'Cerrar',
-                {
-                  duration: 6000,
-                  panelClass: ['success-snackbar']
-                }
-              );
-            } else {
-              this.snackBar.open(
-                'Error al actualizar el inventario',
-                'Cerrar',
-                {
-                  duration: 3000,
-                  panelClass: ['error-snackbar']
-                }
-              );
+      // Si todas las validaciones pasaron, proceder con los descuentos
+      let decreasePromises = entrega.elementos.map(elemento => 
+        this.supplyInventoryService.decreaseStock(elemento.elemento, elemento.cantidad)
+      );
+
+      Promise.all(decreasePromises.map(obs => obs.toPromise())).then(results => {
+        const allSuccessful = results.every(result => result === true);
+        
+        if (allSuccessful) {
+          // Crear los registros de entrega para el historial
+          entrega.elementos.forEach(elemento => {
+            const registroEntrega = {
+              userId: user.id,
+              elemento: elemento.elemento,
+              cantidad: elemento.cantidad,
+              fechaEntrega: entrega.fechaEntrega,
+              observaciones: entrega.observaciones || '',
+              tipo: 'entrega' as const
+            };
+
+            // Guardar cada entrega usando el servicio
+            this.entregaDotacionService.addEntrega(registroEntrega);
+          });
+          
+          console.log('Entrega múltiple procesada y stock descontado:', entrega);
+          
+          // Crear mensaje de resumen
+          const elementosTexto = entrega.elementos.map(el => `${el.cantidad} ${el.elemento}(s)`).join(', ');
+          
+          // Mostrar mensaje de éxito
+          this.snackBar.open(
+            `✅ Entrega exitosa para ${user.nombre} ${user.apellido}: ${elementosTexto}. Stock actualizado.`,
+            'Cerrar',
+            {
+              duration: 6000,
+              panelClass: ['success-snackbar']
             }
-          },
-          error: (error) => {
-            console.error('Error al descontar stock:', error);
-            this.snackBar.open(
-              'Error al procesar la entrega',
-              'Cerrar',
-              {
-                duration: 3000,
-                panelClass: ['error-snackbar']
-              }
-            );
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Error al validar stock:', error);
+          );
+        } else {
+          this.snackBar.open(
+            'Error al actualizar el stock de algunos elementos.',
+            'Cerrar',
+            {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      }).catch(error => {
+        console.error('Error al procesar descuentos de stock:', error);
         this.snackBar.open(
-          'Error al validar el inventario',
+          'Error al procesar la entrega.',
           'Cerrar',
           {
-            duration: 3000,
+            duration: 5000,
             panelClass: ['error-snackbar']
           }
         );
-      }
+      });
+    }).catch(error => {
+      console.error('Error al validar stock:', error);
+      this.snackBar.open(
+        'Error al validar el stock disponible.',
+        'Cerrar',
+        {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        }
+      );
     });
   }
 }
