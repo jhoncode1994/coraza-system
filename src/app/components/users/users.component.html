@@ -79,13 +79,49 @@
 
   <mat-card>
     <mat-card-title>
-      Usuarios Registrados
+      Asociados Registrados
       <button mat-mini-fab color="primary" class="add-button" (click)="toggleForm()" *ngIf="!showForm">
         <mat-icon>add</mat-icon>
       </button>
     </mat-card-title>
     <mat-card-content>
-      <table mat-table [dataSource]="users" class="mat-elevation-z8">
+      <!-- Barra de búsqueda por cédula -->
+      <div class="search-container">
+        <mat-form-field class="search-field" appearance="outline">
+          <mat-label>Buscar por cédula</mat-label>
+          <input matInput 
+                 [(ngModel)]="searchTerm" 
+                 (input)="filterUsers()"
+                 placeholder="Ingrese número de cédula"
+                 autocomplete="off">
+          <mat-icon matSuffix>search</mat-icon>
+          <mat-hint>Busque un asociado por su número de cédula</mat-hint>
+        </mat-form-field>
+        <button mat-icon-button 
+                *ngIf="searchTerm" 
+                (click)="clearSearch()" 
+                class="clear-search-button"
+                matTooltip="Limpiar búsqueda">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </div>
+      
+      <!-- Resultado de búsqueda -->
+      <div class="search-results" *ngIf="searchTerm && filteredUsers.length === 0">
+        <div class="search-message no-results">
+          <mat-icon>info</mat-icon>
+          <span>No se encontraron asociados con la cédula "{{ searchTerm }}"</span>
+        </div>
+      </div>
+      
+      <div class="search-results" *ngIf="searchTerm && filteredUsers.length > 0">
+        <div class="search-message results-found">
+          <mat-icon>check_circle</mat-icon>
+          <span>Se encontraron {{ filteredUsers.length }} asociado(s)</span>
+        </div>
+      </div>
+
+      <table mat-table [dataSource]="filteredUsers" class="mat-elevation-z8">
         <ng-container matColumnDef="nombre">
           <th mat-header-cell *matHeaderCellDef>Nombre</th>
           <td mat-cell *matCellDef="let user">{{ user.nombre }}</td>
@@ -127,9 +163,9 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         
         <!-- Mensaje cuando no hay datos -->
-        <tr class="mat-row" *ngIf="users.length === 0">
+        <tr class="mat-row" *ngIf="filteredUsers.length === 0 && !searchTerm">
           <td class="mat-cell mat-table-message" [attr.colspan]="displayedColumns.length">
-            No hay usuarios registrados. Por favor, añade un usuario usando el formulario.
+            No hay asociados registrados. Por favor, añade un asociado usando el formulario.
           </td>
         </tr>
       </table>

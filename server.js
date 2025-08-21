@@ -17,6 +17,39 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// Initialize database tables on startup
+async function initializeDatabase() {
+  try {
+    console.log('🚀 Inicializando base de datos...');
+    const client = await pool.connect();
+    
+    // Create inventory_movements table
+    console.log('📋 Creando tabla inventory_movements...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS inventory_movements (
+        id SERIAL PRIMARY KEY,
+        supply_id INTEGER REFERENCES supply_inventory(id),
+        movement_type VARCHAR(20) NOT NULL CHECK (movement_type IN ('entrada', 'salida')),
+        quantity INTEGER NOT NULL,
+        reason VARCHAR(100) NOT NULL,
+        notes TEXT,
+        previous_quantity INTEGER NOT NULL,
+        new_quantity INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabla inventory_movements inicializada');
+    
+    client.release();
+    console.log('✅ Base de datos inicializada correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando base de datos:', error);
+  }
+}
+
+// Initialize database on startup
+initializeDatabase();
+
 // API Routes
 // Test database connection
 app.get('/api/test', async (req, res) => {
@@ -77,6 +110,7 @@ app.post('/api/init-database', async (req, res) => {
     `);
 
     // Create inventory movements table
+    console.log('Creating inventory_movements table...');
     await client.query(`
       CREATE TABLE IF NOT EXISTS inventory_movements (
         id SERIAL PRIMARY KEY,
@@ -90,6 +124,7 @@ app.post('/api/init-database', async (req, res) => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('inventory_movements table created successfully');
     
     // Insert sample users
     await client.query(`
@@ -515,6 +550,27 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
 app.get('/api/inventory-movements', async (req, res) => {
   try {
     const client = await pool.connect();
+    
+    // First check if the table exists and create it if it doesn't
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS inventory_movements (
+          id SERIAL PRIMARY KEY,
+          supply_id INTEGER REFERENCES supply_inventory(id),
+          movement_type VARCHAR(20) NOT NULL CHECK (movement_type IN ('entrada', 'salida')),
+          quantity INTEGER NOT NULL,
+          reason VARCHAR(100) NOT NULL,
+          notes TEXT,
+          previous_quantity INTEGER NOT NULL,
+          new_quantity INTEGER NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('inventory_movements table verified/created');
+    } catch (tableError) {
+      console.error('Error creating inventory_movements table:', tableError);
+    }
+    
     const result = await client.query(`
       SELECT 
         im.*,

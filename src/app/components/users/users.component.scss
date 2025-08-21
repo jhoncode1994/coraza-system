@@ -133,3 +133,70 @@
 ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline {
   color: #3f51b5 !important;
 }
+
+/* Estilos para la barra de búsqueda */
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 0 16px;
+}
+
+.search-field {
+  flex: 1;
+  max-width: 400px;
+}
+
+.clear-search-button {
+  margin-top: -8px;
+}
+
+.search-results {
+  margin-bottom: 16px;
+  padding: 0 16px;
+}
+
+.search-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.search-message.no-results {
+  background-color: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc02;
+}
+
+.search-message.results-found {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #4caf50;
+}
+
+.search-message mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-field {
+    max-width: none;
+  }
+  
+  .clear-search-button {
+    align-self: flex-end;
+    margin-top: 0;
+  }
+}

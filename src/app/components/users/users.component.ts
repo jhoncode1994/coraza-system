@@ -20,7 +20,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { NgIf, DatePipe, AsyncPipe } from '@angular/common';
+import { NgIf, DatePipe, AsyncPipe, CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { UsersService } from './users.service';
@@ -55,6 +56,8 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    FormsModule,
+    CommonModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
@@ -111,6 +114,8 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
 export class UsersComponent implements OnInit {
   userForm: FormGroup;
   users: User[] = [];
+  filteredUsers: User[] = [];
+  searchTerm: string = '';
   editIndex: number | null = null;
   displayedColumns: string[] = ['nombre', 'apellido', 'cedula', 'zona', 'fechaIngreso', 'actions'];
   
@@ -151,6 +156,7 @@ export class UsersComponent implements OnInit {
     // Suscribirse a los cambios de usuarios desde el servicio
     this.userSubscription = this.usersService.users$.subscribe(users => {
       this.users = users;
+      this.filteredUsers = users; // Inicializar la lista filtrada
     });
     
     // Cargar los usuarios iniciales
@@ -167,6 +173,7 @@ export class UsersComponent implements OnInit {
   // Método para cargar usuarios del servicio
   loadUsers(): void {
     this.users = this.usersService.getUsers();
+    this.filteredUsers = this.users; // Actualizar la lista filtrada
   }
 
   // Método para mostrar el formulario
@@ -486,5 +493,23 @@ export class UsersComponent implements OnInit {
         }
       );
     }
+  }
+
+  // Métodos para la funcionalidad de búsqueda
+  filterUsers(): void {
+    if (!this.searchTerm || this.searchTerm.trim() === '') {
+      this.filteredUsers = this.users;
+      return;
+    }
+
+    const searchValue = this.searchTerm.trim().toLowerCase();
+    this.filteredUsers = this.users.filter(user => 
+      user.cedula.toLowerCase().includes(searchValue)
+    );
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.filteredUsers = this.users;
   }
 }
