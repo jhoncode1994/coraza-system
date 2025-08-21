@@ -1099,6 +1099,146 @@ app.get('/api/delivery', async (req, res) => {
   }
 });
 
+// Endpoint para obtener historial de entregas de un asociado específico para PDF
+app.get('/api/delivery/associate/:userId/pdf-data', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log(`Obteniendo datos PDF para asociado ${userId}...`);
+    
+    const client = await pool.connect();
+    
+    // Obtener datos del asociado
+    const userResult = await client.query(`
+      SELECT nombre, apellido, cedula 
+      FROM users 
+      WHERE id = $1
+    `, [userId]);
+    
+    if (userResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Asociado no encontrado' });
+    }
+    
+    // Obtener entregas del asociado
+    const deliveriesResult = await client.query(`
+      SELECT 
+        TO_CHAR("fechaEntrega", 'DD/MM/YYYY') as fecha,
+        elemento,
+        cantidad,
+        observaciones
+      FROM entrega_dotacion
+      WHERE "userId" = $1
+      ORDER BY "fechaEntrega" DESC
+    `, [userId]);
+    
+    client.release();
+    
+    const associateData = userResult.rows[0];
+    const deliveries = deliveriesResult.rows;
+    
+    res.json({
+      associate: {
+        nombre: `${associateData.nombre} ${associateData.apellido}`,
+        cedula: associateData.cedula
+      },
+      deliveries: deliveries
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo datos PDF del asociado:', error);
+    res.status(500).json({ error: 'Error al obtener datos para PDF' });
+  }
+});
+
+// Endpoint para obtener resumen general de elementos para PDF
+app.get('/api/delivery/elements-summary/pdf-data', async (req, res) => {
+  try {
+    console.log('Obteniendo resumen de elementos para PDF...');
+    
+    const client = await pool.connect();
+    
+    // Obtener todos los elementos únicos
+    const elementsResult = await client.query(`
+      SELECT DISTINCT elemento 
+      FROM entrega_dotacion 
+      ORDER BY elemento
+    `);
+    
+    const elementsSummary = [];
+    
+    // Para cada elemento, obtener sus entregas
+    for (const elementRow of elementsResult.rows) {
+      const elemento = elementRow.elemento;
+      
+      const deliveriesResult = await client.query(`
+        SELECT 
+          TO_CHAR(ed."fechaEntrega", 'DD/MM/YYYY') as fecha,
+          ed.elemento,
+          ed.cantidad,
+          ed.observaciones,
+          CONCAT(u.nombre, ' ', u.apellido) as asociado,
+          u.cedula
+        FROM entrega_dotacion ed
+        JOIN users u ON ed."userId" = u.id
+        WHERE ed.elemento = $1
+        ORDER BY ed."fechaEntrega" DESC
+      `, [elemento]);
+      
+      const entregas = deliveriesResult.rows;
+      const totalEntregado = entregas.reduce((sum, entrega) => sum + entrega.cantidad, 0);
+      
+      elementsSummary.push({
+        elemento: elemento,
+        totalEntregado: totalEntregado,
+        entregas: entregas
+      });
+    }
+    
+    client.release();
+    
+    res.json(elementsSummary);
+    
+  } catch (error) {
+    console.error('Error obteniendo resumen de elementos:', error);
+    res.status(500).json({ error: 'Error al obtener resumen de elementos' });
+  }
+});
+
+// Endpoint para obtener datos de un elemento específico para PDF
+app.get('/api/delivery/element/:elementName/pdf-data', async (req, res) => {
+  try {
+    const elementName = decodeURIComponent(req.params.elementName);
+    console.log(`Obteniendo datos PDF para elemento: ${elementName}`);
+    
+    const client = await pool.connect();
+    
+    const deliveriesResult = await client.query(`
+      SELECT 
+        TO_CHAR(ed."fechaEntrega", 'DD/MM/YYYY') as fecha,
+        ed.elemento,
+        ed.cantidad,
+        ed.observaciones,
+        CONCAT(u.nombre, ' ', u.apellido) as asociado,
+        u.cedula
+      FROM entrega_dotacion ed
+      JOIN users u ON ed."userId" = u.id
+      WHERE ed.elemento = $1
+      ORDER BY ed."fechaEntrega" DESC
+    `, [elementName]);
+    
+    client.release();
+    
+    res.json({
+      elemento: elementName,
+      deliveries: deliveriesResult.rows
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo datos del elemento:', error);
+    res.status(500).json({ error: 'Error al obtener datos del elemento' });
+  }
+});
+
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });

@@ -26,8 +26,14 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" (click)="exportToExcel()">
+        <button mat-raised-button color="primary" (click)="exportToExcel()" style="margin-right: 8px;">
           <mat-icon>download</mat-icon>
+          Excel
+        </button>
+        
+        <button mat-raised-button color="accent" (click)="openElementReportDialog()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          Reporte PDF por Elemento
           Exportar a Excel
         </button>
       </div>

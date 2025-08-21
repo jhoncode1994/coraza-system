@@ -85,6 +85,14 @@
       </button>
     </mat-card-title>
     <mat-card-content>
+      <!-- Botones de reportes PDF -->
+      <div class="reports-container" style="margin-bottom: 16px;">
+        <button mat-raised-button color="accent" (click)="downloadGeneralElementsReport()" style="margin-right: 8px;">
+          <mat-icon>picture_as_pdf</mat-icon>
+          Reporte General por Elementos
+        </button>
+      </div>
+      
       <!-- Barra de búsqueda por cédula -->
       <div class="search-container">
         <mat-form-field class="search-field" appearance="outline">
@@ -153,6 +161,9 @@
             </button>
             <button mat-icon-button color="primary" (click)="verHistorial(user)" matTooltip="Ver historial">
               <mat-icon>history</mat-icon>
+            </button>
+            <button mat-icon-button style="color: #e91e63;" (click)="downloadAssociatePDF(user)" matTooltip="Descargar historial en PDF">
+              <mat-icon>picture_as_pdf</mat-icon>
             </button>
             <button mat-icon-button style="color: #4CAF50;" (click)="entregarDotacion(user)" matTooltip="Entregar dotación">
               <mat-icon>inventory</mat-icon>

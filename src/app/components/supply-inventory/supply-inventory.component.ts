@@ -19,6 +19,9 @@ import { SupplyInventoryService } from '../../services/supply-inventory.service'
 import { InventoryMovementsService } from '../../services/inventory-movements.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.component';
+import { PdfReportService } from '../../services/pdf-report.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-supply-inventory',
@@ -63,7 +66,9 @@ export class SupplyInventoryComponent implements OnInit {
     private supplyInventoryService: SupplyInventoryService,
     private movementsService: InventoryMovementsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private pdfReportService: PdfReportService,
+    private http: HttpClient
   ) {
     this.dataSource = new MatTableDataSource<SupplyItem>([]);
   }
@@ -183,5 +188,71 @@ export class SupplyInventoryComponent implements OnInit {
         });
       }
     });
+  }
+
+  /**
+   * Abre diálogo para seleccionar elemento y generar reporte PDF
+   */
+  async openElementReportDialog(): Promise<void> {
+    const uniqueElements = Array.from(new Set(this.dataSource.data.map(item => item.name)))
+      .sort()
+      .map(elemento => ({ value: elemento, viewValue: elemento }));
+
+    if (uniqueElements.length === 0) {
+      this.snackBar.open('No hay elementos en el inventario', '', { duration: 3000 });
+      return;
+    }
+
+    // Crear un diálogo simple para seleccionar elemento
+    const result = await this.showElementSelectionDialog(uniqueElements);
+    
+    if (result) {
+      await this.generateElementReport(result);
+    }
+  }
+
+  /**
+   * Muestra diálogo de selección de elemento
+   */
+  private showElementSelectionDialog(elements: { value: string, viewValue: string }[]): Promise<string | null> {
+    return new Promise((resolve) => {
+      // Por ahora, usar el primer elemento como ejemplo
+      // En una implementación completa, crearías un componente de diálogo
+      const selectedElement = elements[0]?.value;
+      if (selectedElement) {
+        if (confirm(`¿Generar reporte PDF para: ${selectedElement}?`)) {
+          resolve(selectedElement);
+        } else {
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  /**
+   * Genera reporte PDF para un elemento específico
+   */
+  private async generateElementReport(elementName: string): Promise<void> {
+    try {
+      this.snackBar.open(`Generando reporte para ${elementName}...`, '', { duration: 2000 });
+
+      // Obtener datos del backend
+      const response = await firstValueFrom(
+        this.http.get<any>(`/api/delivery/element/${encodeURIComponent(elementName)}/pdf-data`)
+      );
+
+      // Generar PDF
+      this.pdfReportService.generateSingleElementReport(
+        response.elemento,
+        response.deliveries
+      );
+
+      this.snackBar.open('Reporte PDF generado exitosamente', '', { duration: 3000 });
+    } catch (error) {
+      console.error('Error generando reporte del elemento:', error);
+      this.snackBar.open('Error al generar el reporte', '', { duration: 3000 });
+    }
   }
 }
