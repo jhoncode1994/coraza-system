@@ -449,8 +449,22 @@ export class UsersComponent implements OnInit {
             firma: entrega.firma // Incluir la firma digital
           };
 
-          // Guardar cada entrega usando el servicio
-          this.entregaDotacionService.addEntrega(registroEntrega);
+          // Guardar cada entrega usando el servicio (ahora con Observable)
+          try {
+            await firstValueFrom(this.entregaDotacionService.addEntrega(registroEntrega));
+            console.log(`Entrega guardada exitosamente: ${elemento.elemento}`);
+          } catch (entregaError) {
+            console.error(`Error al guardar entrega para ${elemento.elemento}:`, entregaError);
+            this.snackBar.open(
+              `Error al guardar entrega para ${elemento.elemento}`,
+              'Cerrar',
+              {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              }
+            );
+            return;
+          }
           
         } catch (error) {
           console.error(`Error al procesar descuento para ${elemento.elemento}:`, error);

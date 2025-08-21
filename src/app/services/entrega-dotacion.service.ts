@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface EntregaHistorial {
@@ -10,18 +11,20 @@ export interface EntregaHistorial {
   observaciones?: string;
   tipo: 'entrega' | 'devolucion';
   firma?: string; // Firma digital en base64
+  firmaDigital?: string; // Campo de la base de datos
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class EntregaDotacionService {
+  private apiUrl = 'https://coraza-system.onrender.com/api';
   private entregas: EntregaHistorial[] = [];
   private entregasSubject = new BehaviorSubject<EntregaHistorial[]>([]);
 
-  constructor() {
-    // Cargar datos desde localStorage si existen
-    this.loadFromStorage();
+  constructor(private http: HttpClient) {
+    // Cargar datos desde la API si existen
+    this.loadFromAPI();
   }
 
   getEntregas(): Observable<EntregaHistorial[]> {
@@ -29,26 +32,38 @@ export class EntregaDotacionService {
   }
 
   getEntregasByUser(userId: number): Observable<EntregaHistorial[]> {
-    return new Observable(observer => {
-      const userEntregas = this.entregas.filter(entrega => entrega.userId === userId);
-      observer.next(userEntregas);
-      observer.complete();
-    });
+    return this.http.get<EntregaHistorial[]>(`${this.apiUrl}/delivery/user/${userId}`);
   }
 
-  addEntrega(entrega: Omit<EntregaHistorial, 'id'>): void {
-    const newEntrega: EntregaHistorial = {
-      ...entrega,
-      id: Date.now()
+  addEntrega(entrega: Omit<EntregaHistorial, 'id'>): Observable<any> {
+    const deliveryData = {
+      userId: entrega.userId,
+      elemento: entrega.elemento,
+      cantidad: entrega.cantidad,
+      fechaEntrega: entrega.fechaEntrega,
+      observaciones: entrega.observaciones,
+      firmaDigital: entrega.firma || entrega.firmaDigital
     };
-    
-    this.entregas.push(newEntrega);
-    this.entregasSubject.next([...this.entregas]);
-    this.saveToStorage();
+
+    return this.http.post(`${this.apiUrl}/delivery`, deliveryData);
   }
 
-  getHistorialByUser(userId: number): EntregaHistorial[] {
-    return this.entregas.filter(entrega => entrega.userId === userId);
+  getHistorialByUser(userId: number): Observable<EntregaHistorial[]> {
+    return this.getEntregasByUser(userId);
+  }
+
+  private loadFromAPI(): void {
+    this.http.get<EntregaHistorial[]>(`${this.apiUrl}/delivery`).subscribe({
+      next: (entregas) => {
+        this.entregas = entregas;
+        this.entregasSubject.next([...this.entregas]);
+      },
+      error: (error) => {
+        console.error('Error loading entregas from API:', error);
+        // Fallback a localStorage si la API falla
+        this.loadFromStorage();
+      }
+    });
   }
 
   private loadFromStorage(): void {

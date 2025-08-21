@@ -1021,6 +1021,82 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Endpoints para entrega de dotaciones
+
+// Guardar entrega de dotación
+app.post('/api/delivery', async (req, res) => {
+  try {
+    const { userId, elemento, cantidad, fechaEntrega, observaciones, firmaDigital } = req.body;
+    
+    console.log('Guardando entrega de dotación:', { userId, elemento, cantidad });
+    
+    const client = await pool.connect();
+    
+    const result = await client.query(`
+      INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", "firmaDigital", observaciones)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `, [userId, elemento, cantidad, fechaEntrega || new Date(), firmaDigital, observaciones]);
+    
+    client.release();
+    
+    res.json({ 
+      success: true, 
+      message: 'Entrega guardada exitosamente',
+      id: result.rows[0].id 
+    });
+  } catch (error) {
+    console.error('Error guardando entrega:', error);
+    res.status(500).json({ error: 'Error al guardar entrega' });
+  }
+});
+
+// Obtener historial de entregas por usuario
+app.get('/api/delivery/user/:userId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    console.log('Obteniendo historial de entregas para usuario:', userId);
+    
+    const client = await pool.connect();
+    
+    const result = await client.query(`
+      SELECT * FROM entrega_dotacion 
+      WHERE "userId" = $1 
+      ORDER BY "fechaEntrega" DESC
+    `, [userId]);
+    
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo historial:', error);
+    res.status(500).json({ error: 'Error al obtener historial' });
+  }
+});
+
+// Obtener todas las entregas
+app.get('/api/delivery', async (req, res) => {
+  try {
+    console.log('Obteniendo todas las entregas...');
+    
+    const client = await pool.connect();
+    
+    const result = await client.query(`
+      SELECT ed.*, u.nombre, u.apellido, u.cedula 
+      FROM entrega_dotacion ed
+      JOIN users u ON ed."userId" = u.id
+      ORDER BY ed."fechaEntrega" DESC
+    `);
+    
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo entregas:', error);
+    res.status(500).json({ error: 'Error al obtener entregas' });
+  }
+});
+
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
