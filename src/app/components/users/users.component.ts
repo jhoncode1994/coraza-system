@@ -322,8 +322,7 @@ export class UsersComponent implements OnInit {
           // Procesar retiro del asociado
           this.retiredAssociatesService.retireAssociate(
             user.id!, 
-            result.reason, 
-            1 // TODO: Obtener ID del usuario actual logueado
+            result.reason || 'Retiro solicitado'
           ).subscribe({
             next: () => {
               console.log('Asociado retirado exitosamente');

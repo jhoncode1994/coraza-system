@@ -33,15 +33,14 @@ export interface RetiredSupplyHistory {
   providedIn: 'root'
 })
 export class RetiredAssociatesService {
-  private apiUrl = 'https://renderdesboard.onrender.com/api';
+  private apiUrl = 'https://coraza-system.onrender.com/api';
 
   constructor(private http: HttpClient) {}
 
   // Retirar un asociado
-  retireAssociate(associateId: number, retiredReason: string, retiredBy: number): Observable<any> {
+  retireAssociate(associateId: number, retiredReason: string, retiredBy?: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/associates/${associateId}/retire`, {
-      retiredReason,
-      retiredBy
+      retiredReason: retiredReason || 'Retiro solicitado'
     });
   }
 
