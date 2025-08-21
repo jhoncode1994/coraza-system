@@ -825,20 +825,22 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           elemento: delivery.elemento,
           cantidad: delivery.cantidad,
           fechaEntrega: delivery.fechaEntrega,
-          observaciones: delivery.observaciones
+          observaciones: delivery.observaciones,
+          firmaDigital: delivery.firmaDigital
         });
         
         await client.query(`
           INSERT INTO retired_associate_supply_history 
-          (retired_associate_id, original_delivery_id, elemento, cantidad, delivered_at, observaciones)
-          VALUES ($1, $2, $3, $4, $5, $6)
+          (retired_associate_id, original_delivery_id, elemento, cantidad, delivered_at, observaciones, signature_data)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
         `, [
           retiredAssociateId,
           delivery.id || null,
           delivery.elemento || 'N/A',
           delivery.cantidad || 1,
           delivery.fechaEntrega || new Date(),
-          delivery.observaciones || null
+          delivery.observaciones || null,
+          delivery.firmaDigital || null
         ]);
         console.log('Entrega migrada exitosamente');
       }

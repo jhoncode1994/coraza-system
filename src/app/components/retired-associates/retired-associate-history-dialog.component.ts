@@ -61,6 +61,22 @@ import { RetiredAssociatesService, RetiredAssociate, RetiredSupplyHistory } from
                 </td>
               </ng-container>
 
+              <!-- Columna Firma -->
+              <ng-container matColumnDef="signature">
+                <th mat-header-cell *matHeaderCellDef>Firma</th>
+                <td mat-cell *matCellDef="let item">
+                  <button 
+                    mat-icon-button 
+                    color="primary" 
+                    *ngIf="item.signature_data"
+                    (click)="viewSignature(item.signature_data)"
+                    matTooltip="Ver firma digital">
+                    <mat-icon>create</mat-icon>
+                  </button>
+                  <span *ngIf="!item.signature_data" class="no-signature">Sin firma</span>
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
@@ -138,6 +154,12 @@ import { RetiredAssociatesService, RetiredAssociate, RetiredSupplyHistory } from
       max-height: 500px;
       overflow-y: auto;
     }
+
+    .no-signature {
+      color: #666;
+      font-style: italic;
+      font-size: 0.9em;
+    }
   `],
   standalone: true,
   imports: [
@@ -152,7 +174,7 @@ import { RetiredAssociatesService, RetiredAssociate, RetiredSupplyHistory } from
 })
 export class RetiredAssociateHistoryDialogComponent implements OnInit {
   history: RetiredSupplyHistory[] = [];
-  displayedColumns: string[] = ['elemento', 'cantidad', 'delivered_at', 'observaciones'];
+  displayedColumns: string[] = ['elemento', 'cantidad', 'delivered_at', 'observaciones', 'signature'];
   isLoading = true;
 
   constructor(
@@ -199,5 +221,57 @@ export class RetiredAssociateHistoryDialogComponent implements OnInit {
   truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  }
+
+  viewSignature(signatureData: string) {
+    if (!signatureData) return;
+    
+    // Crear un diálogo para mostrar la firma
+    const signatureWindow = window.open('', '_blank', 'width=600,height=400');
+    if (signatureWindow) {
+      signatureWindow.document.write(`
+        <html>
+          <head>
+            <title>Firma Digital</title>
+            <style>
+              body { 
+                margin: 0; 
+                padding: 20px; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                min-height: 100vh; 
+                background-color: #f5f5f5;
+                font-family: Arial, sans-serif;
+              }
+              .container {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                text-align: center;
+              }
+              img { 
+                max-width: 100%; 
+                height: auto; 
+                border: 1px solid #ddd;
+                border-radius: 4px;
+              }
+              h3 {
+                margin-top: 0;
+                color: #333;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h3>Firma Digital del Asociado</h3>
+              <img src="${signatureData}" alt="Firma digital" />
+            </div>
+          </body>
+        </html>
+      `);
+      signatureWindow.document.close();
+    }
   }
 }
