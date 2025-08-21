@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRetiredAssociatesTables = void 0;
+const tslib_1 = require("tslib");
 // migrate-retired-associates.ts - Script para aplicar las migraciones de asociados retirados
-const dotenv_1 = require("dotenv");
+const dotenv_1 = tslib_1.__importDefault(require("dotenv"));
 dotenv_1.default.config();
 const db_1 = require("./db");
 async function createRetiredAssociatesTables() {
@@ -77,3 +78,4 @@ if (require.main === module) {
         process.exit(1);
     });
 }
+//# sourceMappingURL=migrate-retired-associates.js.map

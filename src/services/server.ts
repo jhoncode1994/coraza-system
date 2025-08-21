@@ -62,13 +62,14 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
 // Endpoints para asociados retirados
 
 // Retirar un asociado
-app.post('/api/associates/:id/retire', async (req: Request, res: Response) => {
+app.post('/api/associates/:id/retire', async (req: Request, res: Response): Promise<void> => {
   try {
     const associateId = Number(req.params["id"]);
     const { retiredReason, retiredBy } = req.body;
     
     if (!retiredReason || !retiredBy) {
-      return res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+      res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+      return;
     }
     
     await retireAssociate(associateId, retiredReason, retiredBy);

@@ -601,6 +601,136 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+// Retirement functionality
+// Retire an associate (move to retired_associates table)
+app.post('/api/associates/:id/retire', async (req, res) => {
+  try {
+    const associateId = Number(req.params.id);
+    const { retiredReason, retiredBy } = req.body;
+    
+    if (!retiredReason || !retiredBy) {
+      return res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      // Start transaction
+      await client.query('BEGIN');
+      
+      // 1. Get associate data
+      const associateResult = await client.query(
+        'SELECT * FROM users WHERE id = $1',
+        [associateId]
+      );
+      
+      if (associateResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Asociado no encontrado' });
+      }
+      
+      const associate = associateResult.rows[0];
+      
+      // 2. Insert into retired_associates table
+      const retiredResult = await client.query(`
+        INSERT INTO retired_associates 
+        (associate_id, nombre, apellido, cedula, zona, telefono, email, retired_reason, retired_by, original_creation_date)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING id
+      `, [
+        associate.id,
+        associate.nombre,
+        associate.apellido,
+        associate.cedula,
+        associate.zona,
+        associate.telefono,
+        associate.email,
+        retiredReason,
+        retiredBy,
+        associate.created_at
+      ]);
+      
+      const retiredAssociateId = retiredResult.rows[0].id;
+      
+      // 3. Move delivery history to retired_associate_supply_history
+      const historyResult = await client.query(
+        'SELECT * FROM entrega_dotacion WHERE "userId" = $1',
+        [associateId]
+      );
+      
+      for (const delivery of historyResult.rows) {
+        await client.query(`
+          INSERT INTO retired_associate_supply_history 
+          (retired_associate_id, original_delivery_id, elemento, cantidad, delivered_at, signature_data, observaciones)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          retiredAssociateId,
+          delivery.id,
+          delivery.elemento,
+          delivery.cantidad,
+          delivery.fechaEntrega,
+          delivery.firmaDigital,
+          delivery.observaciones
+        ]);
+      }
+      
+      // 4. Delete original records
+      await client.query('DELETE FROM entrega_dotacion WHERE "userId" = $1', [associateId]);
+      await client.query('DELETE FROM users WHERE id = $1', [associateId]);
+      
+      await client.query('COMMIT');
+      
+      res.json({ message: 'Asociado retirado exitosamente' });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('Error retirando asociado:', error);
+    res.status(500).json({ error: 'Error al retirar asociado' });
+  }
+});
+
+// Get all retired associates
+app.get('/api/retired-associates', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT * FROM retired_associates 
+      ORDER BY retired_date DESC
+    `);
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo asociados retirados:', error);
+    res.status(500).json({ error: 'Error al obtener asociados retirados' });
+  }
+});
+
+// Get retired associate history
+app.get('/api/retired-associates/:id/history', async (req, res) => {
+  try {
+    const retiredAssociateId = Number(req.params.id);
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT * FROM retired_associate_supply_history 
+      WHERE retired_associate_id = $1 
+      ORDER BY delivered_at DESC
+    `, [retiredAssociateId]);
+    client.release();
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo historial de asociado retirado:', error);
+    res.status(500).json({ error: 'Error al obtener historial' });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

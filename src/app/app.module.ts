@@ -11,6 +11,7 @@ import { SupplyInventoryComponent } from './components/supply-inventory/supply-i
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { LoginComponent } from './components/login/login.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { RetiredAssociatesComponent } from './components/retired-associates/retired-associates.component';
 
 @NgModule({
   declarations: [
@@ -26,7 +27,8 @@ import { NavbarComponent } from './components/navbar/navbar.component';
     SupplyInventoryComponent,
     DashboardComponent,
     LoginComponent,
-    NavbarComponent
+    NavbarComponent,
+    RetiredAssociatesComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -102,3 +102,4 @@ async function getRetiredAssociatesStats() {
     };
 }
 exports.getRetiredAssociatesStats = getRetiredAssociatesStats;
+//# sourceMappingURL=retiredAssociatesService.js.map

@@ -8,3 +8,4 @@ async function getSupplyHistoryByAssociate(associateId) {
     return result.rows;
 }
 exports.getSupplyHistoryByAssociate = getSupplyHistoryByAssociate;
+//# sourceMappingURL=supplyHistoryService.js.map

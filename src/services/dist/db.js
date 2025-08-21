@@ -9,3 +9,4 @@ const pool = new pg_1.Pool({
 });
 const query = (text, params) => pool.query(text, params);
 exports.query = query;
+//# sourceMappingURL=db.js.map

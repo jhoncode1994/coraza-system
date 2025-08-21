@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const dotenv_1 = require("dotenv");
+const tslib_1 = require("tslib");
+const dotenv_1 = tslib_1.__importDefault(require("dotenv"));
 dotenv_1.default.config();
 // server.ts - Servidor Express para exponer la lógica de negocio
-const express_1 = require("express");
-const cors_1 = require("cors");
+const express_1 = tslib_1.__importDefault(require("express"));
+const cors_1 = tslib_1.__importDefault(require("cors"));
 const userService_1 = require("./userService");
 const supplyHistoryService_1 = require("./supplyHistoryService");
 const retiredAssociatesService_1 = require("./retiredAssociatesService");
@@ -58,7 +59,8 @@ app.post('/api/associates/:id/retire', async (req, res) => {
         const associateId = Number(req.params["id"]);
         const { retiredReason, retiredBy } = req.body;
         if (!retiredReason || !retiredBy) {
-            return res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+            res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+            return;
         }
         await (0, retiredAssociatesService_1.retireAssociate)(associateId, retiredReason, retiredBy);
         res.json({ message: 'Asociado retirado exitosamente' });
@@ -128,3 +130,4 @@ app.listen(PORT, () => {
 }).on('error', (err) => {
     console.error('Error al iniciar el servidor:', err);
 });
+//# sourceMappingURL=server.js.map
