@@ -15,6 +15,12 @@ export interface ElementSummary {
   entregas: DeliveryRecord[];
 }
 
+declare global {
+  interface Window {
+    jsPDF: any;
+  }
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -23,32 +29,50 @@ export class PdfReportService {
   constructor() { }
 
   /**
-   * Carga dinámicamente las librerías de PDF usando una estrategia de fallback
+   * Verifica si las librerías de PDF están disponibles y las carga si es necesario
    */
   private async loadPdfLibraries(): Promise<any> {
-    try {
-      // Intentar carga dinámica
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default;
-      
-      // Cargar jspdf-autotable
-      await import('jspdf-autotable');
-      
-      return jsPDF;
-    } catch (error) {
-      console.error('Error loading PDF libraries dynamically:', error);
-      
-      // Fallback: usar window global
-      if (typeof window !== 'undefined') {
-        // Verificar si las librerías ya están cargadas globalmente
-        const globalJsPDF = (window as any).jsPDF;
-        if (globalJsPDF) {
-          return globalJsPDF;
-        }
-      }
-      
-      throw new Error('No se pudieron cargar las librerías de PDF. Esta funcionalidad no está disponible.');
+    // Verificar si jsPDF ya está disponible globalmente
+    if (typeof window !== 'undefined' && (window as any).jsPDF) {
+      return (window as any).jsPDF;
     }
+
+    // Si no está disponible, intentar cargar desde CDN
+    if (typeof window !== 'undefined') {
+      try {
+        // Cargar jsPDF desde CDN
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        
+        // Cargar jspdf-autotable desde CDN
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js');
+        
+        if ((window as any).jsPDF) {
+          return (window as any).jsPDF;
+        }
+      } catch (error) {
+        console.error('Error loading PDF libraries from CDN:', error);
+      }
+    }
+    
+    throw new Error('No se pudieron cargar las librerías de PDF. Esta funcionalidad no está disponible.');
+  }
+
+  /**
+   * Carga un script desde una URL
+   */
+  private loadScript(src: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (typeof document === 'undefined') {
+        reject(new Error('Document not available'));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.head.appendChild(script);
+    });
   }
 
   /**
