@@ -558,6 +558,85 @@ export class UsersComponent implements OnInit {
   }
 
   /**
+   * Abre diálogo para seleccionar elemento y generar reporte PDF
+   */
+  async openElementReportDialog(): Promise<void> {
+    try {
+      // Obtener lista de elementos únicos del inventario
+      const supplies = await firstValueFrom(
+        this.supplyInventoryService.getAllSupplies()
+      );
+
+      const uniqueElements = Array.from(new Set(supplies.map(item => item.name)))
+        .sort()
+        .map(elemento => ({ value: elemento, viewValue: elemento }));
+
+      if (uniqueElements.length === 0) {
+        this.snackBar.open('No hay elementos en el inventario', '', { duration: 3000 });
+        return;
+      }
+
+      // Crear un diálogo simple para seleccionar elemento
+      const result = await this.showElementSelectionDialog(uniqueElements);
+      
+      if (result) {
+        await this.generateElementReport(result);
+      }
+    } catch (error) {
+      console.error('Error obteniendo elementos:', error);
+      this.snackBar.open('Error al cargar elementos del inventario', '', { duration: 3000 });
+    }
+  }
+
+  /**
+   * Muestra diálogo de selección de elemento
+   */
+  private showElementSelectionDialog(elements: { value: string, viewValue: string }[]): Promise<string | null> {
+    return new Promise((resolve) => {
+      // Crear opciones para el prompt
+      const elementsList = elements.map((el, index) => `${index + 1}. ${el.value}`).join('\n');
+      const userInput = prompt(`Seleccione el elemento para generar reporte:\n\n${elementsList}\n\nIngrese el número del elemento:`);
+      
+      if (userInput) {
+        const selectedIndex = parseInt(userInput) - 1;
+        if (selectedIndex >= 0 && selectedIndex < elements.length) {
+          resolve(elements[selectedIndex].value);
+        } else {
+          alert('Número inválido');
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  /**
+   * Genera reporte PDF para un elemento específico
+   */
+  private async generateElementReport(elementName: string): Promise<void> {
+    try {
+      this.snackBar.open(`Generando reporte para ${elementName}...`, '', { duration: 2000 });
+
+      // Obtener datos del backend
+      const response = await firstValueFrom(
+        this.http.get<any>(`/api/delivery/element/${encodeURIComponent(elementName)}/pdf-data`)
+      );
+
+      // Generar PDF
+      await this.pdfReportService.generateSingleElementReport(
+        response.elemento,
+        response.deliveries
+      );
+
+      this.snackBar.open('Reporte PDF generado exitosamente', '', { duration: 3000 });
+    } catch (error) {
+      console.error('Error generando reporte del elemento:', error);
+      this.snackBar.open('Error al generar el reporte', '', { duration: 3000 });
+    }
+  }
+
+  /**
    * Descarga el reporte general de todos los elementos
    */
   async downloadGeneralElementsReport(): Promise<void> {
