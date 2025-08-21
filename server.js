@@ -657,21 +657,65 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+// Test endpoint for debugging
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'API funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test retire endpoint
+app.get('/api/associates/:id/test', async (req, res) => {
+  try {
+    const associateId = Number(req.params.id);
+    console.log(`Test endpoint - ID: ${associateId}`);
+    
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM users WHERE id = $1', [associateId]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    res.json({
+      message: 'Usuario encontrado para retiro',
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error en test:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Retirement functionality
 // Retire an associate (move to retired_associates table)
 app.post('/api/associates/:id/retire', async (req, res) => {
+  console.log('=== INICIO PROCESO DE RETIRO ===');
+  console.log('Parámetros recibidos:', req.params);
+  console.log('Body recibido:', req.body);
+  
   try {
     const associateId = Number(req.params.id);
     const { retiredReason } = req.body;
     
-    console.log(`Iniciando retiro de asociado ID: ${associateId}`);
+    console.log(`Procesando retiro - ID: ${associateId}, Razón: ${retiredReason}`);
     
+    if (!associateId || isNaN(associateId)) {
+      console.log('Error: ID de asociado inválido');
+      return res.status(400).json({ error: 'ID de asociado inválido' });
+    }
+    
+    console.log('Conectando a la base de datos...');
     const client = await pool.connect();
     
     try {
+      console.log('Iniciando transacción...');
       // Start transaction
       await client.query('BEGIN');
       
+      console.log('Verificando/creando tablas necesarias...');
       // Ensure retired tables exist
       await client.query(`
         CREATE TABLE IF NOT EXISTS retired_associates (
@@ -687,6 +731,7 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      console.log('Tabla retired_associates verificada/creada');
       
       await client.query(`
         CREATE TABLE IF NOT EXISTS retired_associate_supply_history (
@@ -701,24 +746,32 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      console.log('Tabla retired_associate_supply_history verificada/creada');
+      
       
       // 1. Get associate data
-      console.log('Buscando asociado...');
+      console.log('Buscando datos del asociado...');
       const associateResult = await client.query(
         'SELECT * FROM users WHERE id = $1',
         [associateId]
       );
       
       if (associateResult.rows.length === 0) {
+        console.log('Asociado no encontrado en la base de datos');
         await client.query('ROLLBACK');
-        console.log('Asociado no encontrado');
         return res.status(404).json({ error: 'Asociado no encontrado' });
       }
       
       const associate = associateResult.rows[0];
-      console.log('Asociado encontrado:', associate.nombre, associate.apellido);
-      
+      console.log('Asociado encontrado:', {
+        id: associate.id,
+        nombre: associate.nombre,
+        apellido: associate.apellido,
+        cedula: associate.cedula
+      });
+
       // 2. Insert into retired_associates table
+      console.log('Insertando en tabla de retirados...');
       const retiredResult = await client.query(`
         INSERT INTO retired_associates 
         (original_id, nombre, apellido, cedula, zona, fecha_ingreso, retirement_reason)
@@ -735,14 +788,17 @@ app.post('/api/associates/:id/retire', async (req, res) => {
       ]);
       
       const retiredAssociateId = retiredResult.rows[0].id;
-      
-      // 3. Move delivery history to retired_associate_supply_history
+      console.log('Asociado insertado en retirados con ID:', retiredAssociateId);      // 3. Move delivery history to retired_associate_supply_history
+      console.log('Buscando historial de entregas...');
       const historyResult = await client.query(
         'SELECT * FROM entrega_dotacion WHERE "userId" = $1',
         [associateId]
       );
       
+      console.log(`Encontradas ${historyResult.rows.length} entregas para migrar`);
+      
       for (const delivery of historyResult.rows) {
+        console.log('Migrando entrega:', delivery.elemento);
         await client.query(`
           INSERT INTO retired_associate_supply_history 
           (retired_associate_id, supply_code, supply_name, categoria, talla, cantidad, fecha_entrega)
@@ -757,14 +813,18 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           delivery.fechaEntrega || new Date()
         ]);
       }
-      
+      console.log('Historial migrado exitosamente');
+
       // 4. Delete original records
       console.log('Eliminando registros originales...');
-      await client.query('DELETE FROM entrega_dotacion WHERE "userId" = $1', [associateId]);
-      await client.query('DELETE FROM users WHERE id = $1', [associateId]);
+      const deleteDeliveries = await client.query('DELETE FROM entrega_dotacion WHERE "userId" = $1', [associateId]);
+      console.log(`Eliminadas ${deleteDeliveries.rowCount} entregas`);
+      
+      const deleteUser = await client.query('DELETE FROM users WHERE id = $1', [associateId]);
+      console.log(`Eliminado usuario (filas afectadas: ${deleteUser.rowCount})`);
       
       await client.query('COMMIT');
-      console.log('Retiro completado exitosamente');
+      console.log('=== RETIRO COMPLETADO EXITOSAMENTE ===');
       
       res.json({ 
         message: 'Asociado retirado exitosamente',
@@ -772,18 +832,25 @@ app.post('/api/associates/:id/retire', async (req, res) => {
       });
       
     } catch (error) {
+      console.log('=== ERROR EN TRANSACCIÓN ===');
+      console.error('Detalles del error:', error);
+      console.error('Stack trace:', error.stack);
       await client.query('ROLLBACK');
-      console.error('Error en transacción de retiro:', error);
       throw error;
     } finally {
       client.release();
+      console.log('Conexión de base de datos liberada');
     }
     
   } catch (error) {
+    console.log('=== ERROR GENERAL ===');
     console.error('Error retirando asociado:', error);
+    console.error('Mensaje:', error.message);
+    console.error('Código:', error.code);
     res.status(500).json({ 
       error: 'Error al retirar asociado',
-      details: error.message 
+      details: error.message,
+      code: error.code 
     });
   }
 });
