@@ -42,8 +42,7 @@ import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.
     MatBadgeModule,
     FormsModule,
     ReactiveFormsModule,
-    MatDialogModule,
-    AddStockDialogComponent
+    MatDialogModule
   ]
 })
 export class SupplyInventoryComponent implements OnInit {
