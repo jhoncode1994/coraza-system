@@ -544,7 +544,7 @@ export class UsersComponent implements OnInit {
       );
 
       // Generar PDF
-      this.pdfReportService.generateAssociateDeliveryReport(
+      await this.pdfReportService.generateAssociateDeliveryReport(
         response.associate.nombre,
         response.associate.cedula,
         response.deliveries
@@ -571,7 +571,7 @@ export class UsersComponent implements OnInit {
       );
 
       // Generar PDF
-      this.pdfReportService.generateElementSummaryReport(elementsSummary);
+      await this.pdfReportService.generateElementSummaryReport(elementsSummary);
 
       this.snackBar.open('Reporte general generado exitosamente', '', { duration: 3000 });
     } catch (error) {

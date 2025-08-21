@@ -244,7 +244,7 @@ export class SupplyInventoryComponent implements OnInit {
       );
 
       // Generar PDF
-      this.pdfReportService.generateSingleElementReport(
+      await this.pdfReportService.generateSingleElementReport(
         response.elemento,
         response.deliveries
       );
