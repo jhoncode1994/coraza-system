@@ -918,6 +918,57 @@ app.get('/api/retired-associates/:id/history', async (req, res) => {
   }
 });
 
+// Get retired associates statistics
+app.get('/api/retired-associates/stats', async (req, res) => {
+  try {
+    console.log('Obteniendo estadísticas de asociados retirados...');
+    const client = await pool.connect();
+    
+    // Get total retired associates
+    const totalResult = await client.query(`
+      SELECT COUNT(*) as total FROM retired_associates
+    `);
+    
+    // Get retired associates by month
+    const monthlyResult = await client.query(`
+      SELECT 
+        DATE_TRUNC('month', retired_date) as month,
+        COUNT(*) as count
+      FROM retired_associates 
+      WHERE retired_date >= DATE_TRUNC('year', CURRENT_DATE)
+      GROUP BY DATE_TRUNC('month', retired_date)
+      ORDER BY month DESC
+    `);
+    
+    // Get retired associates by reason
+    const reasonResult = await client.query(`
+      SELECT 
+        retirement_reason,
+        COUNT(*) as count
+      FROM retired_associates 
+      GROUP BY retirement_reason
+      ORDER BY count DESC
+    `);
+    
+    client.release();
+    
+    const stats = {
+      total: parseInt(totalResult.rows[0]?.total || 0),
+      byMonth: monthlyResult.rows,
+      byReason: reasonResult.rows
+    };
+    
+    console.log('Estadísticas obtenidas:', stats);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener estadísticas',
+      details: error.message 
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
