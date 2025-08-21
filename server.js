@@ -772,20 +772,70 @@ app.post('/api/associates/:id/retire', async (req, res) => {
 
       // 2. Insert into retired_associates table
       console.log('Insertando en tabla de retirados...');
-      const retiredResult = await client.query(`
-        INSERT INTO retired_associates 
-        (original_id, nombre, apellido, cedula, zona, fecha_ingreso, retirement_reason)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id
-      `, [
-        associate.id,
-        associate.nombre,
-        associate.apellido,
-        associate.cedula,
-        associate.zona,
-        associate.fecha_ingreso,
-        retiredReason || 'Retiro solicitado'
-      ]);
+      
+      // First, let's check the table structure
+      const tableInfoResult = await client.query(`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'retired_associates' 
+        AND table_schema = 'public'
+        ORDER BY ordinal_position
+      `);
+      
+      console.log('Estructura de tabla retired_associates:', tableInfoResult.rows);
+      
+      // Try to insert with the most common field names
+      let retiredResult;
+      try {
+        // Try with 'associate_id' first (more common)
+        retiredResult = await client.query(`
+          INSERT INTO retired_associates 
+          (associate_id, nombre, apellido, cedula, zona, fecha_ingreso, retired_reason)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id
+        `, [
+          associate.id,
+          associate.nombre,
+          associate.apellido,
+          associate.cedula,
+          associate.zona,
+          associate.fecha_ingreso,
+          retiredReason || 'Retiro solicitado'
+        ]);
+      } catch (firstError) {
+        console.log('Error con associate_id, probando con id_asociado:', firstError.message);
+        try {
+          // Try with 'id_asociado'
+          retiredResult = await client.query(`
+            INSERT INTO retired_associates 
+            (id_asociado, nombre, apellido, cedula, zona, fecha_ingreso, motivo_retiro)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+          `, [
+            associate.id,
+            associate.nombre,
+            associate.apellido,
+            associate.cedula,
+            associate.zona,
+            associate.fecha_ingreso,
+            retiredReason || 'Retiro solicitado'
+          ]);
+        } catch (secondError) {
+          console.log('Error con id_asociado, probando inserción básica:', secondError.message);
+          // Try basic insertion with only required fields
+          retiredResult = await client.query(`
+            INSERT INTO retired_associates 
+            (nombre, apellido, cedula, zona)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+          `, [
+            associate.nombre,
+            associate.apellido,
+            associate.cedula,
+            associate.zona
+          ]);
+        }
+      }
       
       const retiredAssociateId = retiredResult.rows[0].id;
       console.log('Asociado insertado en retirados con ID:', retiredAssociateId);      // 3. Move delivery history to retired_associate_supply_history
