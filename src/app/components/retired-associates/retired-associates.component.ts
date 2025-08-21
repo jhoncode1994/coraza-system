@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RetiredAssociatesService, RetiredAssociate } from '../../services/retired-associates.service';
+import { RetiredAssociateHistoryDialogComponent } from './retired-associate-history-dialog.component';
 
 @Component({
   selector: 'app-retired-associates',
@@ -293,9 +294,10 @@ export class RetiredAssociatesComponent implements OnInit {
   }
 
   viewHistory(associate: RetiredAssociate) {
-    // TODO: Implementar diálogo para mostrar historial
-    this.snackBar.open(`Ver historial de ${associate.nombre} ${associate.apellido}`, 'Cerrar', {
-      duration: 3000
+    this.dialog.open(RetiredAssociateHistoryDialogComponent, {
+      width: '800px',
+      maxWidth: '90vw',
+      data: { associate }
     });
   }
 
