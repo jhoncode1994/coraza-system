@@ -884,7 +884,7 @@ app.get('/api/retired-associates', async (req, res) => {
     
     const result = await client.query(`
       SELECT * FROM retired_associates 
-      ORDER BY retirement_date DESC
+      ORDER BY retired_date DESC
     `);
     client.release();
     
