@@ -744,7 +744,7 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           zona INTEGER NOT NULL,
           fecha_ingreso DATE,
           retirement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          retirement_reason TEXT,
+          retired_reason TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -903,7 +903,7 @@ app.get('/api/retired-associates', async (req, res) => {
         zona INTEGER NOT NULL,
         fecha_ingreso DATE,
         retirement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        retirement_reason TEXT,
+        retired_reason TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -988,10 +988,10 @@ app.get('/api/retired-associates/stats', async (req, res) => {
     // Get retired associates by reason
     const reasonResult = await client.query(`
       SELECT 
-        retirement_reason,
+        retired_reason,
         COUNT(*) as count
       FROM retired_associates 
-      GROUP BY retirement_reason
+      GROUP BY retired_reason
       ORDER BY count DESC
     `);
     
