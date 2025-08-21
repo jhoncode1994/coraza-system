@@ -1,8 +1,5 @@
 import { Injectable } from '@angular/core';
 
-// Declaraciones de tipos para librerías externas
-declare const jsPDF: any;
-
 export interface DeliveryRecord {
   fecha: string;
   elemento: string;
@@ -26,13 +23,32 @@ export class PdfReportService {
   constructor() { }
 
   /**
-   * Carga dinámicamente las librerías de PDF
+   * Carga dinámicamente las librerías de PDF usando una estrategia de fallback
    */
   private async loadPdfLibraries(): Promise<any> {
-    // Carga dinámica para evitar problemas de SSR
-    const jsPDFLib = await import('jspdf');
-    await import('jspdf-autotable');
-    return jsPDFLib.default || jsPDFLib;
+    try {
+      // Intentar carga dinámica
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      
+      // Cargar jspdf-autotable
+      await import('jspdf-autotable');
+      
+      return jsPDF;
+    } catch (error) {
+      console.error('Error loading PDF libraries dynamically:', error);
+      
+      // Fallback: usar window global
+      if (typeof window !== 'undefined') {
+        // Verificar si las librerías ya están cargadas globalmente
+        const globalJsPDF = (window as any).jsPDF;
+        if (globalJsPDF) {
+          return globalJsPDF;
+        }
+      }
+      
+      throw new Error('No se pudieron cargar las librerías de PDF. Esta funcionalidad no está disponible.');
+    }
   }
 
   /**
@@ -70,38 +86,11 @@ export class PdfReportService {
         doc.setFontSize(12);
         doc.text('No hay entregas registradas para este asociado.', 20, 80);
       } else {
-        // Tabla de entregas
-        const tableData = deliveries.map(delivery => [
-          delivery.fecha,
-          delivery.elemento,
-          delivery.cantidad.toString(),
-          delivery.observaciones || '-'
-        ]);
-        
-        (doc as any).autoTable({
-          head: [['Fecha', 'Elemento', 'Cantidad', 'Observaciones']],
-          body: tableData,
-          startY: 75,
-          theme: 'striped',
-          headStyles: {
-            fillColor: [44, 62, 80],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          styles: {
-            fontSize: 10,
-            cellPadding: 5
-          },
-          columnStyles: {
-            0: { cellWidth: 40 }, // Fecha
-            1: { cellWidth: 80 }, // Elemento
-            2: { cellWidth: 25 }, // Cantidad
-            3: { cellWidth: 45 }  // Observaciones
-          }
-        });
+        // Crear tabla manualmente si autoTable no está disponible
+        this.createManualTable(doc, deliveries, 75);
         
         // Resumen al final
-        const finalY = (doc as any).lastAutoTable.finalY + 20;
+        const finalY = 75 + (deliveries.length * 10) + 30;
         doc.setFontSize(12);
         doc.setTextColor(44, 62, 80);
         doc.text('RESUMEN:', 20, finalY);
@@ -133,6 +122,67 @@ export class PdfReportService {
       console.error('Error generando PDF:', error);
       throw error;
     }
+  }
+
+  /**
+   * Crea una tabla manual cuando autoTable no está disponible
+   */
+  private createManualTable(doc: any, deliveries: DeliveryRecord[], startY: number): void {
+    const headers = ['Fecha', 'Elemento', 'Cantidad', 'Observaciones'];
+    const rowHeight = 8;
+    const colWidths = [40, 80, 25, 45];
+    let currentY = startY;
+    
+    // Dibujar encabezados
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(44, 62, 80);
+    doc.setTextColor(255, 255, 255);
+    
+    let currentX = 20;
+    headers.forEach((header, index) => {
+      doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+      doc.text(header, currentX + 2, currentY + 5);
+      currentX += colWidths[index];
+    });
+    
+    currentY += rowHeight;
+    
+    // Dibujar filas de datos
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    
+    deliveries.forEach((delivery, rowIndex) => {
+      const rowData = [
+        delivery.fecha,
+        delivery.elemento,
+        delivery.cantidad.toString(),
+        delivery.observaciones || '-'
+      ];
+      
+      // Alternar colores de fila
+      if (rowIndex % 2 === 0) {
+        doc.setFillColor(245, 245, 245);
+      } else {
+        doc.setFillColor(255, 255, 255);
+      }
+      
+      currentX = 20;
+      rowData.forEach((data, colIndex) => {
+        doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'F');
+        
+        // Truncar texto si es muy largo
+        let text = data.toString();
+        if (text.length > 15 && colIndex === 3) { // Observaciones
+          text = text.substring(0, 12) + '...';
+        }
+        
+        doc.text(text, currentX + 2, currentY + 5);
+        currentX += colWidths[colIndex];
+      });
+      
+      currentY += rowHeight;
+    });
   }
 
   /**
@@ -184,52 +234,27 @@ export class PdfReportService {
           
           currentY += 20;
           
-          // Tabla de entregas para este elemento
-          const tableData = elementSummary.entregas.map(delivery => [
-            delivery.fecha,
-            delivery.asociado || '-',
-            delivery.cedula || '-',
-            delivery.cantidad.toString(),
-            delivery.observaciones || '-'
-          ]);
-          
-          (doc as any).autoTable({
-            head: [['Fecha', 'Asociado', 'Cédula', 'Cantidad', 'Observaciones']],
-            body: tableData,
-            startY: currentY,
-            theme: 'striped',
-            headStyles: {
-              fillColor: [44, 62, 80],
-              textColor: [255, 255, 255],
-              fontStyle: 'bold'
-            },
-            styles: {
-              fontSize: 8,
-              cellPadding: 3
-            },
-            columnStyles: {
-              0: { cellWidth: 30 }, // Fecha
-              1: { cellWidth: 50 }, // Asociado
-              2: { cellWidth: 30 }, // Cédula
-              3: { cellWidth: 20 }, // Cantidad
-              4: { cellWidth: 60 }  // Observaciones
+          // Lista simple de entregas
+          elementSummary.entregas.forEach((entrega, entregaIndex) => {
+            if (currentY > 280) {
+              doc.addPage();
+              currentY = 20;
             }
+            
+            doc.setFontSize(8);
+            doc.text(`${entrega.fecha} - ${entrega.asociado || 'N/A'} (${entrega.cedula || 'N/A'}) - Cantidad: ${entrega.cantidad}`, 25, currentY);
+            currentY += 6;
           });
           
-          currentY = (doc as any).lastAutoTable.finalY + 15;
+          currentY += 10;
         });
       }
       
-      // Pie de página en todas las páginas
-      const totalPages = doc.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text('Sistema de Control de Dotaciones - Coraza', 105, pageHeight - 10, { align: 'center' });
-        doc.text(`Página ${i} de ${totalPages}`, 190, pageHeight - 10, { align: 'right' });
-      }
+      // Pie de página
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text('Sistema de Control de Dotaciones - Coraza', 105, pageHeight - 10, { align: 'center' });
       
       // Descargar PDF
       doc.save(`Reporte_General_Dotaciones_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -271,37 +296,8 @@ export class PdfReportService {
         doc.setFontSize(12);
         doc.text('No hay entregas registradas para este elemento.', 20, 90);
       } else {
-        // Tabla de entregas
-        const tableData = deliveries.map(delivery => [
-          delivery.fecha,
-          delivery.asociado || '-',
-          delivery.cedula || '-',
-          delivery.cantidad.toString(),
-          delivery.observaciones || '-'
-        ]);
-        
-        (doc as any).autoTable({
-          head: [['Fecha', 'Asociado', 'Cédula', 'Cantidad', 'Observaciones']],
-          body: tableData,
-          startY: 85,
-          theme: 'striped',
-          headStyles: {
-            fillColor: [44, 62, 80],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          styles: {
-            fontSize: 10,
-            cellPadding: 5
-          },
-          columnStyles: {
-            0: { cellWidth: 35 }, // Fecha
-            1: { cellWidth: 50 }, // Asociado
-            2: { cellWidth: 30 }, // Cédula
-            3: { cellWidth: 25 }, // Cantidad
-            4: { cellWidth: 50 }  // Observaciones
-          }
-        });
+        // Crear tabla manual
+        this.createElementTable(doc, deliveries, 85);
       }
       
       // Pie de página
@@ -316,5 +312,89 @@ export class PdfReportService {
       console.error('Error generando reporte del elemento:', error);
       throw error;
     }
+  }
+
+  /**
+   * Crea una tabla manual para reportes de elementos
+   */
+  private createElementTable(doc: any, deliveries: DeliveryRecord[], startY: number): void {
+    const headers = ['Fecha', 'Asociado', 'Cédula', 'Cantidad', 'Observaciones'];
+    const rowHeight = 8;
+    const colWidths = [35, 50, 30, 25, 50];
+    let currentY = startY;
+    
+    // Dibujar encabezados
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(44, 62, 80);
+    doc.setTextColor(255, 255, 255);
+    
+    let currentX = 20;
+    headers.forEach((header, index) => {
+      doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+      doc.text(header, currentX + 2, currentY + 5);
+      currentX += colWidths[index];
+    });
+    
+    currentY += rowHeight;
+    
+    // Dibujar filas de datos
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    
+    deliveries.forEach((delivery, rowIndex) => {
+      const rowData = [
+        delivery.fecha,
+        delivery.asociado || '-',
+        delivery.cedula || '-',
+        delivery.cantidad.toString(),
+        delivery.observaciones || '-'
+      ];
+      
+      // Alternar colores de fila
+      if (rowIndex % 2 === 0) {
+        doc.setFillColor(245, 245, 245);
+      } else {
+        doc.setFillColor(255, 255, 255);
+      }
+      
+      currentX = 20;
+      rowData.forEach((data, colIndex) => {
+        doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'F');
+        
+        // Truncar texto si es muy largo
+        let text = data.toString();
+        if (text.length > 12 && (colIndex === 1 || colIndex === 4)) { // Asociado o Observaciones
+          text = text.substring(0, 9) + '...';
+        }
+        
+        doc.text(text, currentX + 2, currentY + 5);
+        currentX += colWidths[colIndex];
+      });
+      
+      currentY += rowHeight;
+      
+      // Verificar si necesitamos nueva página
+      if (currentY > 270) {
+        doc.addPage();
+        currentY = 20;
+        
+        // Redibujar encabezados en nueva página
+        doc.setFont('helvetica', 'bold');
+        doc.setFillColor(44, 62, 80);
+        doc.setTextColor(255, 255, 255);
+        
+        currentX = 20;
+        headers.forEach((header, index) => {
+          doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+          doc.text(header, currentX + 2, currentY + 5);
+          currentX += colWidths[index];
+        });
+        
+        currentY += rowHeight;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+      }
+    });
   }
 }
