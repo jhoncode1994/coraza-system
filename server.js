@@ -662,11 +662,9 @@ app.delete('/api/users/:id', async (req, res) => {
 app.post('/api/associates/:id/retire', async (req, res) => {
   try {
     const associateId = Number(req.params.id);
-    const { retiredReason, retiredBy } = req.body;
+    const { retiredReason } = req.body;
     
-    if (!retiredReason || !retiredBy) {
-      return res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
-    }
+    console.log(`Iniciando retiro de asociado ID: ${associateId}`);
     
     const client = await pool.connect();
     
@@ -674,7 +672,38 @@ app.post('/api/associates/:id/retire', async (req, res) => {
       // Start transaction
       await client.query('BEGIN');
       
+      // Ensure retired tables exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS retired_associates (
+          id SERIAL PRIMARY KEY,
+          original_id INTEGER NOT NULL,
+          nombre VARCHAR(100) NOT NULL,
+          apellido VARCHAR(100) NOT NULL,
+          cedula VARCHAR(20) NOT NULL,
+          zona INTEGER NOT NULL,
+          fecha_ingreso DATE,
+          retirement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          retirement_reason TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS retired_associate_supply_history (
+          id SERIAL PRIMARY KEY,
+          retired_associate_id INTEGER REFERENCES retired_associates(id),
+          supply_code VARCHAR(50),
+          supply_name VARCHAR(200),
+          categoria VARCHAR(50),
+          talla VARCHAR(10),
+          cantidad INTEGER,
+          fecha_entrega DATE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
       // 1. Get associate data
+      console.log('Buscando asociado...');
       const associateResult = await client.query(
         'SELECT * FROM users WHERE id = $1',
         [associateId]
@@ -682,16 +711,18 @@ app.post('/api/associates/:id/retire', async (req, res) => {
       
       if (associateResult.rows.length === 0) {
         await client.query('ROLLBACK');
+        console.log('Asociado no encontrado');
         return res.status(404).json({ error: 'Asociado no encontrado' });
       }
       
       const associate = associateResult.rows[0];
+      console.log('Asociado encontrado:', associate.nombre, associate.apellido);
       
       // 2. Insert into retired_associates table
       const retiredResult = await client.query(`
         INSERT INTO retired_associates 
-        (associate_id, nombre, apellido, cedula, zona, telefono, email, retired_reason, retired_by, original_creation_date)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (original_id, nombre, apellido, cedula, zona, fecha_ingreso, retirement_reason)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
       `, [
         associate.id,
@@ -699,11 +730,8 @@ app.post('/api/associates/:id/retire', async (req, res) => {
         associate.apellido,
         associate.cedula,
         associate.zona,
-        associate.telefono,
-        associate.email,
-        retiredReason,
-        retiredBy,
-        associate.created_at
+        associate.fecha_ingreso,
+        retiredReason || 'Retiro solicitado'
       ]);
       
       const retiredAssociateId = retiredResult.rows[0].id;
@@ -717,29 +745,35 @@ app.post('/api/associates/:id/retire', async (req, res) => {
       for (const delivery of historyResult.rows) {
         await client.query(`
           INSERT INTO retired_associate_supply_history 
-          (retired_associate_id, original_delivery_id, elemento, cantidad, delivered_at, signature_data, observaciones)
+          (retired_associate_id, supply_code, supply_name, categoria, talla, cantidad, fecha_entrega)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
         `, [
           retiredAssociateId,
-          delivery.id,
-          delivery.elemento,
-          delivery.cantidad,
-          delivery.fechaEntrega,
-          delivery.firmaDigital,
-          delivery.observaciones
+          delivery.elemento || 'N/A',
+          delivery.elemento || 'N/A',
+          delivery.categoria || 'uniforme',
+          delivery.talla || 'N/A',
+          delivery.cantidad || 1,
+          delivery.fechaEntrega || new Date()
         ]);
       }
       
       // 4. Delete original records
+      console.log('Eliminando registros originales...');
       await client.query('DELETE FROM entrega_dotacion WHERE "userId" = $1', [associateId]);
       await client.query('DELETE FROM users WHERE id = $1', [associateId]);
       
       await client.query('COMMIT');
+      console.log('Retiro completado exitosamente');
       
-      res.json({ message: 'Asociado retirado exitosamente' });
+      res.json({ 
+        message: 'Asociado retirado exitosamente',
+        retiredAssociateId: retiredAssociateId 
+      });
       
     } catch (error) {
       await client.query('ROLLBACK');
+      console.error('Error en transacción de retiro:', error);
       throw error;
     } finally {
       client.release();
@@ -747,24 +781,49 @@ app.post('/api/associates/:id/retire', async (req, res) => {
     
   } catch (error) {
     console.error('Error retirando asociado:', error);
-    res.status(500).json({ error: 'Error al retirar asociado' });
+    res.status(500).json({ 
+      error: 'Error al retirar asociado',
+      details: error.message 
+    });
   }
 });
 
 // Get all retired associates
 app.get('/api/retired-associates', async (req, res) => {
   try {
+    console.log('Obteniendo asociados retirados...');
     const client = await pool.connect();
+    
+    // First ensure the table exists
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS retired_associates (
+        id SERIAL PRIMARY KEY,
+        original_id INTEGER NOT NULL,
+        nombre VARCHAR(100) NOT NULL,
+        apellido VARCHAR(100) NOT NULL,
+        cedula VARCHAR(20) NOT NULL,
+        zona INTEGER NOT NULL,
+        fecha_ingreso DATE,
+        retirement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        retirement_reason TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
     const result = await client.query(`
       SELECT * FROM retired_associates 
-      ORDER BY retired_date DESC
+      ORDER BY retirement_date DESC
     `);
     client.release();
     
+    console.log(`Encontrados ${result.rows.length} asociados retirados`);
     res.json(result.rows);
   } catch (error) {
     console.error('Error obteniendo asociados retirados:', error);
-    res.status(500).json({ error: 'Error al obtener asociados retirados' });
+    res.status(500).json({ 
+      error: 'Error al obtener asociados retirados',
+      details: error.message 
+    });
   }
 });
 
