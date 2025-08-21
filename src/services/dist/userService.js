@@ -14,4 +14,3 @@ async function getUserById(id) {
 }
 exports.getUserById = getUserById;
 // Agrega aquí más funciones de negocio según tus necesidades
-//# sourceMappingURL=userService.js.map

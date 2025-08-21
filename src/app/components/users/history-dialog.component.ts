@@ -2,14 +2,14 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { EmployeeSupplyHistoryComponent } from '../employee-supply-history/employee-supply-history.component';
+import { AssociateSupplyHistoryComponent } from '../associate-supply-history/associate-supply-history.component';
 
 @Component({
   selector: 'app-history-dialog',
   template: `
     <h2 mat-dialog-title>Historial de Dotación - {{data.user.nombre}} {{data.user.apellido}}</h2>
     <mat-dialog-content>
-      <app-employee-supply-history [employeeId]="data.user.id"></app-employee-supply-history>
+      <app-associate-supply-history [associateId]="data.user.id"></app-associate-supply-history>
     </mat-dialog-content>
     <mat-dialog-actions>
       <button mat-button (click)="close()">Cerrar</button>
@@ -20,7 +20,7 @@ import { EmployeeSupplyHistoryComponent } from '../employee-supply-history/emplo
     CommonModule,
     MatDialogModule,
     MatButtonModule,
-    EmployeeSupplyHistoryComponent
+    AssociateSupplyHistoryComponent
   ],
 })
 export class HistoryDialogComponent {

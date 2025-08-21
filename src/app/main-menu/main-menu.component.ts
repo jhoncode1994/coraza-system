@@ -24,4 +24,8 @@ export class MainMenuComponent {
   goToInventory() {
     this.router.navigate(['/inventory']);
   }
+
+  goToRetiredAssociates() {
+    this.router.navigate(['/retired-associates']);
+  }
 }

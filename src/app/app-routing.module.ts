@@ -6,6 +6,7 @@ import { UsersComponent } from './components/users/users.component';
 import { SupplyInventoryComponent } from './components/supply-inventory/supply-inventory.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { LoginComponent } from './components/login/login.component';
+import { RetiredAssociatesComponent } from './components/retired-associates/retired-associates.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
@@ -14,6 +15,7 @@ const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
   { path: 'inventory', component: SupplyInventoryComponent, canActivate: [AuthGuard] },
+  { path: 'retired-associates', component: RetiredAssociatesComponent, canActivate: [AuthGuard] },
   { path: '**', redirectTo: '' }
 ];
 

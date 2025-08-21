@@ -28,6 +28,8 @@ import { HistoryDialogComponent } from './history-dialog.component';
 import { EntregaDotacionDialogComponent, EntregaDotacion } from './entrega-dotacion-dialog.component';
 import { EntregaDotacionService } from '../../services/entrega-dotacion.service';
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
+import { RetiredAssociatesService } from '../../services/retired-associates.service';
+import { RetireAssociateDialogComponent } from '../retire-associate-dialog/retire-associate-dialog.component';
 
 export interface User {
   id: number;
@@ -131,7 +133,8 @@ export class UsersComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private entregaDotacionService: EntregaDotacionService,
-    private supplyInventoryService: SupplyInventoryService
+    private supplyInventoryService: SupplyInventoryService,
+    private retiredAssociatesService: RetiredAssociatesService
   ) {
     // Configurar el adaptador de fechas para usar el formato español
     this.dateAdapter.setLocale('es-ES');
@@ -291,36 +294,60 @@ export class UsersComponent implements OnInit {
     this.showForm = true; // Mostrar el formulario al editar
   }
 
-  deleteUser(index: number) {
+  retireUser(index: number) {
     const user = this.users[index];
     if (user && user.id) {
-      // Eliminar usuario usando el servicio con el ID del usuario
-      this.usersService.deleteUser(user.id).subscribe({
-        next: (deletedUser) => {
-          console.log('Usuario eliminado:', deletedUser);
-          this.snackBar.open('Usuario eliminado exitosamente', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          
-          // Si estábamos editando este usuario, limpiar el formulario
-          if (this.editIndex === index) {
-            this.editIndex = null;
-            this.userForm.reset();
-            this.showForm = false;
+      // Abrir diálogo de confirmación para retirar asociado
+      const dialogRef = this.dialog.open(RetireAssociateDialogComponent, {
+        width: '600px',
+        data: {
+          associate: {
+            id: user.id,
+            nombre: user.nombre,
+            apellido: user.apellido,
+            cedula: user.cedula
           }
-        },
-        error: (error) => {
-          console.error('Error al eliminar usuario:', error);
-          this.snackBar.open('Error al eliminar usuario', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['error-snackbar']
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result && result.confirmed) {
+          // Procesar retiro del asociado
+          this.retiredAssociatesService.retireAssociate(
+            user.id!, 
+            result.reason, 
+            1 // TODO: Obtener ID del usuario actual logueado
+          ).subscribe({
+            next: () => {
+              console.log('Asociado retirado exitosamente');
+              this.snackBar.open('Asociado retirado exitosamente', 'Cerrar', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+              
+              // Recargar la lista de usuarios
+              this.usersService.loadUsers();
+              
+              // Si estábamos editando este usuario, limpiar el formulario
+              if (this.editIndex === index) {
+                this.editIndex = null;
+                this.userForm.reset();
+                this.showForm = false;
+              }
+            },
+            error: (error) => {
+              console.error('Error al retirar asociado:', error);
+              this.snackBar.open('Error al retirar asociado', 'Cerrar', {
+                duration: 3000,
+                panelClass: ['error-snackbar']
+              });
+            }
           });
         }
       });
     } else {
-      console.error('Usuario no encontrado o sin ID');
-      this.snackBar.open('Error: Usuario no encontrado', 'Cerrar', {
+      console.error('Asociado no encontrado o sin ID');
+      this.snackBar.open('Error: Asociado no encontrado', 'Cerrar', {
         duration: 3000,
         panelClass: ['error-snackbar']
       });

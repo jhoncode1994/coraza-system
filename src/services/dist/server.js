@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
-const dotenv_1 = tslib_1.__importDefault(require("dotenv"));
+const dotenv_1 = require("dotenv");
 dotenv_1.default.config();
 // server.ts - Servidor Express para exponer la lógica de negocio
-const express_1 = tslib_1.__importDefault(require("express"));
-const cors_1 = tslib_1.__importDefault(require("cors"));
+const express_1 = require("express");
+const cors_1 = require("cors");
 const userService_1 = require("./userService");
 const supplyHistoryService_1 = require("./supplyHistoryService");
+const retiredAssociatesService_1 = require("./retiredAssociatesService");
 const app = (0, express_1.default)();
 const PORT = process.env["PORT"] || 3000;
 // Habilitar CORS para el frontend
@@ -16,10 +16,10 @@ app.use((0, cors_1.default)({
 }));
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-// Endpoint para historial de dotación por empleado
-app.get('/api/employees/:id/supply-history', async (req, res) => {
+// Endpoint para historial de dotación por asociado
+app.get('/api/associates/:id/supply-history', async (req, res) => {
     try {
-        const history = await (0, supplyHistoryService_1.getSupplyHistoryByEmployee)(Number(req.params["id"]));
+        const history = await (0, supplyHistoryService_1.getSupplyHistoryByAssociate)(Number(req.params["id"]));
         res.json(history);
     }
     catch (err) {
@@ -51,6 +51,74 @@ app.get('/api/users/:id', async (req, res) => {
         res.status(500).json({ error: 'Error al obtener usuario' });
     }
 });
+// Endpoints para asociados retirados
+// Retirar un asociado
+app.post('/api/associates/:id/retire', async (req, res) => {
+    try {
+        const associateId = Number(req.params["id"]);
+        const { retiredReason, retiredBy } = req.body;
+        if (!retiredReason || !retiredBy) {
+            return res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+        }
+        await (0, retiredAssociatesService_1.retireAssociate)(associateId, retiredReason, retiredBy);
+        res.json({ message: 'Asociado retirado exitosamente' });
+    }
+    catch (error) {
+        console.error('Error retirando asociado:', error);
+        res.status(500).json({ error: 'Error al retirar asociado' });
+    }
+});
+// Obtener todos los asociados retirados
+app.get('/api/retired-associates', async (req, res) => {
+    try {
+        const retiredAssociates = await (0, retiredAssociatesService_1.getRetiredAssociates)();
+        res.json(retiredAssociates);
+    }
+    catch (error) {
+        console.error('Error obteniendo asociados retirados:', error);
+        res.status(500).json({ error: 'Error al obtener asociados retirados' });
+    }
+});
+// Obtener historial de un asociado retirado
+app.get('/api/retired-associates/:id/history', async (req, res) => {
+    try {
+        const retiredAssociateId = Number(req.params["id"]);
+        const history = await (0, retiredAssociatesService_1.getRetiredAssociateHistory)(retiredAssociateId);
+        res.json(history);
+    }
+    catch (error) {
+        console.error('Error obteniendo historial:', error);
+        res.status(500).json({ error: 'Error al obtener historial del asociado retirado' });
+    }
+});
+// Buscar asociado retirado por cédula
+app.get('/api/retired-associates/search/:cedula', async (req, res) => {
+    try {
+        const cedula = req.params["cedula"];
+        const associate = await (0, retiredAssociatesService_1.findRetiredAssociateByCedula)(cedula);
+        if (associate) {
+            res.json(associate);
+        }
+        else {
+            res.status(404).json({ error: 'Asociado retirado no encontrado' });
+        }
+    }
+    catch (error) {
+        console.error('Error buscando asociado retirado:', error);
+        res.status(500).json({ error: 'Error al buscar asociado retirado' });
+    }
+});
+// Obtener estadísticas de asociados retirados
+app.get('/api/retired-associates/stats', async (req, res) => {
+    try {
+        const stats = await (0, retiredAssociatesService_1.getRetiredAssociatesStats)();
+        res.json(stats);
+    }
+    catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+});
 // Endpoint raíz
 app.get('/', (req, res) => {
     res.send('API corriendo');
@@ -60,4 +128,3 @@ app.listen(PORT, () => {
 }).on('error', (err) => {
     console.error('Error al iniciar el servidor:', err);
 });
-//# sourceMappingURL=server.js.map

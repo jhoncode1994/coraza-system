@@ -22,8 +22,8 @@ import { EntregaDotacionService, EntregaHistorial } from '../../services/entrega
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 
 interface DeliveryReport {
-  employeeName: string;
-  employeeId: number;
+  associateName: string;
+  associateId: number;
   cedula: string;
   zona: number;
   elemento: string;
@@ -83,7 +83,7 @@ export class ReportsComponent implements OnInit {
   consumptionReports: ConsumptionReport[] = [];
   
   // Configuración de tablas
-  deliveryColumns: string[] = ['employeeName', 'cedula', 'zona', 'elemento', 'cantidad', 'fechaEntrega'];
+  deliveryColumns: string[] = ['associateName', 'cedula', 'zona', 'elemento', 'cantidad', 'fechaEntrega'];
   inventoryColumns: string[] = ['code', 'name', 'category', 'currentStock', 'minimumStock', 'status'];
   consumptionColumns: string[] = ['elemento', 'totalEntregado', 'numeroEntregas', 'promedioEntrega', 'zona'];
   
@@ -109,7 +109,7 @@ export class ReportsComponent implements OnInit {
       endDate: [''],
       zone: [''],
       supply: [''],
-      employee: ['']
+      associate: ['']
     });
   }
 
@@ -155,8 +155,8 @@ export class ReportsComponent implements OnInit {
     this.deliveryReports = this.deliveries.map(delivery => {
       const user = this.users.find(u => u.id === delivery.userId);
       return {
-        employeeName: user ? `${user.nombre} ${user.apellido}` : 'Usuario desconocido',
-        employeeId: delivery.userId,
+        associateName: user ? `${user.nombre} ${user.apellido}` : 'Usuario desconocido',
+        associateId: delivery.userId,
         cedula: user?.cedula || 'N/A',
         zona: user?.zona || 0,
         elemento: delivery.elemento,
@@ -248,12 +248,12 @@ export class ReportsComponent implements OnInit {
       );
     }
     
-    if (filters.employee) {
+    if (filters.associate) {
       filteredDeliveries = filteredDeliveries.filter(d => {
         const user = this.users.find(u => u.id === d.userId);
-        return user?.nombre.toLowerCase().includes(filters.employee.toLowerCase()) ||
-               user?.apellido.toLowerCase().includes(filters.employee.toLowerCase()) ||
-               user?.cedula.includes(filters.employee);
+        return user?.nombre.toLowerCase().includes(filters.associate.toLowerCase()) ||
+               user?.apellido.toLowerCase().includes(filters.associate.toLowerCase()) ||
+               user?.cedula.includes(filters.associate);
       });
     }
     

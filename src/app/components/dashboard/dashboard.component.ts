@@ -16,12 +16,12 @@ import { EntregaDotacionService, EntregaHistorial } from '../../services/entrega
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 
 interface DashboardMetrics {
-  totalEmployees: number;
+  totalAssociates: number;
   totalSupplies: number;
   lowStockItems: number;
   deliveriesToday: number;
   deliveriesThisMonth: number;
-  employeesByZone: { [key: number]: number };
+  associatesByZone: { [key: number]: number };
   topSuppliesUsed: Array<{ name: string; count: number }>;
   criticalStockItems: Array<{ name: string; stock: number; minStock: number }>;
 }
@@ -46,12 +46,12 @@ interface DashboardMetrics {
 })
 export class DashboardComponent implements OnInit {
   metrics: DashboardMetrics = {
-    totalEmployees: 0,
+    totalAssociates: 0,
     totalSupplies: 0,
     lowStockItems: 0,
     deliveriesToday: 0,
     deliveriesThisMonth: 0,
-    employeesByZone: {},
+    associatesByZone: {},
     topSuppliesUsed: [],
     criticalStockItems: []
   };
@@ -71,8 +71,8 @@ export class DashboardComponent implements OnInit {
   loadDashboardData() {
     this.isLoading = true;
     
-    // Cargar métricas de empleados
-    this.loadEmployeeMetrics();
+    // Cargar métricas de asociados
+    this.loadAssociateMetrics();
     
     // Cargar métricas de inventario
     this.loadInventoryMetrics();
@@ -85,12 +85,12 @@ export class DashboardComponent implements OnInit {
     }, 1000);
   }
 
-  private loadEmployeeMetrics() {
+  private loadAssociateMetrics() {
     const users = this.usersService.getUsers();
-    this.metrics.totalEmployees = users.length;
+    this.metrics.totalAssociates = users.length;
     
-    // Agrupar empleados por zona
-    this.metrics.employeesByZone = users.reduce((acc, user) => {
+    // Agrupar asociados por zona
+    this.metrics.associatesByZone = users.reduce((acc, user) => {
       acc[user.zona] = (acc[user.zona] || 0) + 1;
       return acc;
     }, {} as { [key: number]: number });
@@ -157,7 +157,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getZoneKeys(): number[] {
-    return Object.keys(this.metrics.employeesByZone).map(key => parseInt(key));
+    return Object.keys(this.metrics.associatesByZone).map(key => parseInt(key));
   }
 
   getStockPercentage(current: number, min: number): number {

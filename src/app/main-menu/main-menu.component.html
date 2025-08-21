@@ -9,14 +9,20 @@
     
     <button mat-raised-button color="accent" class="menu-button" (click)="goToUsers()">
       <mat-icon>group</mat-icon>
-      <span>Gestión de Empleados</span>
-      <small>Administrar empleados y entregas</small>
+      <span>Gestión de Asociados</span>
+      <small>Administrar asociados y entregas</small>
     </button>
     
     <button mat-raised-button color="primary" class="menu-button" (click)="goToInventory()">
       <mat-icon>inventory</mat-icon>
       <span>Inventario de Dotación</span>
       <small>Control de stock y suministros</small>
+    </button>
+    
+    <button mat-raised-button color="warn" class="menu-button" (click)="goToRetiredAssociates()">
+      <mat-icon>person_off</mat-icon>
+      <span>Asociados Retirados</span>
+      <small>Historial de asociados retirados</small>
     </button>
   </div>
 </div>

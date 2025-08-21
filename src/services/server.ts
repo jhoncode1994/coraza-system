@@ -5,7 +5,14 @@ dotenv.config();
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { getAllUsers, getUserById } from './userService';
-import { getSupplyHistoryByEmployee } from './supplyHistoryService';
+import { getSupplyHistoryByAssociate } from './supplyHistoryService';
+import { 
+  retireAssociate, 
+  getRetiredAssociates, 
+  getRetiredAssociateHistory,
+  findRetiredAssociateByCedula,
+  getRetiredAssociatesStats 
+} from './retiredAssociatesService';
 
 const app = express();
 const PORT = process.env["PORT"] || 3000;
@@ -18,10 +25,10 @@ app.use(cors({
 app.use(cors());
 app.use(express.json());
 
-// Endpoint para historial de dotación por empleado
-app.get('/api/employees/:id/supply-history', async (req: Request, res: Response) => {
+// Endpoint para historial de dotación por asociado
+app.get('/api/associates/:id/supply-history', async (req: Request, res: Response) => {
   try {
-    const history = await getSupplyHistoryByEmployee(Number(req.params["id"]));
+    const history = await getSupplyHistoryByAssociate(Number(req.params["id"]));
     res.json(history);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener historial de dotación' });
@@ -49,6 +56,76 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
     }
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener usuario' });
+  }
+});
+
+// Endpoints para asociados retirados
+
+// Retirar un asociado
+app.post('/api/associates/:id/retire', async (req: Request, res: Response) => {
+  try {
+    const associateId = Number(req.params["id"]);
+    const { retiredReason, retiredBy } = req.body;
+    
+    if (!retiredReason || !retiredBy) {
+      return res.status(400).json({ error: 'Motivo de retiro y usuario que procesa son requeridos' });
+    }
+    
+    await retireAssociate(associateId, retiredReason, retiredBy);
+    res.json({ message: 'Asociado retirado exitosamente' });
+  } catch (error) {
+    console.error('Error retirando asociado:', error);
+    res.status(500).json({ error: 'Error al retirar asociado' });
+  }
+});
+
+// Obtener todos los asociados retirados
+app.get('/api/retired-associates', async (req: Request, res: Response) => {
+  try {
+    const retiredAssociates = await getRetiredAssociates();
+    res.json(retiredAssociates);
+  } catch (error) {
+    console.error('Error obteniendo asociados retirados:', error);
+    res.status(500).json({ error: 'Error al obtener asociados retirados' });
+  }
+});
+
+// Obtener historial de un asociado retirado
+app.get('/api/retired-associates/:id/history', async (req: Request, res: Response) => {
+  try {
+    const retiredAssociateId = Number(req.params["id"]);
+    const history = await getRetiredAssociateHistory(retiredAssociateId);
+    res.json(history);
+  } catch (error) {
+    console.error('Error obteniendo historial:', error);
+    res.status(500).json({ error: 'Error al obtener historial del asociado retirado' });
+  }
+});
+
+// Buscar asociado retirado por cédula
+app.get('/api/retired-associates/search/:cedula', async (req: Request, res: Response) => {
+  try {
+    const cedula = req.params["cedula"];
+    const associate = await findRetiredAssociateByCedula(cedula);
+    if (associate) {
+      res.json(associate);
+    } else {
+      res.status(404).json({ error: 'Asociado retirado no encontrado' });
+    }
+  } catch (error) {
+    console.error('Error buscando asociado retirado:', error);
+    res.status(500).json({ error: 'Error al buscar asociado retirado' });
+  }
+});
+
+// Obtener estadísticas de asociados retirados
+app.get('/api/retired-associates/stats', async (req: Request, res: Response) => {
+  try {
+    const stats = await getRetiredAssociatesStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
   }
 });
 

@@ -54,8 +54,8 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Empleado</mat-label>
-            <input matInput formControlName="employee" placeholder="Nombre, apellido o cédula">
+            <mat-label>Asociado</mat-label>
+            <input matInput formControlName="associate" placeholder="Nombre, apellido o cédula">
           </mat-form-field>
 
           <div class="filter-actions">
@@ -96,9 +96,9 @@
           <mat-card-content>
             <div class="table-container">
               <table mat-table [dataSource]="deliveryReports" class="delivery-table">
-                <ng-container matColumnDef="employeeName">
-                  <th mat-header-cell *matHeaderCellDef>Empleado</th>
-                  <td mat-cell *matCellDef="let report">{{ report.employeeName }}</td>
+                <ng-container matColumnDef="associateName">
+                  <th mat-header-cell *matHeaderCellDef>Asociado</th>
+                  <td mat-cell *matCellDef="let report">{{ report.associateName }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="cedula">

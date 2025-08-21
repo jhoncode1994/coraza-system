@@ -4,11 +4,11 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SupplyHistoryService {
-  private apiUrl = 'https://renderdesboard.onrender.com/api/employees';
+  private apiUrl = 'https://renderdesboard.onrender.com/api/associates';
 
   constructor(private http: HttpClient) {}
 
-  getHistory(employeeId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/${employeeId}/supply-history`);
+  getHistory(associateId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${associateId}/supply-history`);
   }
 }

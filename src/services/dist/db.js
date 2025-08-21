@@ -5,8 +5,7 @@ exports.query = void 0;
 const pg_1 = require("pg");
 const pool = new pg_1.Pool({
     connectionString: process.env["DATABASE_URL"],
-    ssl: { rejectUnauthorized: false }
+    ssl: process.env["NODE_ENV"] === 'production' ? { rejectUnauthorized: false } : false
 });
 const query = (text, params) => pool.query(text, params);
 exports.query = query;
-//# sourceMappingURL=db.js.map

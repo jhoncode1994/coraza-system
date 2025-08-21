@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UsersComponent } from './users.component';
-import { EmployeeSupplyHistoryComponent } from '../employee-supply-history/employee-supply-history.component';
+import { AssociateSupplyHistoryComponent } from '../associate-supply-history/associate-supply-history.component';
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -27,7 +27,7 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatCardModule,
     MatDialogModule,
     UsersComponent,
-    EmployeeSupplyHistoryComponent
+    AssociateSupplyHistoryComponent
   ],
   providers: [DatePipe]
 })

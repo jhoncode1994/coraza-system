@@ -25,8 +25,8 @@
               <mat-icon>group</mat-icon>
             </div>
             <div class="metric-info">
-              <h3>{{ metrics.totalEmployees }}</h3>
-              <p>Empleados Registrados</p>
+              <h3>{{ metrics.totalAssociates }}</h3>
+              <p>Asociados Registrados</p>
             </div>
           </div>
         </mat-card-content>
@@ -77,12 +77,12 @@
 
     <!-- Gráficos y estadísticas -->
     <div class="charts-grid">
-      <!-- Empleados por zona -->
+      <!-- Asociados por zona -->
       <mat-card class="chart-card">
         <mat-card-header>
           <mat-card-title>
             <mat-icon>location_on</mat-icon>
-            Empleados por Zona
+            Asociados por Zona
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
@@ -90,17 +90,17 @@
             <div class="zone-item" *ngFor="let zone of getZoneKeys()">
               <div class="zone-info">
                 <span class="zone-label">Zona {{ zone }}</span>
-                <span class="zone-count">{{ metrics.employeesByZone[zone] }} empleados</span>
+                <span class="zone-count">{{ metrics.associatesByZone[zone] }} asociados</span>
               </div>
               <mat-progress-bar 
                 mode="determinate" 
-                [value]="(metrics.employeesByZone[zone] / metrics.totalEmployees) * 100"
+                [value]="(metrics.associatesByZone[zone] / metrics.totalAssociates) * 100"
                 color="primary">
               </mat-progress-bar>
             </div>
           </div>
           <ng-template #noZoneData>
-            <p class="no-data">No hay datos de empleados por zona</p>
+            <p class="no-data">No hay datos de asociados por zona</p>
           </ng-template>
         </mat-card-content>
       </mat-card>
@@ -176,7 +176,7 @@
           <div class="quick-actions">
             <button mat-raised-button color="primary" routerLink="/users">
               <mat-icon>group_add</mat-icon>
-              Gestionar Empleados
+              Gestionar Asociados
             </button>
             <button mat-raised-button color="accent" routerLink="/inventory">
               <mat-icon>inventory</mat-icon>
