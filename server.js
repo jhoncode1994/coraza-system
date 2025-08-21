@@ -40,6 +40,23 @@ async function initializeDatabase() {
     `);
     console.log('✅ Tabla inventory_movements inicializada');
     
+    // Create retired_associate_supply_history table
+    console.log('📋 Creando tabla retired_associate_supply_history...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS retired_associate_supply_history (
+        id SERIAL PRIMARY KEY,
+        retired_associate_id INTEGER NOT NULL,
+        original_delivery_id INTEGER,
+        elemento VARCHAR(200) NOT NULL,
+        cantidad INTEGER NOT NULL,
+        delivered_at TIMESTAMP,
+        signature_data TEXT,
+        observaciones TEXT,
+        retired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabla retired_associate_supply_history inicializada');
+    
     client.release();
     console.log('✅ Base de datos inicializada correctamente');
   } catch (error) {
@@ -803,20 +820,27 @@ app.post('/api/associates/:id/retire', async (req, res) => {
       console.log(`Encontradas ${historyResult.rows.length} entregas para migrar`);
       
       for (const delivery of historyResult.rows) {
-        console.log('Migrando entrega:', delivery.elemento);
+        console.log('Migrando entrega:', {
+          id: delivery.id,
+          elemento: delivery.elemento,
+          cantidad: delivery.cantidad,
+          fechaEntrega: delivery.fechaEntrega,
+          observaciones: delivery.observaciones
+        });
+        
         await client.query(`
           INSERT INTO retired_associate_supply_history 
-          (retired_associate_id, supply_code, supply_name, categoria, talla, cantidad, fecha_entrega)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          (retired_associate_id, original_delivery_id, elemento, cantidad, delivered_at, observaciones)
+          VALUES ($1, $2, $3, $4, $5, $6)
         `, [
           retiredAssociateId,
+          delivery.id || null,
           delivery.elemento || 'N/A',
-          delivery.elemento || 'N/A',
-          delivery.categoria || 'uniforme',
-          delivery.talla || 'N/A',
           delivery.cantidad || 1,
-          delivery.fechaEntrega || new Date()
+          delivery.fechaEntrega || new Date(),
+          delivery.observaciones || null
         ]);
+        console.log('Entrega migrada exitosamente');
       }
       console.log('Historial migrado exitosamente');
 
@@ -903,12 +927,31 @@ app.get('/api/retired-associates', async (req, res) => {
 app.get('/api/retired-associates/:id/history', async (req, res) => {
   try {
     const retiredAssociateId = Number(req.params.id);
+    console.log('Obteniendo historial para asociado retirado ID:', retiredAssociateId);
+    
     const client = await pool.connect();
+    
+    // First, let's check the table structure
+    const structureResult = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'retired_associate_supply_history'
+      ORDER BY ordinal_position
+    `);
+    console.log('Estructura de retired_associate_supply_history:', structureResult.rows);
+    
+    // Try to get the history
     const result = await client.query(`
       SELECT * FROM retired_associate_supply_history 
       WHERE retired_associate_id = $1 
       ORDER BY delivered_at DESC
     `, [retiredAssociateId]);
+    
+    console.log(`Encontradas ${result.rows.length} entradas de historial`);
+    if (result.rows.length > 0) {
+      console.log('Primera entrada:', result.rows[0]);
+    }
+    
     client.release();
     
     res.json(result.rows);
