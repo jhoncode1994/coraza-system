@@ -32,25 +32,34 @@ export class PdfReportService {
    * Verifica si las librerías de PDF están disponibles y las carga si es necesario
    */
   private async loadPdfLibraries(): Promise<any> {
+    console.log('🔄 Iniciando carga de librerías PDF...');
+    
     // Verificar si jsPDF ya está disponible globalmente
     if (typeof window !== 'undefined' && (window as any).jsPDF) {
+      console.log('✅ jsPDF ya está disponible globalmente');
       return (window as any).jsPDF;
     }
 
     // Si no está disponible, intentar cargar desde CDN
     if (typeof window !== 'undefined') {
       try {
+        console.log('📦 Cargando jsPDF desde CDN...');
         // Cargar jsPDF desde CDN
         await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
         
+        console.log('📦 Cargando jspdf-autotable desde CDN...');
         // Cargar jspdf-autotable desde CDN
         await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js');
         
+        // Verificar que se cargó correctamente
         if ((window as any).jsPDF) {
+          console.log('✅ Librerías PDF cargadas exitosamente desde CDN');
           return (window as any).jsPDF;
+        } else {
+          console.error('❌ jsPDF no está disponible después de cargar scripts');
         }
       } catch (error) {
-        console.error('Error loading PDF libraries from CDN:', error);
+        console.error('❌ Error loading PDF libraries from CDN:', error);
       }
     }
     
