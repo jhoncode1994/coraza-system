@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface EntregaHistorial {
   id: number;
@@ -32,7 +33,12 @@ export class EntregaDotacionService {
   }
 
   getEntregasByUser(userId: number): Observable<EntregaHistorial[]> {
-    return this.http.get<EntregaHistorial[]>(`${this.apiUrl}/delivery/user/${userId}`);
+    return this.http.get<any[]>(`${this.apiUrl}/delivery/user/${userId}`).pipe(
+      map(entregas => entregas.map(entrega => ({
+        ...entrega,
+        firma: entrega.firmaDigital || entrega.firma // Mapear firmaDigital a firma
+      })))
+    );
   }
 
   addEntrega(entrega: Omit<EntregaHistorial, 'id'>): Observable<any> {
