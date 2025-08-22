@@ -35,71 +35,94 @@ export class PdfReportService {
   private async loadPdfLibraries(): Promise<any> {
     console.log('🔄 Iniciando carga de librerías PDF...');
     
-    try {
-      // Intentar importar desde node_modules primero
-      console.log('📦 Intentando cargar jsPDF desde node_modules...');
-      
-      const jsPDFModule = await import('jspdf');
-      const autoTableModule = await import('jspdf-autotable');
-      
-      const jsPDF = jsPDFModule.default || jsPDFModule;
-      
-      if (jsPDF) {
-        console.log('✅ jsPDF cargado desde node_modules');
-        return jsPDF;
-      }
-    } catch (importError) {
-      console.warn('⚠️ No se pudo cargar desde node_modules, intentando CDN...', importError);
-      
-      // Fallback a CDN si no funciona la importación
-      return this.loadFromCDN();
-    }
-    
-    throw new Error('No se pudieron cargar las librerías de PDF. Esta funcionalidad no está disponible.');
-  }
-
-  /**
-   * Método fallback para cargar desde CDN
-   */
-  private async loadFromCDN(): Promise<any> {
     // Verificar si jsPDF ya está disponible globalmente
     if (typeof window !== 'undefined' && (window as any).jsPDF) {
       console.log('✅ jsPDF ya está disponible globalmente');
       return (window as any).jsPDF;
     }
 
-    // Si no está disponible, intentar cargar desde CDN
+    // Para producción, usar solo CDN que es más confiable
+    return this.loadFromCDN();
+  }
+
+  /**
+   * Método para cargar desde CDN - optimizado para producción
+   */
+  private async loadFromCDN(): Promise<any> {
+    console.log('📦 Cargando jsPDF desde CDN...');
+    
+    // Verificar si jsPDF ya está disponible globalmente
+    if (typeof window !== 'undefined' && (window as any).jsPDF) {
+      console.log('✅ jsPDF ya está disponible globalmente');
+      return (window as any).jsPDF;
+    }
+
     if (typeof window !== 'undefined') {
       try {
-        console.log('📦 Cargando jsPDF desde CDN...');
+        // Cargar jsPDF desde CDN con múltiples URLs de respaldo
+        const jsPDFUrls = [
+          'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+          'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+        ];
         
-        // Cargar jsPDF con timeout más generoso
-        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        const autoTableUrls = [
+          'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js',
+          'https://unpkg.com/jspdf-autotable@3.6.0/dist/jspdf.plugin.autotable.min.js'
+        ];
+        
+        // Intentar cargar jsPDF con múltiples CDNs
+        let jsPDFLoaded = false;
+        for (const url of jsPDFUrls) {
+          try {
+            await this.loadScript(url);
+            if ((window as any).jsPDF) {
+              console.log(`✅ jsPDF cargado desde: ${url}`);
+              jsPDFLoaded = true;
+              break;
+            }
+          } catch (error) {
+            console.warn(`⚠️ Falló carga desde ${url}:`, error);
+          }
+        }
+        
+        if (!jsPDFLoaded) {
+          throw new Error('No se pudo cargar jsPDF desde ningún CDN');
+        }
         
         // Esperar un poco para que se procese completamente
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        console.log('📦 Cargando jspdf-autotable desde CDN...');
-        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js');
+        // Intentar cargar autotable con múltiples CDNs
+        let autoTableLoaded = false;
+        for (const url of autoTableUrls) {
+          try {
+            await this.loadScript(url);
+            console.log(`✅ AutoTable cargado desde: ${url}`);
+            autoTableLoaded = true;
+            break;
+          } catch (error) {
+            console.warn(`⚠️ Falló carga de autotable desde ${url}:`, error);
+          }
+        }
         
         // Esperar otro poco para procesar autotable
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Intentar diferentes formas de acceder a jsPDF
-        console.log('🔍 Verificando disponibilidad de jsPDF...');
-        console.log('window.jsPDF:', typeof (window as any).jsPDF);
-        console.log('window.jspdf:', typeof (window as any).jspdf);
-        console.log('window.window?.jsPDF:', typeof (window as any).window?.jsPDF);
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // Verificar que se cargó correctamente
-        let jsPDFConstructor = (window as any).jsPDF || (window as any).jspdf;
+        let jsPDFConstructor = (window as any).jsPDF;
         
         if (jsPDFConstructor) {
           console.log('✅ Librerías PDF cargadas exitosamente desde CDN');
+          console.log('jsPDF disponible:', typeof jsPDFConstructor);
+          console.log('AutoTable disponible:', typeof jsPDFConstructor.autoTable);
           return jsPDFConstructor;
         } else {
           console.error('❌ jsPDF no está disponible después de cargar scripts');
-          console.log('Propiedades disponibles en window:', Object.keys(window).filter(k => k.toLowerCase().includes('pdf')));
+          // Diagnóstico adicional
+          console.log('window.jsPDF:', typeof (window as any).jsPDF);
+          console.log('window.jspdf:', typeof (window as any).jspdf);
+          console.log('Todas las propiedades de window que contienen "pdf":', 
+            Object.keys(window).filter(k => k.toLowerCase().includes('pdf')));
         }
       } catch (error) {
         console.error('❌ Error loading PDF libraries from CDN:', error);
