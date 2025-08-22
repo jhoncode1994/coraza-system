@@ -214,7 +214,12 @@ export class PdfReportService {
    */
   async generateElementSummaryReport(elementSummaries: ElementSummary[]): Promise<void> {
     try {
+      console.log('Iniciando generación de reporte general PDF...');
+      console.log('Datos recibidos:', elementSummaries);
+      
       const jsPDF = await this.loadPdfLibraries();
+      console.log('Librerías PDF cargadas exitosamente');
+      
       const doc = new jsPDF();
       
       // Configurar fuente
@@ -237,11 +242,13 @@ export class PdfReportService {
       
       let currentY = 65;
       
-      if (elementSummaries.length === 0) {
+      if (!elementSummaries || elementSummaries.length === 0) {
         doc.setFontSize(12);
         doc.text('No hay entregas registradas.', 20, currentY);
       } else {
         elementSummaries.forEach((elementSummary, index) => {
+          console.log(`Procesando elemento ${index + 1}:`, elementSummary);
+          
           // Verificar si necesitamos nueva página
           if (currentY > 250) {
             doc.addPage();

@@ -8,12 +8,17 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 import { UsersService } from '../users/users.service';
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
 import { EntregaDotacionService, EntregaHistorial } from '../../services/entrega-dotacion.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
+import { PdfReportService } from '../../services/pdf-report.service';
 
 interface DashboardMetrics {
   totalAssociates: number;
@@ -41,6 +46,8 @@ interface DashboardMetrics {
     MatChipsModule,
     MatBadgeModule,
     MatDividerModule,
+    MatSnackBarModule,
+    MatDialogModule,
     RouterModule
   ]
 })
@@ -61,7 +68,11 @@ export class DashboardComponent implements OnInit {
   constructor(
     private usersService: UsersService,
     private supplyService: SupplyInventoryService,
-    private deliveryService: EntregaDotacionService
+    private deliveryService: EntregaDotacionService,
+    private pdfReportService: PdfReportService,
+    private http: HttpClient,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit() {
@@ -174,5 +185,152 @@ export class DashboardComponent implements OnInit {
 
   refreshData() {
     this.loadDashboardData();
+  }
+
+  // ========================= MÉTODOS PARA REPORTES PDF =========================
+
+  /**
+   * 1. Reporte General por Elementos
+   * Lista de todos los elementos entregados, total de cantidades, detalles de entregas
+   */
+  async downloadGeneralElementsReport(): Promise<void> {
+    try {
+      this.snackBar.open('Generando reporte general por elementos...', '', { duration: 2000 });
+
+      const elementsSummary = await firstValueFrom(
+        this.http.get<any[]>('/api/delivery/elements-summary/pdf-data')
+      );
+
+      if (!elementsSummary || elementsSummary.length === 0) {
+        this.snackBar.open('No hay datos de entregas para generar el reporte', '', { duration: 3000 });
+        return;
+      }
+
+      await this.pdfReportService.generateElementSummaryReport(elementsSummary);
+      this.snackBar.open('✅ Reporte general generado exitosamente', '', { duration: 3000 });
+    } catch (error) {
+      console.error('Error generando reporte general:', error);
+      this.snackBar.open('❌ Error al generar el reporte general', '', { duration: 5000 });
+    }
+  }
+
+  /**
+   * 2. Reporte por Elemento Específico
+   * Historial completo de un elemento específico (quién, cuándo, cantidades)
+   */
+  async downloadSpecificElementReport(): Promise<void> {
+    try {
+      // Obtener lista de elementos únicos del inventario
+      const supplies = await firstValueFrom(this.supplyService.getAllSupplies());
+      const uniqueElements = Array.from(new Set(supplies.map(item => item.name)))
+        .sort()
+        .map(elemento => ({ value: elemento, viewValue: elemento }));
+
+      if (uniqueElements.length === 0) {
+        this.snackBar.open('No hay elementos en el inventario', '', { duration: 3000 });
+        return;
+      }
+
+      // Mostrar diálogo de selección
+      const selectedElement = await this.showElementSelectionDialog(uniqueElements);
+      
+      if (selectedElement) {
+        this.snackBar.open(`Generando reporte para ${selectedElement}...`, '', { duration: 2000 });
+
+        const response = await firstValueFrom(
+          this.http.get<any>(`/api/delivery/element/${encodeURIComponent(selectedElement)}/pdf-data`)
+        );
+
+        await this.pdfReportService.generateSingleElementReport(
+          response.elemento,
+          response.deliveries
+        );
+
+        this.snackBar.open('✅ Reporte de elemento generado exitosamente', '', { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error generando reporte del elemento:', error);
+      this.snackBar.open('❌ Error al generar el reporte del elemento', '', { duration: 5000 });
+    }
+  }
+
+  /**
+   * 3. Reporte Individual de Asociado
+   * Todo lo que ha recibido un asociado específico (fechas, elementos, cantidades, observaciones)
+   */
+  async downloadAssociateReport(): Promise<void> {
+    try {
+      const users = this.usersService.getUsers();
+      
+      if (users.length === 0) {
+        this.snackBar.open('No hay asociados registrados', '', { duration: 3000 });
+        return;
+      }
+
+      // Mostrar diálogo de selección de asociado
+      const selectedUser = await this.showAssociateSelectionDialog(users);
+      
+      if (selectedUser) {
+        this.snackBar.open(`Generando reporte para ${selectedUser.nombre} ${selectedUser.apellido}...`, '', { duration: 2000 });
+
+        const response = await firstValueFrom(
+          this.http.get<any>(`/api/delivery/associate/${selectedUser.id}/pdf-data`)
+        );
+
+        await this.pdfReportService.generateAssociateDeliveryReport(
+          `${response.associate.nombre} ${response.associate.apellido}`,
+          response.associate.cedula,
+          response.deliveries
+        );
+
+        this.snackBar.open('✅ Reporte de asociado generado exitosamente', '', { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error generando reporte del asociado:', error);
+      this.snackBar.open('❌ Error al generar el reporte del asociado', '', { duration: 5000 });
+    }
+  }
+
+  // ========================= MÉTODOS AUXILIARES =========================
+
+  private showElementSelectionDialog(elements: { value: string, viewValue: string }[]): Promise<string | null> {
+    return new Promise((resolve) => {
+      const elementsList = elements.map((el, index) => `${index + 1}. ${el.value}`).join('\n');
+      const userInput = prompt(`📋 SELECCIONE ELEMENTO PARA REPORTE\n\n${elementsList}\n\nIngrese el número del elemento:`);
+      
+      if (userInput) {
+        const selectedIndex = parseInt(userInput) - 1;
+        if (selectedIndex >= 0 && selectedIndex < elements.length) {
+          resolve(elements[selectedIndex].value);
+        } else {
+          alert('❌ Número inválido. Por favor intente de nuevo.');
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  private showAssociateSelectionDialog(users: any[]): Promise<any | null> {
+    return new Promise((resolve) => {
+      const usersList = users.map((user, index) => 
+        `${index + 1}. ${user.nombre} ${user.apellido} (${user.cedula})`
+      ).join('\n');
+      
+      const userInput = prompt(`👥 SELECCIONE ASOCIADO PARA REPORTE\n\n${usersList}\n\nIngrese el número del asociado:`);
+      
+      if (userInput) {
+        const selectedIndex = parseInt(userInput) - 1;
+        if (selectedIndex >= 0 && selectedIndex < users.length) {
+          resolve(users[selectedIndex]);
+        } else {
+          alert('❌ Número inválido. Por favor intente de nuevo.');
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
   }
 }

@@ -217,5 +217,96 @@
         </mat-card-content>
       </mat-card>
     </div>
+
+    <!-- Sección de Reportes PDF -->
+    <div class="reports-section">
+      <mat-card class="reports-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>picture_as_pdf</mat-icon>
+            Generación de Reportes PDF
+          </mat-card-title>
+          <mat-card-subtitle>
+            Descarga reportes detallados del sistema de dotaciones
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="reports-grid">
+            <!-- Reporte General por Elementos -->
+            <div class="report-option">
+              <div class="report-icon">
+                <mat-icon color="primary">summarize</mat-icon>
+              </div>
+              <div class="report-info">
+                <h4>Reporte General por Elementos</h4>
+                <p>Lista completa de todos los elementos entregados con totales y detalles de cada entrega</p>
+                <ul class="report-details">
+                  <li>• Lista de todos los elementos entregados</li>
+                  <li>• Total de cantidades por elemento</li>
+                  <li>• Detalles: fecha, asociado, cantidad</li>
+                </ul>
+              </div>
+              <button mat-raised-button 
+                      color="primary" 
+                      (click)="downloadGeneralElementsReport()"
+                      class="report-button">
+                <mat-icon>file_download</mat-icon>
+                Generar PDF
+              </button>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Reporte por Elemento Específico -->
+            <div class="report-option">
+              <div class="report-icon">
+                <mat-icon color="accent">filter_list</mat-icon>
+              </div>
+              <div class="report-info">
+                <h4>Reporte por Elemento Específico</h4>
+                <p>Historial completo de entregas de un elemento particular seleccionado</p>
+                <ul class="report-details">
+                  <li>• Historial completo del elemento</li>
+                  <li>• Quién lo recibió y cuándo</li>
+                  <li>• Cantidades entregadas por fecha</li>
+                </ul>
+              </div>
+              <button mat-raised-button 
+                      color="accent" 
+                      (click)="downloadSpecificElementReport()"
+                      class="report-button">
+                <mat-icon>file_download</mat-icon>
+                Seleccionar y Generar
+              </button>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Reporte Individual de Asociado -->
+            <div class="report-option">
+              <div class="report-icon">
+                <mat-icon color="warn">person</mat-icon>
+              </div>
+              <div class="report-info">
+                <h4>Reporte Individual de Asociado</h4>
+                <p>Historial completo de dotaciones recibidas por un asociado específico</p>
+                <ul class="report-details">
+                  <li>• Todo lo recibido por el asociado</li>
+                  <li>• Fechas, elementos y cantidades</li>
+                  <li>• Observaciones de cada entrega</li>
+                </ul>
+              </div>
+              <button mat-raised-button 
+                      color="warn" 
+                      (click)="downloadAssociateReport()"
+                      class="report-button">
+                <mat-icon>file_download</mat-icon>
+                Seleccionar y Generar
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
   </div>
 </div>

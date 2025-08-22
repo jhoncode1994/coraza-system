@@ -644,18 +644,33 @@ export class UsersComponent implements OnInit {
       // Mostrar mensaje de carga
       this.snackBar.open('Generando reporte general...', '', { duration: 2000 });
 
+      console.log('Solicitando datos para reporte general...');
+      
       // Obtener datos del backend
       const elementsSummary = await firstValueFrom(
         this.http.get<any[]>('/api/delivery/elements-summary/pdf-data')
       );
+
+      console.log('Datos recibidos del backend:', elementsSummary);
+
+      if (!elementsSummary || elementsSummary.length === 0) {
+        this.snackBar.open('No hay datos de entregas para generar el reporte', '', { duration: 3000 });
+        return;
+      }
 
       // Generar PDF
       await this.pdfReportService.generateElementSummaryReport(elementsSummary);
 
       this.snackBar.open('Reporte general generado exitosamente', '', { duration: 3000 });
     } catch (error) {
-      console.error('Error generando reporte general:', error);
-      this.snackBar.open('Error al generar el reporte general', '', { duration: 3000 });
+      console.error('Error detallado generando reporte general:', error);
+      
+      let errorMessage = 'Error al generar el reporte general';
+      if (error instanceof Error) {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      this.snackBar.open(errorMessage, '', { duration: 5000 });
     }
   }
 }
