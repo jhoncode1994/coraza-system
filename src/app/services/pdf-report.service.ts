@@ -15,6 +15,7 @@ export interface ElementSummary {
   entregas: DeliveryRecord[];
 }
 
+// Importar dinámicamente jsPDF
 declare global {
   interface Window {
     jsPDF: any;
@@ -34,6 +35,33 @@ export class PdfReportService {
   private async loadPdfLibraries(): Promise<any> {
     console.log('🔄 Iniciando carga de librerías PDF...');
     
+    try {
+      // Intentar importar desde node_modules primero
+      console.log('📦 Intentando cargar jsPDF desde node_modules...');
+      
+      const jsPDFModule = await import('jspdf');
+      const autoTableModule = await import('jspdf-autotable');
+      
+      const jsPDF = jsPDFModule.default || jsPDFModule;
+      
+      if (jsPDF) {
+        console.log('✅ jsPDF cargado desde node_modules');
+        return jsPDF;
+      }
+    } catch (importError) {
+      console.warn('⚠️ No se pudo cargar desde node_modules, intentando CDN...', importError);
+      
+      // Fallback a CDN si no funciona la importación
+      return this.loadFromCDN();
+    }
+    
+    throw new Error('No se pudieron cargar las librerías de PDF. Esta funcionalidad no está disponible.');
+  }
+
+  /**
+   * Método fallback para cargar desde CDN
+   */
+  private async loadFromCDN(): Promise<any> {
     // Verificar si jsPDF ya está disponible globalmente
     if (typeof window !== 'undefined' && (window as any).jsPDF) {
       console.log('✅ jsPDF ya está disponible globalmente');
@@ -44,26 +72,41 @@ export class PdfReportService {
     if (typeof window !== 'undefined') {
       try {
         console.log('📦 Cargando jsPDF desde CDN...');
-        // Cargar jsPDF desde CDN
+        
+        // Cargar jsPDF con timeout más generoso
         await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
         
+        // Esperar un poco para que se procese completamente
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         console.log('📦 Cargando jspdf-autotable desde CDN...');
-        // Cargar jspdf-autotable desde CDN
         await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js');
         
+        // Esperar otro poco para procesar autotable
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Intentar diferentes formas de acceder a jsPDF
+        console.log('🔍 Verificando disponibilidad de jsPDF...');
+        console.log('window.jsPDF:', typeof (window as any).jsPDF);
+        console.log('window.jspdf:', typeof (window as any).jspdf);
+        console.log('window.window?.jsPDF:', typeof (window as any).window?.jsPDF);
+        
         // Verificar que se cargó correctamente
-        if ((window as any).jsPDF) {
+        let jsPDFConstructor = (window as any).jsPDF || (window as any).jspdf;
+        
+        if (jsPDFConstructor) {
           console.log('✅ Librerías PDF cargadas exitosamente desde CDN');
-          return (window as any).jsPDF;
+          return jsPDFConstructor;
         } else {
           console.error('❌ jsPDF no está disponible después de cargar scripts');
+          console.log('Propiedades disponibles en window:', Object.keys(window).filter(k => k.toLowerCase().includes('pdf')));
         }
       } catch (error) {
         console.error('❌ Error loading PDF libraries from CDN:', error);
       }
     }
     
-    throw new Error('No se pudieron cargar las librerías de PDF. Esta funcionalidad no está disponible.');
+    throw new Error('No se pudieron cargar las librerías de PDF desde CDN.');
   }
 
   /**
@@ -76,10 +119,36 @@ export class PdfReportService {
         return;
       }
 
+      // Verificar si el script ya existe
+      const existingScript = document.querySelector(`script[src="${src}"]`);
+      if (existingScript) {
+        console.log(`Script ya existe: ${src}`);
+        resolve();
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = src;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      
+      // Timeout de 10 segundos
+      const timeout = setTimeout(() => {
+        reject(new Error(`Timeout loading script: ${src}`));
+      }, 10000);
+      
+      script.onload = () => {
+        clearTimeout(timeout);
+        console.log(`✅ Script cargado: ${src}`);
+        resolve();
+      };
+      
+      script.onerror = (error) => {
+        clearTimeout(timeout);
+        console.error(`❌ Error cargando script: ${src}`, error);
+        reject(new Error(`Failed to load script: ${src}`));
+      };
+      
       document.head.appendChild(script);
     });
   }
