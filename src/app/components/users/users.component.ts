@@ -28,7 +28,6 @@ import { UsersService } from './users.service';
 import { HistoryDialogComponent } from './history-dialog.component';
 import { EntregaDotacionDialogComponent, EntregaDotacion } from './entrega-dotacion-dialog.component';
 import { EntregaDotacionService } from '../../services/entrega-dotacion.service';
-import { PdfReportService } from '../../services/pdf-report.service';
 import { HttpClient } from '@angular/common/http';
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
 import { RetiredAssociatesService } from '../../services/retired-associates.service';
@@ -142,7 +141,6 @@ export class UsersComponent implements OnInit {
     private entregaDotacionService: EntregaDotacionService,
     private supplyInventoryService: SupplyInventoryService,
     private retiredAssociatesService: RetiredAssociatesService,
-    private pdfReportService: PdfReportService,
     private http: HttpClient
   ) {
     // Configurar el adaptador de fechas para usar el formato español
@@ -528,33 +526,6 @@ export class UsersComponent implements OnInit {
   clearSearch(): void {
     this.searchTerm = '';
     this.filteredUsers = this.users;
-  }
-
-  /**
-   * Descarga el historial de entregas de un asociado específico en PDF
-   */
-  async downloadAssociatePDF(user: User): Promise<void> {
-    try {
-      // Mostrar mensaje de carga
-      this.snackBar.open('Generando PDF...', '', { duration: 2000 });
-
-      // Obtener datos del backend
-      const response = await firstValueFrom(
-        this.http.get<any>(`/api/delivery/associate/${user.id}/pdf-data`)
-      );
-
-      // Generar PDF
-      await this.pdfReportService.generateAssociateDeliveryReport(
-        response.associate.nombre,
-        response.associate.cedula,
-        response.deliveries
-      );
-
-      this.snackBar.open('PDF generado exitosamente', '', { duration: 3000 });
-    } catch (error) {
-      console.error('Error generando PDF del asociado:', error);
-      this.snackBar.open('Error al generar el PDF', '', { duration: 3000 });
-    }
   }
 
 }
