@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { getApiBaseUrl } from '../config/api.config';
 
 export interface InventoryMovement {
   id?: number;
@@ -29,7 +30,7 @@ export interface InventoryMovementCreate {
   providedIn: 'root'
 })
 export class InventoryMovementsService {
-  private apiUrl = '/api/inventory-movements';
+  private apiUrl = `${getApiBaseUrl()}/inventory-movements`;
   
   private movementsSubject = new BehaviorSubject<InventoryMovement[]>([]);
   public movements$ = this.movementsSubject.asObservable();

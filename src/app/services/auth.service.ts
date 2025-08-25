@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map } from 'rxjs/operators';
+import { getApiBaseUrl } from '../config/api.config';
 
 export interface User {
   id: number;
@@ -24,7 +25,7 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   
-  private readonly baseUrl = 'http://localhost:3000/api';
+  private readonly baseUrl = getApiBaseUrl();
   
   constructor(
     private router: Router,

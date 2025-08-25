@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, switchMap } from 'rxjs';
 import { SupplyItem } from '../interfaces/supply-item.interface';
+import { getApiBaseUrl } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SupplyInventoryService {
-  private apiUrl = '/api/supply-inventory';
+  private apiUrl = `${getApiBaseUrl()}/supply-inventory`;
   
   constructor(private http: HttpClient) {}
 

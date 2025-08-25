@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from '../config/api.config';
 
 @Injectable({ providedIn: 'root' })
 export class SupplyHistoryService {
-  private apiUrl = 'https://renderdesboard.onrender.com/api/associates';
+  private apiUrl = `${getApiBaseUrl()}/associates`;
 
   constructor(private http: HttpClient) {}
 

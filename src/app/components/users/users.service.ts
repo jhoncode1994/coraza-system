@@ -2,13 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, finalize, map, tap, throwError } from 'rxjs';
 import { User } from './users.component';
+import { getApiBaseUrl } from '../../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsersService {
   // URL de la API - Configúrala según tu entorno
-  private apiUrl = '/api/users'; // Esto usará la URL base del navegador + /api/users
+  private apiUrl = `${getApiBaseUrl()}/users`;
   
   // Fuente de datos de usuarios con BehaviorSubject para permitir emisión de cambios
   private usersSubject = new BehaviorSubject<User[]>([]);

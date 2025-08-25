@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { getApiBaseUrl } from '../config/api.config';
 
 export interface EntregaHistorial {
   id: number;
@@ -19,7 +20,7 @@ export interface EntregaHistorial {
   providedIn: 'root'
 })
 export class EntregaDotacionService {
-  private apiUrl = 'https://coraza-system.onrender.com/api';
+  private apiUrl = getApiBaseUrl();
   private entregas: EntregaHistorial[] = [];
   private entregasSubject = new BehaviorSubject<EntregaHistorial[]>([]);
 

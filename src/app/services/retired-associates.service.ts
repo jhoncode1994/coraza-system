@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from '../config/api.config';
 
 export interface RetiredAssociate {
   id?: number;
@@ -33,7 +34,7 @@ export interface RetiredSupplyHistory {
   providedIn: 'root'
 })
 export class RetiredAssociatesService {
-  private apiUrl = 'https://coraza-system.onrender.com/api';
+  private apiUrl = getApiBaseUrl();
 
   constructor(private http: HttpClient) {}
 
