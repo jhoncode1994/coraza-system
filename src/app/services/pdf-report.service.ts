@@ -573,16 +573,25 @@ export class PdfReportService {
     const colWidths = [35, 50, 30, 25, 50];
     let currentY = startY;
     
-    // Dibujar encabezados
+    // Dibujar encabezados con mejor manejo de colores
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.setFillColor(44, 62, 80);
-    doc.setTextColor(255, 255, 255);
     
     let currentX = 20;
     headers.forEach((header, index) => {
+      // Fondo del encabezado
+      doc.setFillColor(44, 62, 80); // Azul oscuro
       doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+      
+      // Texto del encabezado
+      doc.setTextColor(255, 255, 255); // Texto blanco
       doc.text(header, currentX + 2, currentY + 5);
+      
+      // Borde del encabezado
+      doc.setDrawColor(100, 100, 100);
+      doc.setLineWidth(0.1);
+      doc.rect(currentX, currentY, colWidths[index], rowHeight, 'S');
+      
       currentX += colWidths[index];
     });
     
@@ -590,7 +599,7 @@ export class PdfReportService {
     
     // Dibujar filas de datos
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(0, 0, 0); // Asegurar texto negro para las filas
     
     deliveries.forEach((delivery, rowIndex) => {
       const rowData = [
@@ -601,16 +610,24 @@ export class PdfReportService {
         delivery.observaciones || '-'
       ];
       
-      // Alternar colores de fila
+      // Definir color de fondo para toda la fila
+      let rowFillColor: [number, number, number];
       if (rowIndex % 2 === 0) {
-        doc.setFillColor(245, 245, 245);
+        rowFillColor = [250, 250, 250]; // Gris muy claro
       } else {
-        doc.setFillColor(255, 255, 255);
+        rowFillColor = [255, 255, 255]; // Blanco
       }
       
       currentX = 20;
       rowData.forEach((data, colIndex) => {
+        // Establecer el color de fondo correcto para esta celda
+        doc.setFillColor(rowFillColor[0], rowFillColor[1], rowFillColor[2]);
+        
+        // Dibujar fondo de celda con el color correcto
         doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'F');
+        
+        // Establecer color de texto negro para esta celda
+        doc.setTextColor(0, 0, 0);
         
         // Truncar texto si es muy largo
         let text = data.toString();
@@ -618,7 +635,17 @@ export class PdfReportService {
           text = text.substring(0, 9) + '...';
         }
         
+        // Escribir texto
         doc.text(text, currentX + 2, currentY + 5);
+        currentX += colWidths[colIndex];
+      });
+      
+      // Dibujar bordes de las celdas
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.1);
+      currentX = 20;
+      rowData.forEach((_, colIndex) => {
+        doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'S');
         currentX += colWidths[colIndex];
       });
       
@@ -629,15 +656,24 @@ export class PdfReportService {
         doc.addPage();
         currentY = 20;
         
-        // Redibujar encabezados en nueva página
+        // Redibujar encabezados en nueva página con estilo correcto
         doc.setFont('helvetica', 'bold');
-        doc.setFillColor(44, 62, 80);
-        doc.setTextColor(255, 255, 255);
         
         currentX = 20;
         headers.forEach((header, index) => {
+          // Fondo del encabezado
+          doc.setFillColor(44, 62, 80); // Azul oscuro
           doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+          
+          // Texto del encabezado
+          doc.setTextColor(255, 255, 255); // Texto blanco
           doc.text(header, currentX + 2, currentY + 5);
+          
+          // Borde del encabezado
+          doc.setDrawColor(100, 100, 100);
+          doc.setLineWidth(0.1);
+          doc.rect(currentX, currentY, colWidths[index], rowHeight, 'S');
+          
           currentX += colWidths[index];
         });
         
