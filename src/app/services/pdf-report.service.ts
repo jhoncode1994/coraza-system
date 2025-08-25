@@ -162,7 +162,25 @@ export class PdfReportService {
         console.log('- jsPDF tipo:', typeof finalJsPDF);
         console.log('- jsPDF.version:', finalJsPDF.version || 'no disponible');
         console.log('- AutoTable disponible:', typeof finalJsPDF.autoTable);
-        return finalJsPDF;
+        
+        // Diagnóstico detallado del objeto jsPDF
+        console.log('🔍 Diagnóstico detallado del objeto jsPDF:');
+        console.log('- Es función constructora:', typeof finalJsPDF === 'function');
+        console.log('- Propiedades disponibles:', Object.keys(finalJsPDF));
+        console.log('- finalJsPDF.jsPDF:', typeof finalJsPDF.jsPDF);
+        console.log('- finalJsPDF.default:', typeof finalJsPDF.default);
+        
+        // Si es un objeto que contiene la clase, extraerla
+        let actualJsPDF = finalJsPDF;
+        if (typeof finalJsPDF === 'object' && finalJsPDF.jsPDF) {
+          actualJsPDF = finalJsPDF.jsPDF;
+          console.log('📦 Encontrada clase jsPDF dentro del objeto, tipo:', typeof actualJsPDF);
+        } else if (typeof finalJsPDF === 'object' && finalJsPDF.default) {
+          actualJsPDF = finalJsPDF.default;
+          console.log('📦 Encontrada clase default dentro del objeto, tipo:', typeof actualJsPDF);
+        }
+        
+        return actualJsPDF;
       } else {
         // Diagnóstico completo
         console.error('❌ Diagnóstico completo:');
