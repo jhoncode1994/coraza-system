@@ -157,33 +157,30 @@
 }
 
 /* Sección demo */
-.demo-section {
-  background: #f8f9fa;
+.security-section {
+  background: #f0f8ff;
   padding: 16px 24px !important;
   text-align: center;
+  border-left: 4px solid #1976d2;
 }
 
-.demo-title {
+.security-title {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   margin: 0 0 12px 0;
-  color: #666;
+  color: #1976d2;
   font-weight: 500;
 }
 
-.demo-credentials {
+.security-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
+  gap: 6px;
   font-size: 0.9rem;
-  color: #555;
-}
-
-.demo-button {
-  font-size: 0.9rem;
+  color: #333;
+  text-align: left;
 }
 
 /* Información del sistema */

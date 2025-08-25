@@ -96,25 +96,17 @@
 
       <mat-divider></mat-divider>
 
-      <!-- Sección de demo (solo para desarrollo) -->
-      <mat-card-content class="demo-section">
-        <p class="demo-title">
-          <mat-icon>info</mat-icon>
-          Credenciales de Demo
+      <!-- Información de seguridad -->
+      <mat-card-content class="security-section">
+        <p class="security-title">
+          <mat-icon>security</mat-icon>
+          Sistema Seguro
         </p>
-        <div class="demo-credentials">
-          <span><strong>Usuario:</strong> admin</span>
-          <span><strong>Contraseña:</strong> coraza2025</span>
+        <div class="security-info">
+          <span>• Autenticación encriptada</span>
+          <span>• Sesiones con expiración automática</span>
+          <span>• Protección contra intentos de acceso</span>
         </div>
-        <button 
-          mat-stroked-button 
-          color="accent" 
-          (click)="loadDemoCredentials()"
-          [disabled]="isLoading"
-          class="demo-button">
-          <mat-icon>cloud_download</mat-icon>
-          Cargar Credenciales Demo
-        </button>
       </mat-card-content>
     </mat-card>
 

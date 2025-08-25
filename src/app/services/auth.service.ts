@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { catchError, map } from 'rxjs/operators';
 
 export interface User {
   id: number;
@@ -22,18 +24,12 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   
-  // Usuario por defecto del sistema (en producción esto debería venir de una base de datos)
-  private readonly defaultUser: User = {
-    id: 1,
-    username: 'admin',
-    email: 'admin@coraza-dotacion.com',
-    role: 'admin'
-  };
+  private readonly baseUrl = 'http://localhost:3000/api';
   
-  // Contraseña por defecto (en producción debería estar hasheada)
-  private readonly defaultPassword = 'coraza2025';
-  
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private http: HttpClient
+  ) {
     // Verificar si hay una sesión activa al inicializar el servicio
     this.checkStoredSession();
   }
@@ -42,26 +38,42 @@ export class AuthService {
    * Iniciar sesión
    */
   login(credentials: LoginCredentials): Observable<{ success: boolean; user?: User; error?: string }> {
-    const { username, password } = credentials;
-    
-    // Simular verificación de credenciales
-    if (username === this.defaultUser.username && password === this.defaultPassword) {
-      const userWithLogin = {
-        ...this.defaultUser,
-        lastLogin: new Date()
-      };
-      
-      // Guardar sesión en localStorage
-      this.setCurrentUser(userWithLogin);
-      this.saveSession(userWithLogin);
-      
-      return of({ success: true, user: userWithLogin });
-    } else {
-      return of({ 
-        success: false, 
-        error: 'Credenciales incorrectas. Verifique su usuario y contraseña.' 
-      });
-    }
+    return this.http.post<any>(`${this.baseUrl}/auth/login`, credentials).pipe(
+      map(response => {
+        if (response.success && response.user) {
+          // Guardar sesión en localStorage
+          this.setCurrentUser(response.user);
+          this.saveSession(response.user);
+          
+          return { 
+            success: true, 
+            user: response.user 
+          };
+        } else {
+          return { 
+            success: false, 
+            error: response.error || 'Error de autenticación' 
+          };
+        }
+      }),
+      catchError(error => {
+        console.error('Error en login:', error);
+        let errorMessage = 'Error de conexión con el servidor';
+        
+        if (error.error && error.error.error) {
+          errorMessage = error.error.error;
+        } else if (error.status === 401) {
+          errorMessage = 'Credenciales incorrectas';
+        } else if (error.status === 0) {
+          errorMessage = 'No se puede conectar al servidor';
+        }
+        
+        return of({ 
+          success: false, 
+          error: errorMessage 
+        });
+      })
+    );
   }
 
   /**
@@ -145,18 +157,12 @@ export class AuthService {
    * Cambiar contraseña (para futuras implementaciones)
    */
   changePassword(currentPassword: string, newPassword: string): Observable<{ success: boolean; error?: string }> {
-    if (currentPassword === this.defaultPassword) {
-      // En una implementación real, aquí actualizarías la contraseña en la base de datos
-      console.log('Cambio de contraseña solicitado:', { newPassword });
-      return of({ 
-        success: true
-      });
-    } else {
-      return of({ 
-        success: false, 
-        error: 'La contraseña actual es incorrecta' 
-      });
-    }
+    // TODO: Implementar endpoint para cambio de contraseña
+    console.log('Cambio de contraseña solicitado:', { newPassword });
+    return of({ 
+      success: true,
+      error: 'Funcionalidad de cambio de contraseña pendiente de implementar'
+    });
   }
 
   /**

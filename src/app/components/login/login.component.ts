@@ -107,18 +107,6 @@ export class LoginComponent implements OnInit {
     );
   }
 
-  loadDemoCredentials() {
-    this.loginForm.patchValue({
-      username: 'admin',
-      password: 'coraza2025'
-    });
-    
-    this.snackBar.open('Credenciales de demo cargadas', 'Cerrar', {
-      duration: 3000,
-      panelClass: ['info-snackbar']
-    });
-  }
-
   private markFormGroupTouched() {
     Object.keys(this.loginForm.controls).forEach(key => {
       const control = this.loginForm.get(key);

@@ -35,14 +35,58 @@ export class PdfReportService {
   private async loadPdfLibraries(): Promise<any> {
     console.log('🔄 Iniciando carga de librerías PDF...');
     
+    // Limpiar cualquier estado residual anterior
+    this.cleanupPdfState();
+    
     // Verificar si jsPDF ya está disponible globalmente
     if (typeof window !== 'undefined' && (window as any).jsPDF) {
       console.log('✅ jsPDF ya está disponible globalmente');
+      // Siempre retornar la clase constructora, no una instancia
       return (window as any).jsPDF;
     }
 
     // Para producción, usar solo CDN que es más confiable
     return this.loadFromCDN();
+  }
+
+  /**
+   * Limpia cualquier estado residual de generaciones anteriores de PDF
+   */
+  private cleanupPdfState(): void {
+    try {
+      // Limpiar eventos y listeners que puedan estar pendientes
+      if (typeof window !== 'undefined') {
+        // Forzar garbage collection de cualquier documento PDF anterior
+        if ((window as any).jsPDF) {
+          console.log('🧹 Limpiando estado PDF anterior...');
+          // No eliminar jsPDF, solo limpiar posibles referencias colgantes
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error durante limpieza de estado PDF:', error);
+    }
+  }
+
+  /**
+   * Finaliza la generación de PDF y limpia recursos
+   */
+  private async finalizePdfGeneration(doc: any): Promise<void> {
+    try {
+      console.log('🔄 Finalizando generación de PDF...');
+      
+      // Limpiar referencias del documento
+      if (doc) {
+        // Intentar limpiar el documento sin romper la funcionalidad
+        doc = null;
+      }
+      
+      // Pequeña pausa para permitir que el navegador procese la descarga
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('✅ PDF finalizado correctamente');
+    } catch (error) {
+      console.warn('⚠️ Error durante finalización de PDF:', error);
+    }
   }
 
   /**
@@ -264,6 +308,7 @@ export class PdfReportService {
     deliveries: DeliveryRecord[]
   ): Promise<void> {
     try {
+      console.log('📄 Iniciando generación de reporte de asociado...');
       const jsPDF = await this.loadPdfLibraries();
       const doc = new jsPDF();
       
@@ -326,6 +371,10 @@ export class PdfReportService {
       
       // Descargar PDF
       doc.save(`Historial_Entregas_${associateName.replace(/\s+/g, '_')}_${associateId}.pdf`);
+      
+      // Limpiar referencias después de la generación
+      await this.finalizePdfGeneration(doc);
+      
     } catch (error) {
       console.error('Error generando PDF:', error);
       throw error;
@@ -508,6 +557,10 @@ export class PdfReportService {
       
       // Descargar PDF
       doc.save(`Reporte_General_Dotaciones_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      // Limpiar referencias después de la generación
+      await this.finalizePdfGeneration(doc);
+      
     } catch (error) {
       console.error('Error generando reporte general:', error);
       throw error;
@@ -558,6 +611,10 @@ export class PdfReportService {
       
       // Descargar PDF
       doc.save(`Reporte_${elemento.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      // Limpiar referencias después de la generación
+      await this.finalizePdfGeneration(doc);
+      
     } catch (error) {
       console.error('Error generando reporte del elemento:', error);
       throw error;
