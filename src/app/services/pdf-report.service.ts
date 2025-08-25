@@ -385,8 +385,10 @@ export class PdfReportService {
         // Dibujar fondo de celda
         doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'F');
         
-        // Asegurar color de texto negro antes de escribir
-        doc.setTextColor(0, 0, 0);
+        // CRÍTICO: Resetear completamente los colores para cada celda
+        doc.setFillColor(255, 255, 255); // Reset a blanco
+        doc.setTextColor(0, 0, 0); // NEGRO para texto - aplicar a TODAS las celdas
+        doc.setDrawColor(0, 0, 0); // Negro para líneas
         
         // Truncar texto si es muy largo
         let text = data.toString();
@@ -394,8 +396,16 @@ export class PdfReportService {
           text = text.substring(0, 12) + '...';
         }
         
-        // Escribir texto
-        doc.text(text, currentX + 2, currentY + 5);
+        // Escribir texto con posición específica según columna
+        const textY = currentY + 5;
+        const textX = currentX + 2;
+        
+        // Log para debug (remover después)
+        if (rowIndex === 0) {
+          console.log(`Columna ${colIndex} (${headers[colIndex]}): escribiendo "${text}" en posición x:${textX}, y:${textY}`);
+        }
+        
+        doc.text(text, textX, textY);
         currentX += colWidths[colIndex];
       });
       
