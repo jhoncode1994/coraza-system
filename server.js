@@ -1,10 +1,27 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const bcrypt = require('bcryptjs');
+// Implementación simple de hash sin dependencias externas
+const crypto = require('crypto');
 
 // Cargar variables de entorno
 require('dotenv').config();
+
+// Funciones de hash simples usando crypto nativo
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedHash) {
+  if (!storedHash) return false;
+  const [salt, hash] = storedHash.split(':');
+  if (!salt || !hash) return false;
+  
+  const verifyHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return hash === verifyHash;
+}
 
 const app = express();
 
@@ -56,8 +73,7 @@ async function initializeAdminUsers(client) {
       
       // Hash de la contraseña por defecto
       const defaultPassword = 'coraza2025';
-      const saltRounds = 12;
-      const passwordHash = await bcrypt.hash(defaultPassword, saltRounds);
+      const passwordHash = hashPassword(defaultPassword);
       
       // Insertar usuario admin por defecto
       await client.query(`
@@ -179,7 +195,7 @@ async function validateCredentials(username, password) {
     }
     
     // Validar contraseña
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    const passwordMatch = verifyPassword(password, user.password_hash);
     
     if (passwordMatch) {
       // Login exitoso - actualizar last_login y resetear intentos fallidos
