@@ -4,8 +4,14 @@ const cors = require('cors');
 // Implementación simple de hash sin dependencias externas
 const crypto = require('crypto');
 
-// Cargar variables de entorno
-require('dotenv').config();
+// Cargar variables de entorno (sin dotenv en producción)
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    console.log('dotenv no disponible, usando variables de entorno del sistema');
+  }
+}
 
 // Funciones de hash simples usando crypto nativo
 function hashPassword(password) {
