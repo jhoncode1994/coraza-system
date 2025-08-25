@@ -98,6 +98,11 @@ export class PdfReportService {
           if (jsPDFCheck) {
             console.log(`✅ jsPDF cargado exitosamente desde: ${url}`);
             console.log('Tipo de jsPDF:', typeof jsPDFCheck);
+            // Normalizar acceso - asegurar que esté disponible como jsPDF
+            if (!(window as any).jsPDF && (window as any).jspdf) {
+              (window as any).jsPDF = (window as any).jspdf;
+              console.log('🔧 Normalizando acceso: jspdf -> jsPDF');
+            }
             jsPDFLoaded = true;
             break;
           } else {
@@ -139,7 +144,19 @@ export class PdfReportService {
       }
       
       // Verificación final
-      const finalJsPDF = (window as any).jsPDF;
+      let finalJsPDF = (window as any).jsPDF || (window as any).jspdf;
+      
+      // Asegurar que esté disponible como jsPDF para compatibilidad
+      if (!finalJsPDF) {
+        throw new Error('jsPDF no está disponible después de cargar todos los scripts');
+      }
+      
+      if (!(window as any).jsPDF && (window as any).jspdf) {
+        (window as any).jsPDF = (window as any).jspdf;
+        finalJsPDF = (window as any).jsPDF;
+        console.log('🔧 Normalizando acceso global: jspdf -> jsPDF');
+      }
+      
       if (finalJsPDF) {
         console.log('🎉 Verificación final exitosa:');
         console.log('- jsPDF tipo:', typeof finalJsPDF);
