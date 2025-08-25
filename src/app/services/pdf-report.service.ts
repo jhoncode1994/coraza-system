@@ -373,22 +373,24 @@ export class PdfReportService {
         delivery.observaciones || '-'
       ];
       
-      // Alternar colores de fila (fondos claros)
+      // Definir color de fondo para toda la fila
+      let rowFillColor: [number, number, number];
       if (rowIndex % 2 === 0) {
-        doc.setFillColor(250, 250, 250); // Gris muy claro
+        rowFillColor = [250, 250, 250]; // Gris muy claro
       } else {
-        doc.setFillColor(255, 255, 255); // Blanco
+        rowFillColor = [255, 255, 255]; // Blanco
       }
       
       currentX = 20;
       rowData.forEach((data, colIndex) => {
-        // Dibujar fondo de celda
+        // Establecer el color de fondo correcto para esta celda
+        doc.setFillColor(rowFillColor[0], rowFillColor[1], rowFillColor[2]);
+        
+        // Dibujar fondo de celda con el color correcto
         doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'F');
         
-        // CRÍTICO: Resetear completamente los colores para cada celda
-        doc.setFillColor(255, 255, 255); // Reset a blanco
-        doc.setTextColor(0, 0, 0); // NEGRO para texto - aplicar a TODAS las celdas
-        doc.setDrawColor(0, 0, 0); // Negro para líneas
+        // Establecer color de texto negro para esta celda
+        doc.setTextColor(0, 0, 0);
         
         // Truncar texto si es muy largo
         let text = data.toString();
