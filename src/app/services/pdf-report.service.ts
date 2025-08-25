@@ -278,8 +278,12 @@ export class PdfReportService {
       // Información del asociado
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Asociado: ${associateName}`, 20, 35);
-      doc.text(`Cédula: ${associateId}`, 20, 45);
+      
+      // Limpiar el nombre del asociado eliminando "undefined"
+      const cleanAssociateName = associateName ? associateName.replace(/undefined/g, '').replace(/\s+/g, ' ').trim() : 'Sin nombre';
+      
+      doc.text(`Asociado: ${cleanAssociateName}`, 20, 35);
+      doc.text(`Cédula: ${associateId || 'Sin cédula'}`, 20, 45);
       doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, 55);
       
       // Línea separadora
