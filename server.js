@@ -4,8 +4,9 @@ const cors = require('cors');
 // Implementación simple de hash sin dependencias externas
 const crypto = require('crypto');
 
-// Coraza System - Server v1.0.1
+// Coraza System - Server v1.0.2 - Railway Deploy
 console.log('🚀 Iniciando Coraza System Server...');
+console.log('📡 Desplegando en Railway...');
 
 // Cargar variables de entorno (sin dotenv en producción)
 if (process.env.NODE_ENV !== 'production') {
