@@ -61,15 +61,15 @@
 }
 
 .system-logo {
-  font-size: 72px;
   width: 72px;
   height: 72px;
-  color: white;
+  object-fit: contain;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   padding: 16px;
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
 }
 
 .system-header h1 {
@@ -245,10 +245,10 @@
   }
   
   .system-logo {
-    font-size: 56px;
     width: 56px;
     height: 56px;
     padding: 12px;
+    box-sizing: border-box;
   }
   
   .login-card {
