@@ -43,10 +43,32 @@ app.use(express.json());
 const { Pool } = require('pg');
 
 // Database configuration using environment variables
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+console.log('🔍 Variables de entorno detectadas:');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Configurado' : 'No configurado');
+console.log('PGHOST:', process.env.PGHOST || 'No configurado');
+console.log('PGDATABASE:', process.env.PGDATABASE || 'No configurado');
+console.log('PGUSER:', process.env.PGUSER || 'No configurado');
+
+const dbConfig = process.env.DATABASE_URL 
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    }
+  : {
+      host: process.env.PGHOST,
+      database: process.env.PGDATABASE,
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      port: process.env.PGPORT || 5432,
+      ssl: { rejectUnauthorized: false }
+    };
+
+console.log('🔗 Configuración de base de datos:', {
+  ...dbConfig,
+  password: dbConfig.password ? '***' : 'No configurada'
 });
+
+const pool = new Pool(dbConfig);
 
 // Initialize admin users table and default user
 async function initializeAdminUsers(client) {
