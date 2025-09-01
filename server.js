@@ -4,6 +4,9 @@ const cors = require('cors');
 // Implementación simple de hash sin dependencias externas
 const crypto = require('crypto');
 
+// Coraza System - Server v1.0.1
+console.log('🚀 Iniciando Coraza System Server...');
+
 // Cargar variables de entorno (sin dotenv en producción)
 if (process.env.NODE_ENV !== 'production') {
   try {
