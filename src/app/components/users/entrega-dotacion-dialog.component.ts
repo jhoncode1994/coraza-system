@@ -298,7 +298,9 @@ export class EntregaDotacionDialogComponent implements OnInit {
     { name: 'overol', code: 'OVE' },
     { name: 'reata', code: 'REA' },
     { name: 'goleana', code: 'GOL' },
-    { name: 'moña', code: 'MOÑ' }
+    { name: 'moña', code: 'MOÑ' },
+    { name: 'carnet', code: 'CAR' },
+    { name: 'cinta', code: 'CIN' }
   ];
 
   constructor(
