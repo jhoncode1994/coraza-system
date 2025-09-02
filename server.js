@@ -458,6 +458,7 @@ app.get('/api/users', async (req, res) => {
       apellido: user.apellido,
       cedula: user.cedula,
       zona: user.zona,
+      cargo: user.cargo,
       fechaIngreso: user.fecha_ingreso,
       createdAt: user.created_at,
       updatedAt: user.updated_at
@@ -610,7 +611,7 @@ app.post('/api/users', async (req, res) => {
     console.log('Body type:', typeof req.body);
     console.log('Content-Type:', req.headers['content-type']);
     
-    const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
+    const { nombre, apellido, cedula, zona, fechaIngreso, cargo } = req.body;
     
     // Validar que todos los campos requeridos estén presentes
     if (!nombre || !apellido || !cedula || zona === undefined || zona === null || !fechaIngreso) {
@@ -668,8 +669,8 @@ app.post('/api/users', async (req, res) => {
     
     const client = await pool.connect();
     const result = await client.query(
-      'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [nombre, apellido, cedula, zonaInt, fechaFormatted]
+      'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso, cargo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [nombre, apellido, cedula, zonaInt, fechaFormatted, cargo]
     );
     client.release();
     
@@ -682,6 +683,7 @@ app.post('/api/users', async (req, res) => {
       apellido: user.apellido,
       cedula: user.cedula,
       zona: user.zona,
+      cargo: user.cargo,
       fechaIngreso: user.fecha_ingreso,
       createdAt: user.created_at,
       updatedAt: user.updated_at
@@ -712,12 +714,12 @@ app.post('/api/users', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, apellido, cedula, zona, fechaIngreso } = req.body;
+    const { nombre, apellido, cedula, zona, fechaIngreso, cargo } = req.body;
     
     const client = await pool.connect();
     const result = await client.query(
-      'UPDATE users SET nombre = $1, apellido = $2, cedula = $3, zona = $4, fecha_ingreso = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *',
-      [nombre, apellido, cedula, zona, fechaIngreso, id]
+      'UPDATE users SET nombre = $1, apellido = $2, cedula = $3, zona = $4, fecha_ingreso = $5, cargo = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
+      [nombre, apellido, cedula, zona, fechaIngreso, cargo, id]
     );
     client.release();
     
@@ -732,6 +734,7 @@ app.put('/api/users/:id', async (req, res) => {
       apellido: user.apellido,
       cedula: user.cedula,
       zona: user.zona,
+      cargo: user.cargo,
       fechaIngreso: user.fecha_ingreso,
       createdAt: user.created_at,
       updatedAt: user.updated_at
