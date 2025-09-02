@@ -130,7 +130,8 @@
         </div>
       </div>
 
-      <table mat-table [dataSource]="filteredUsers" class="mat-elevation-z8">
+      <div class="mat-table-container">
+        <table mat-table [dataSource]="filteredUsers" class="mat-elevation-z8">
         <ng-container matColumnDef="nombre">
           <th mat-header-cell *matHeaderCellDef>Nombre</th>
           <td mat-cell *matCellDef="let user">{{ user.nombre }}</td>
@@ -182,6 +183,7 @@
           </td>
         </tr>
       </table>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>

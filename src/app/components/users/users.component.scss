@@ -89,6 +89,42 @@
 ::ng-deep table.mat-table {
   width: 100% !important;
   margin-bottom: 20px !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+/* Contenedor con scroll horizontal */
+::ng-deep .mat-table-container {
+  overflow-x: auto !important;
+  width: 100% !important;
+  position: relative !important;
+  
+  /* Sombra para indicar scroll */
+  background: 
+    linear-gradient(90deg, white 30%, rgba(255,255,255,0)) 0 0,
+    linear-gradient(90deg, rgba(255,255,255,0), white 70%) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%;
+  background-attachment: local, local;
+}
+
+/* Scroll suave en tablets */
+::ng-deep .mat-table-container::-webkit-scrollbar {
+  height: 8px !important;
+}
+
+::ng-deep .mat-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 4px !important;
+}
+
+::ng-deep .mat-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1 !important;
+  border-radius: 4px !important;
+}
+
+::ng-deep .mat-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8 !important;
 }
 
 ::ng-deep .mat-elevation-z8 {
@@ -108,11 +144,18 @@
   color: #888 !important;
 }
 
-/* Estilo adicional para botones de acción */
+/* Estilos adicionales para botones de acción */
 ::ng-deep .mat-icon-button {
   line-height: 24px !important;
   width: 36px !important;
   height: 36px !important;
+  margin: 0 2px !important;
+}
+
+/* Tooltips más legibles */
+::ng-deep .mat-tooltip {
+  font-size: 12px !important;
+  background-color: #424242 !important;
 }
 
 /* Estilos para el botón de añadir */
@@ -184,7 +227,7 @@
   height: 18px;
 }
 
-/* Responsive para móviles */
+/* Responsive para móviles y tablets */
 @media (max-width: 768px) {
   .search-container {
     flex-direction: column;
@@ -198,5 +241,108 @@
   .clear-search-button {
     align-self: flex-end;
     margin-top: 0;
+  }
+}
+
+/* Estilos específicos para tablets (Android) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .user-form-container {
+    max-width: 95%;
+    padding: 0 8px;
+  }
+  
+  /* Tabla más ancha en tablets */
+  ::ng-deep table.mat-table {
+    width: 100% !important;
+    min-width: 800px !important;
+  }
+  
+  /* Columnas con anchos específicos */
+  ::ng-deep .mat-column-nombre {
+    min-width: 100px !important;
+    width: 15% !important;
+  }
+  
+  ::ng-deep .mat-column-apellido {
+    min-width: 100px !important;
+    width: 15% !important;
+  }
+  
+  ::ng-deep .mat-column-cedula {
+    min-width: 90px !important;
+    width: 12% !important;
+  }
+  
+  ::ng-deep .mat-column-zona {
+    min-width: 60px !important;
+    width: 8% !important;
+    text-align: center !important;
+  }
+  
+  ::ng-deep .mat-column-cargo {
+    min-width: 100px !important;
+    width: 15% !important;
+  }
+  
+  ::ng-deep .mat-column-fechaIngreso {
+    min-width: 100px !important;
+    width: 15% !important;
+  }
+  
+  /* Columna de acciones más ancha */
+  ::ng-deep .mat-column-actions {
+    min-width: 180px !important;
+    width: 20% !important;
+    text-align: center !important;
+  }
+  
+  /* Botones de acción en línea horizontal */
+  ::ng-deep .mat-column-actions .mat-cell {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 4px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  /* Botones más pequeños en tablets */
+  ::ng-deep .mat-column-actions .mat-icon-button {
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+  }
+  
+  ::ng-deep .mat-column-actions .mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Estilos generales para la columna de acciones */
+::ng-deep .mat-column-actions {
+  position: sticky !important;
+  right: 0 !important;
+  background: white !important;
+  z-index: 1 !important;
+}
+
+/* Scroll horizontal en pantallas pequeñas */
+::ng-deep .mat-table-container {
+  overflow-x: auto !important;
+  width: 100% !important;
+}
+
+/* Mejorar legibilidad en tablets */
+@media (min-width: 768px) and (max-width: 1024px) {
+  ::ng-deep .mat-cell,
+  ::ng-deep .mat-header-cell {
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+  }
+  
+  ::ng-deep .mat-header-cell {
+    font-weight: 600 !important;
   }
 }
