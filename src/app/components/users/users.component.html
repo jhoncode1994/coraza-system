@@ -41,6 +41,15 @@
               La cédula es <strong>obligatoria</strong>
             </mat-error>
           </mat-form-field>
+
+            <mat-form-field class="example-full-width" appearance="outline">
+              <mat-label>Cargo</mat-label>
+              <input matInput formControlName="cargo" placeholder="Ej. Presidente, Secretario, etc.">
+              <mat-hint>Ingrese el cargo del asociado</mat-hint>
+              <mat-error *ngIf="userForm.get('cargo')?.hasError('required') && (userForm.get('cargo')?.dirty || userForm.get('cargo')?.touched)">
+                El cargo es <strong>obligatorio</strong>
+              </mat-error>
+            </mat-form-field>
           
           <mat-form-field class="example-full-width" appearance="outline">
             <mat-label>Zona</mat-label>

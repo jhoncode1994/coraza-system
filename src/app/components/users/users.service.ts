@@ -189,114 +189,37 @@ export class UsersService {
 
   // Método para convertir fechas y formatos entre la API y la aplicación
   private mapApiUserToAppUser(apiUser: any): User {
-    console.log('Mapeando usuario de API:', apiUser);
-    if (!apiUser) {
-      console.error('Error: apiUser es undefined o null');
-      return null as any; // Devolver un valor para evitar errores, aunque sea null
-    }
-    
-    try {
-      // Depurar para ver todas las propiedades disponibles
-      console.log('Propiedades disponibles en apiUser:', Object.keys(apiUser));
-      
-      // Verificar las propiedades fecha antes de proceder
-      if (apiUser.fecha_ingreso) {
-        console.log('Encontrado fecha_ingreso (snake_case):', apiUser.fecha_ingreso);
-      } else if (apiUser.fechaingreso) {
-        console.log('Encontrado fechaingreso (minúsculas):', apiUser.fechaingreso);
-      } else if (apiUser.fechaIngreso) {
-        console.log('Encontrado fechaIngreso (camelCase):', apiUser.fechaIngreso);
-      } else {
-        console.log('No se encontró ningún campo de fecha en el usuario:', apiUser.id);
-      }
-      
-      const user = {
-        id: apiUser.id,
-        nombre: apiUser.nombre || '',
-        apellido: apiUser.apellido || '',
-        cedula: apiUser.cedula || '',
-        zona: apiUser.zona || 0,
-        // Usar fecha_ingreso como clave principal y tener respaldo para todas las variantes posibles
-        fechaIngreso: apiUser.fecha_ingreso 
-          ? new Date(apiUser.fecha_ingreso) 
-          : (apiUser.fechaingreso // minúsculas
-              ? new Date(apiUser.fechaingreso)
-              : (apiUser.fechaIngreso // camelCase
-                  ? new Date(apiUser.fechaIngreso) 
-                  : new Date()))
-      };
-      // Verificar la fecha después del mapeo
-      if (user.fechaIngreso instanceof Date) {
-        console.log(`Fecha mapeada correctamente: ${user.fechaIngreso.toLocaleDateString('es-ES')}`);
-      } else if (user.fechaIngreso) {
-        console.log(`Fecha en formato no Date: ${user.fechaIngreso}`);
-        // Intentar convertir a Date si es un string
-        try {
-          user.fechaIngreso = new Date(user.fechaIngreso);
-          console.log(`Convertida a Date: ${user.fechaIngreso.toLocaleDateString('es-ES')}`);
-        } catch (error) {
-          console.error('Error al convertir fecha:', error);
-        }
-      } else {
-        console.log('No hay fecha disponible, usando fecha actual');
-        user.fechaIngreso = new Date();
-      }
-      
-      console.log('Usuario mapeado para App:', user);
-      return user;
-    } catch (error) {
-      console.error('Error al mapear el usuario:', error, apiUser);
-      // Crear un usuario básico con los datos mínimos
-      return {
-        id: apiUser?.id || 0,
-        nombre: apiUser?.nombre || '',
-        apellido: apiUser?.apellido || '',
-        cedula: apiUser?.cedula || '',
-        zona: apiUser?.zona || 0,
-        fechaIngreso: new Date()
-      } as User;
-    }
+    // Convierte el usuario recibido de la API al modelo de la app
+    return {
+      id: apiUser.id || 0,
+      nombre: apiUser.nombre || '',
+      apellido: apiUser.apellido || '',
+      cedula: apiUser.cedula || '',
+      zona: apiUser.zona || 0,
+      cargo: apiUser.cargo || '',
+      fechaIngreso: apiUser.fecha_ingreso ? new Date(apiUser.fecha_ingreso) : new Date()
+    };
   }
 
   // Método para convertir el formato de usuario de la aplicación al formato de la API
   private mapAppUserToApiUser(appUser: User, isUpdate: boolean = false): any {
+    // Convierte el usuario del modelo de la app al formato esperado por la API
     const apiUser: any = {
       nombre: appUser.nombre,
       apellido: appUser.apellido,
       cedula: appUser.cedula,
-      zona: appUser.zona
+      zona: appUser.zona,
+      cargo: appUser.cargo
     };
-    
-    // Manejar la conversión de la fecha con mejor gestión de errores
-    if (appUser.fechaIngreso || !isUpdate) {
-      try {
-        if (appUser.fechaIngreso instanceof Date) {
-          // Si es una instancia de Date, convertir a formato ISO y tomar solo la parte de la fecha
-          apiUser.fechaIngreso = appUser.fechaIngreso.toISOString().split('T')[0];
-          console.log(`Fecha convertida: ${appUser.fechaIngreso} → ${apiUser.fechaIngreso}`);
-        } else if (typeof appUser.fechaIngreso === 'string') {
-          // Si es un string, intentar parsear como Date y luego convertir
-          const date = new Date(appUser.fechaIngreso);
-          if (!isNaN(date.getTime())) {
-            apiUser.fechaIngreso = date.toISOString().split('T')[0];
-            console.log(`Fecha string convertida: ${appUser.fechaIngreso} → ${apiUser.fechaIngreso}`);
-          } else {
-            // Si no se puede parsear, usar el string directamente
-            apiUser.fechaIngreso = appUser.fechaIngreso;
-            console.log(`Usando fecha string directamente: ${apiUser.fechaIngreso}`);
-          }
-        } else {
-          // Si no es Date ni string, usar fecha actual como respaldo
-          apiUser.fechaIngreso = new Date().toISOString().split('T')[0];
-          console.log(`Usando fecha actual como respaldo: ${apiUser.fechaIngreso}`);
-        }
-      } catch (error) {
-        console.error('Error al convertir fecha:', error);
-        // En caso de error, usar la fecha actual
-        apiUser.fechaIngreso = new Date().toISOString().split('T')[0];
-      }
+    // Manejar la conversión de la fecha
+    if (appUser.fechaIngreso && (appUser.fechaIngreso instanceof Date)) {
+      apiUser.fecha_ingreso = appUser.fechaIngreso.toISOString().split('T')[0];
+    } else if (typeof appUser.fechaIngreso === 'string') {
+      const date = new Date(appUser.fechaIngreso);
+      apiUser.fecha_ingreso = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : appUser.fechaIngreso;
+    } else {
+      apiUser.fecha_ingreso = new Date().toISOString().split('T')[0];
     }
-    
     return apiUser;
   }
 }

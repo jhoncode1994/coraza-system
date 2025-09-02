@@ -4,7 +4,7 @@ dotenv.config();
 // server.ts - Servidor Express para exponer la lógica de negocio
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { getAllUsers, getUserById } from './userService';
+import { getAllUsers, getUserById, createUser, updateUser } from './userService';
 import { getSupplyHistoryByAssociate } from './supplyHistoryService';
 import { 
   retireAssociate, 
@@ -46,6 +46,28 @@ app.get('/api/users', async (req: Request, res: Response) => {
 });
 
 // Endpoint para obtener un usuario por ID
+// Endpoint para crear usuario
+app.post('/api/users', async (req: Request, res: Response) => {
+  try {
+    const userData = req.body;
+    const newUser = await createUser(userData);
+    res.status(201).json(newUser);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear usuario' });
+  }
+});
+
+// Endpoint para actualizar usuario
+app.put('/api/users/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params["id"]);
+    const userData = req.body;
+    const updatedUser = await updateUser(userId, userData);
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar usuario' });
+  }
+});
 app.get('/api/users/:id', async (req: Request, res: Response) => {
   try {
   const user = await getUserById(Number(req.params["id"]));

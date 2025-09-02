@@ -40,6 +40,7 @@ export interface User {
   cedula: string;
   zona: number;
   fechaIngreso: Date | string;
+  cargo?: string;
 }
 
 /** Error when invalid control is dirty, touched, or submitted. */
@@ -150,7 +151,8 @@ export class UsersComponent implements OnInit {
       apellido: ['', [Validators.required]],
       cedula: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
       zona: [null, [Validators.required, Validators.pattern('^[0-9]+$')]],
-      fechaIngreso: ['', [Validators.required]]
+      fechaIngreso: ['', [Validators.required]],
+      cargo: ['', [Validators.required]]
     });
   }
   
