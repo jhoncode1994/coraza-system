@@ -211,14 +211,14 @@ export class UsersService {
       zona: appUser.zona,
       cargo: appUser.cargo
     };
-    // Manejar la conversión de la fecha
+    // Manejar la conversión de la fecha - enviar como fechaIngreso (camelCase) para que coincida con server.js
     if (appUser.fechaIngreso && (appUser.fechaIngreso instanceof Date)) {
-      apiUser.fecha_ingreso = appUser.fechaIngreso.toISOString().split('T')[0];
+      apiUser.fechaIngreso = appUser.fechaIngreso.toISOString().split('T')[0];
     } else if (typeof appUser.fechaIngreso === 'string') {
       const date = new Date(appUser.fechaIngreso);
-      apiUser.fecha_ingreso = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : appUser.fechaIngreso;
+      apiUser.fechaIngreso = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : appUser.fechaIngreso;
     } else {
-      apiUser.fecha_ingreso = new Date().toISOString().split('T')[0];
+      apiUser.fechaIngreso = new Date().toISOString().split('T')[0];
     }
     return apiUser;
   }
