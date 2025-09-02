@@ -13,6 +13,13 @@ import {
   findRetiredAssociateByCedula,
   getRetiredAssociatesStats 
 } from './retiredAssociatesService';
+import { 
+  getAllEntregas, 
+  getEntregasByUser, 
+  createEntrega, 
+  updateEntrega, 
+  deleteEntrega 
+} from './entregaDotacionService';
 
 const app = express();
 const PORT = process.env["PORT"] || 3000;
@@ -149,6 +156,68 @@ app.get('/api/retired-associates/stats', async (req: Request, res: Response) => 
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);
     res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+});
+
+// Endpoints para entregas de dotación
+
+// Obtener todas las entregas
+app.get('/api/delivery', async (req: Request, res: Response) => {
+  try {
+    const entregas = await getAllEntregas();
+    res.json(entregas);
+  } catch (error) {
+    console.error('Error obteniendo entregas:', error);
+    res.status(500).json({ error: 'Error al obtener entregas' });
+  }
+});
+
+// Obtener entregas por usuario
+app.get('/api/delivery/user/:userId', async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params["userId"]);
+    const entregas = await getEntregasByUser(userId);
+    res.json(entregas);
+  } catch (error) {
+    console.error('Error obteniendo entregas por usuario:', error);
+    res.status(500).json({ error: 'Error al obtener entregas del usuario' });
+  }
+});
+
+// Crear nueva entrega
+app.post('/api/delivery', async (req: Request, res: Response) => {
+  try {
+    const entregaData = req.body;
+    const nuevaEntrega = await createEntrega(entregaData);
+    res.status(201).json(nuevaEntrega);
+  } catch (error) {
+    console.error('Error creando entrega:', error);
+    res.status(500).json({ error: 'Error al crear entrega' });
+  }
+});
+
+// Actualizar entrega
+app.put('/api/delivery/:id', async (req: Request, res: Response) => {
+  try {
+    const entregaId = Number(req.params["id"]);
+    const entregaData = req.body;
+    const entregaActualizada = await updateEntrega(entregaId, entregaData);
+    res.json(entregaActualizada);
+  } catch (error) {
+    console.error('Error actualizando entrega:', error);
+    res.status(500).json({ error: 'Error al actualizar entrega' });
+  }
+});
+
+// Eliminar entrega
+app.delete('/api/delivery/:id', async (req: Request, res: Response) => {
+  try {
+    const entregaId = Number(req.params["id"]);
+    const entregaEliminada = await deleteEntrega(entregaId);
+    res.json(entregaEliminada);
+  } catch (error) {
+    console.error('Error eliminando entrega:', error);
+    res.status(500).json({ error: 'Error al eliminar entrega' });
   }
 });
 
