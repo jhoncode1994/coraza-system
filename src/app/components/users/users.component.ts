@@ -119,7 +119,7 @@ export class UsersComponent implements OnInit {
   filteredUsers: User[] = [];
   searchTerm: string = '';
   editIndex: number | null = null;
-  displayedColumns: string[] = ['nombre', 'apellido', 'cedula', 'zona', 'fechaIngreso', 'actions'];
+  displayedColumns: string[] = ['nombre', 'apellido', 'cedula', 'zona', 'cargo', 'fechaIngreso', 'actions'];
   
   // Variable para controlar la visibilidad del formulario
   showForm: boolean = false;
