@@ -216,7 +216,8 @@ export class UsersComponent implements OnInit {
         apellido: this.userForm.value.apellido,
         cedula: this.userForm.value.cedula,
         zona: parseInt(this.userForm.value.zona), // Asegurar que zona sea número
-        fechaIngreso: fechaIngreso
+        fechaIngreso: fechaIngreso,
+        cargo: this.userForm.value.cargo
       };
       
       console.log('Datos procesados para enviar:', userData);
@@ -298,7 +299,8 @@ export class UsersComponent implements OnInit {
       apellido: user.apellido,
       cedula: user.cedula,
       zona: user.zona,
-      fechaIngreso: fechaIngreso
+      fechaIngreso: fechaIngreso,
+      cargo: user.cargo
     });
     
     console.log('Editando usuario:', this.users[index]);
