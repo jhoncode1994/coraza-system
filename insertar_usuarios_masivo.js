@@ -117,7 +117,58 @@ const usuarios = [
   { nombre: 'LUIS EDUARDO', apellido: 'LOPEZ MARIN', cedula: '31205704', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2012-09-01' },
   { nombre: 'RUBEN DARIO', apellido: 'LOPEZ MONTOYA', cedula: '31209266', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2014-12-01' },
   { nombre: 'RICARDO ANTONIO', apellido: 'MARTINEZ PEREZ', cedula: '31212718', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2013-05-01' },
-  { nombre: 'JUAN CARLOS', apellido: 'CASTAÑO SALAZAR', cedula: '31216270', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2018-10-01' }
+  { nombre: 'JUAN CARLOS', apellido: 'CASTAÑO SALAZAR', cedula: '31216270', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2018-10-01' },
+  // LOTE 3 - USUARIOS 51-100
+  { nombre: 'LUIS EDUARDO', apellido: 'MONTOYA CASTAÑO', cedula: '31219822', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2014-07-01' },
+  { nombre: 'JESUS ALBERTO', apellido: 'SANCHEZ LOPEZ', cedula: '31223274', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2012-02-01' },
+  { nombre: 'MARIO ENRIQUE', apellido: 'CASTAÑO LOPEZ', cedula: '31226826', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2013-09-01' },
+  { nombre: 'RICARDO ALONSO', apellido: 'MORENO ARIAS', cedula: '31230378', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2018-06-01' },
+  { nombre: 'FRANCISCO JAVIER', apellido: 'MONTOYA PEREZ', cedula: '31233930', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2017-04-01' },
+  { nombre: 'ALFREDO DE JESUS', apellido: 'LOPEZ GONZALEZ', cedula: '31237482', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2016-03-01' },
+  { nombre: 'RAFAEL ANTONIO', apellido: 'CASTAÑO MORALES', cedula: '31241034', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2019-02-01' },
+  { nombre: 'JORGE EDUARDO', apellido: 'ZAPATA MORALES', cedula: '31244586', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2015-07-01' },
+  { nombre: 'LUIS FERNANDO', apellido: 'LOPEZ GONZALEZ', cedula: '31248138', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2014-09-01' },
+  { nombre: 'OSCAR ALFREDO', apellido: 'MONTOYA CASTAÑO', cedula: '31251690', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2013-01-01' },
+  { nombre: 'MIGUEL ANGEL', apellido: 'CORDOBA LOPEZ', cedula: '31255242', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2016-10-01' },
+  { nombre: 'JAVIER ENRIQUE', apellido: 'MONTOYA SANCHEZ', cedula: '31258794', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2017-11-01' },
+  { nombre: 'JORGE ANDRES', apellido: 'LOPEZ MONTOYA', cedula: '31262346', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2012-05-01' },
+  { nombre: 'RICARDO ANTONIO', apellido: 'CASTAÑO LOPEZ', cedula: '31265898', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2015-02-01' },
+  { nombre: 'ALVARO DE JESUS', apellido: 'MONTOYA ZAPATA', cedula: '31269450', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2018-12-01' },
+  { nombre: 'LUIS ALFONSO', apellido: 'LOPEZ CASTAÑO', cedula: '31273002', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2019-07-01' },
+  { nombre: 'JOSE EDUARDO', apellido: 'CASTAÑO LOPEZ', cedula: '31276554', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2013-03-01' },
+  { nombre: 'GERMAN EDUARDO', apellido: 'MONTOYA LOPEZ', cedula: '31280106', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2016-08-01' },
+  { nombre: 'RAFAEL EDUARDO', apellido: 'LOPEZ SANCHEZ', cedula: '31283658', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2012-09-01' },
+  { nombre: 'JUAN PABLO', apellido: 'CASTAÑO MARTINEZ', cedula: '31287210', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2014-10-01' },
+  { nombre: 'CARLOS ANDRES', apellido: 'MONTOYA CASTAÑO', cedula: '31290762', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2017-02-01' },
+  { nombre: 'JULIAN ALFREDO', apellido: 'LOPEZ MONTOYA', cedula: '31294314', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2015-05-01' },
+  { nombre: 'WILSON EDUARDO', apellido: 'CASTAÑO LOPEZ', cedula: '31297866', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2012-06-01' },
+  { nombre: 'JORGE LUIS', apellido: 'MONTOYA CASTAÑO', cedula: '31301418', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2013-08-01' },
+  { nombre: 'RAUL EDUARDO', apellido: 'LOPEZ MONTOYA', cedula: '31304970', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2018-07-01' },
+  { nombre: 'RICARDO ANTONIO', apellido: 'CASTAÑO LOPEZ', cedula: '31308522', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2012-03-01' },
+  { nombre: 'LUIS EDUARDO', apellido: 'MONTOYA LOPEZ', cedula: '31312074', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2016-05-01' },
+  { nombre: 'JULIO CESAR', apellido: 'LOPEZ CASTAÑO', cedula: '31315626', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2019-09-01' },
+  { nombre: 'WILLIAM ANTONIO', apellido: 'MONTOYA LOPEZ', cedula: '31319178', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2014-11-01' },
+  { nombre: 'FREDY EDUARDO', apellido: 'CASTAÑO MONTOYA', cedula: '31322730', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2017-01-01' },
+  { nombre: 'MAURICIO ANDRES', apellido: 'LOPEZ CASTAÑO', cedula: '31326282', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2018-02-01' },
+  { nombre: 'CARLOS EDUARDO', apellido: 'MONTOYA LOPEZ', cedula: '31329834', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2012-07-01' },
+  { nombre: 'FABIO ANDRES', apellido: 'LOPEZ CASTAÑO', cedula: '31333386', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2015-10-01' },
+  { nombre: 'JULIAN EDUARDO', apellido: 'CASTAÑO MONTOYA', cedula: '31336938', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2016-08-01' },
+  { nombre: 'JORGE ENRIQUE', apellido: 'MONTOYA CASTAÑO', cedula: '31340490', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2013-09-01' },
+  { nombre: 'LUIS FERNANDO', apellido: 'LOPEZ MONTOYA', cedula: '31344042', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2019-05-01' },
+  { nombre: 'ALEXANDER ANTONIO', apellido: 'CASTAÑO LOPEZ', cedula: '31347594', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2012-04-01' },
+  { nombre: 'HERNAN EDUARDO', apellido: 'MONTOYA CASTAÑO', cedula: '31351146', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2014-06-01' },
+  { nombre: 'JAVIER ALONSO', apellido: 'LOPEZ CASTAÑO', cedula: '31354698', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2017-03-01' },
+  { nombre: 'RAFAEL ENRIQUE', apellido: 'MONTOYA CASTAÑO', cedula: '31358250', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2018-08-01' },
+  { nombre: 'JHON JAIRO', apellido: 'LOPEZ CASTAÑO', cedula: '31361802', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2015-02-01' },
+  { nombre: 'ORLANDO ANTONIO', apellido: 'CASTAÑO LOPEZ', cedula: '31365354', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2012-09-01' },
+  { nombre: 'HUGO FERNANDO', apellido: 'MONTOYA LOPEZ', cedula: '31368906', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2016-07-01' },
+  { nombre: 'JULIO ALBERTO', apellido: 'LOPEZ CASTAÑO', cedula: '31372458', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2018-05-01' },
+  { nombre: 'RICARDO ENRIQUE', apellido: 'MONTOYA CASTAÑO', cedula: '31376010', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2014-01-01' },
+  { nombre: 'MARTIN EDUARDO', apellido: 'LOPEZ MONTOYA', cedula: '31379562', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2019-04-01' },
+  { nombre: 'ALVARO ANTONIO', apellido: 'MONTOYA CASTAÑO', cedula: '31383114', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2012-02-01' },
+  { nombre: 'GUSTAVO ADOLFO', apellido: 'LOPEZ CASTAÑO', cedula: '31386666', zona: 23, cargo: 'VIGILANTE', fechaIngreso: '2015-06-01' },
+  { nombre: 'JORGE LEONARDO', apellido: 'MONTOYA CASTAÑO', cedula: '31390218', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2017-08-01' },
+  { nombre: 'CARLOS ENRIQUE', apellido: 'LOPEZ CASTAÑO', cedula: '31393770', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2013-11-01' }
 ];
 
 async function insertarUsuariosMasivo() {
@@ -125,7 +176,7 @@ async function insertarUsuariosMasivo() {
   
   try {
     console.log('🚀 Iniciando inserción masiva de usuarios...');
-    console.log(`📊 Total de usuarios a insertar: ${usuarios.length} (Lotes 1 y 2)`);
+    console.log(`📊 Total de usuarios a insertar: ${usuarios.length} (Lotes 1, 2 y 3)`);
     
     // Iniciar transacción
     await client.query('BEGIN');
