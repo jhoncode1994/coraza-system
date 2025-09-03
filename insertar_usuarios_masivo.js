@@ -219,7 +219,58 @@ const usuarios = [
   { nombre: 'JHON JAIRO', apellido: 'ORTIZ PULGARIN', cedula: '94255492', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2019-09-01' },
   { nombre: 'JHON EIBER', apellido: 'ALVAREZ CASTAÑO', cedula: '94262650', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2018-02-02' },
   { nombre: 'DUBERNEY', apellido: 'BENAVIDES BEDOYA', cedula: '94289024', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2020-08-14' },
-  { nombre: 'LEONEL ANTONIO', apellido: 'RAMOS COLORADO', cedula: '94386740', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2018-03-27' }
+  { nombre: 'LEONEL ANTONIO', apellido: 'RAMOS COLORADO', cedula: '94386740', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2018-03-27' },
+  // LOTE 5 - USUARIOS 151-200
+  { nombre: 'JAVIER ANDRES', apellido: 'VALENCIA CASTAÑO', cedula: '94401953', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2017-09-05' },
+  { nombre: 'EDISON', apellido: 'MARULANDA GUTIERREZ', cedula: '94431782', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2016-04-28' },
+  { nombre: 'JAIRO ANTONIO', apellido: 'GARCIA RAMIREZ', cedula: '94443279', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2014-07-15' },
+  { nombre: 'JAIRO ALBERTO', apellido: 'AGUDELO BUSTAMANTE', cedula: '94461206', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2015-06-15' },
+  { nombre: 'JHON WILMAR', apellido: 'BERMUDEZ MARIN', cedula: '94466367', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2017-09-01' },
+  { nombre: 'CARLOS ANDRES', apellido: 'GARCIA GOMEZ', cedula: '94477453', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2019-04-01' },
+  { nombre: 'EDWIN ANTONIO', apellido: 'LONDOÑO LONDOÑO', cedula: '94488706', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2016-12-13' },
+  { nombre: 'ALVARO JAVIER', apellido: 'SIERRA SIERRA', cedula: '94490159', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2015-02-14' },
+  { nombre: 'ALEXANDER DE JESUS', apellido: 'LONDOÑO GARCIA', cedula: '94490248', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2019-09-28' },
+  { nombre: 'LEONARDO FABIAN', apellido: 'VALENCIA BUILES', cedula: '94492790', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2019-01-19' },
+  { nombre: 'WILMAR ALFONSO', apellido: 'GARCIA SUAREZ', cedula: '94502341', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2013-07-22' },
+  { nombre: 'GABRIEL JAIME', apellido: 'VELASQUEZ MARULANDA', cedula: '94506432', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2015-11-01' },
+  { nombre: 'RUBEN DARIO', apellido: 'ECHEVERRI BEDOYA', cedula: '94509065', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2012-08-15' },
+  { nombre: 'ALFREDO', apellido: 'JIMENEZ VASQUEZ', cedula: '94512917', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2014-06-17' },
+  { nombre: 'MAURICIO ANDRES', apellido: 'CORDOBA LONDOÑO', cedula: '94523248', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2013-10-05' },
+  { nombre: 'JOSE ALIRIO', apellido: 'LONDOÑO CASTAÑO', cedula: '94527638', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2012-08-17' },
+  { nombre: 'EDUARDO ANTONIO', apellido: 'JIMENEZ VALENCIA', cedula: '94531654', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2018-09-14' },
+  { nombre: 'FABIO NELSON', apellido: 'ARISTIZABAL VALENCIA', cedula: '94533441', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2017-02-01' },
+  { nombre: 'RAUL DE JESUS', apellido: 'ECHEVERRI LOAIZA', cedula: '94535532', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2016-11-21' },
+  { nombre: 'ALFREDO ANTONIO', apellido: 'PEREZ MARIN', cedula: '94538267', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2015-08-01' },
+  { nombre: 'ALFREDO ANTONIO', apellido: 'RIVERA SALAZAR', cedula: '94541192', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2019-10-25' },
+  { nombre: 'RICARDO ANDRES', apellido: 'RESTREPO SIERRA', cedula: '94545210', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2017-02-27' },
+  { nombre: 'JHON WILSON', apellido: 'MONTOYA VALENCIA', cedula: '94548760', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2019-06-21' },
+  { nombre: 'LEONEL DE JESUS', apellido: 'LOPEZ JIMENEZ', cedula: '94550017', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2012-12-14' },
+  { nombre: 'FREDY DE JESUS', apellido: 'CORDOBA CARDONA', cedula: '94553941', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2018-04-13' },
+  { nombre: 'YOBANY ESTEBAN', apellido: 'USUGA GUTIERREZ', cedula: '94556101', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2014-09-11' },
+  { nombre: 'JOSE ALFREDO', apellido: 'MARTINEZ MEJIA', cedula: '94558620', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2016-06-25' },
+  { nombre: 'ALFONSO DE JESUS', apellido: 'MONTOYA GUTIERREZ', cedula: '94560127', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2015-03-28' },
+  { nombre: 'JORGE ALBERTO', apellido: 'AGUDELO CORDOBA', cedula: '94561302', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2017-08-12' },
+  { nombre: 'WILMER ALFONSO', apellido: 'HENAO ECHEVERRI', cedula: '94563011', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2014-03-10' },
+  { nombre: 'EDUARDO ANDRES', apellido: 'ALVAREZ GARCIA', cedula: '94565580', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2013-12-15' },
+  { nombre: 'GUSTAVO ADOLFO', apellido: 'GUTIERREZ MONTOYA', cedula: '94567140', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2015-07-06' },
+  { nombre: 'HECTOR ALFONSO', apellido: 'LOPEZ MONTOYA', cedula: '94569212', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2018-10-27' },
+  { nombre: 'FREDY ALONSO', apellido: 'CASTAÑO MARULANDA', cedula: '94571320', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2019-01-19' },
+  { nombre: 'OSCAR ALFREDO', apellido: 'MUÑOZ RESTREPO', cedula: '94573216', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2016-04-02' },
+  { nombre: 'ALBERTO DE JESUS', apellido: 'ZAPATA SIERRA', cedula: '94575230', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2017-11-18' },
+  { nombre: 'DIEGO ALEJANDRO', apellido: 'ARROYAVE TORO', cedula: '94577011', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2016-01-28' },
+  { nombre: 'LUIS ALFREDO', apellido: 'MONTOYA LOPEZ', cedula: '94579213', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2018-02-16' },
+  { nombre: 'YONY ALBERTO', apellido: 'CORDOBA LOPEZ', cedula: '94581204', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2014-05-20' },
+  { nombre: 'JORGE ALFONSO', apellido: 'ARIAS CASTAÑO', cedula: '94583215', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2016-08-15' },
+  { nombre: 'ARMANDO DE JESUS', apellido: 'VASQUEZ TORO', cedula: '94585109', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2013-07-02' },
+  { nombre: 'LUIS ANTONIO', apellido: 'ZULUAGA GOMEZ', cedula: '94587110', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2018-10-01' },
+  { nombre: 'LUIS ANTONIO', apellido: 'MORENO CASTRILLON', cedula: '94589120', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2017-11-11' },
+  { nombre: 'GONZALO ANDRES', apellido: 'GARCIA RIVERA', cedula: '94591031', zona: 7, cargo: 'VIGILANTE', fechaIngreso: '2015-01-24' },
+  { nombre: 'HECTOR FABIO', apellido: 'MARIN CORDOBA', cedula: '94593218', zona: 6, cargo: 'VIGILANTE', fechaIngreso: '2014-09-01' },
+  { nombre: 'NELSON AUGUSTO', apellido: 'CASTRO PEREZ', cedula: '94595230', zona: 18, cargo: 'VIGILANTE', fechaIngreso: '2012-07-28' },
+  { nombre: 'FABIO ALEJANDRO', apellido: 'LOPEZ GUTIERREZ', cedula: '94597216', zona: 20, cargo: 'VIGILANTE', fechaIngreso: '2019-09-18' },
+  { nombre: 'JAIME ALIRIO', apellido: 'CASTAÑO JIMENEZ', cedula: '94599103', zona: 1, cargo: 'VIGILANTE', fechaIngreso: '2013-05-17' },
+  { nombre: 'MANUEL ALBERTO', apellido: 'TORO ECHEVERRI', cedula: '94601211', zona: 12, cargo: 'VIGILANTE', fechaIngreso: '2018-06-22' },
+  { nombre: 'LUIS EDUARDO', apellido: 'MORENO CASTRO', cedula: '94603225', zona: 4, cargo: 'VIGILANTE', fechaIngreso: '2015-07-07' }
 ];
 
 async function insertarUsuariosMasivo() {
@@ -227,7 +278,7 @@ async function insertarUsuariosMasivo() {
   
   try {
     console.log('🚀 Iniciando inserción masiva de usuarios...');
-    console.log(`📊 Total de usuarios a insertar: ${usuarios.length} (Lotes 1, 2, 3 y 4)`);
+    console.log(`📊 Total de usuarios a insertar: ${usuarios.length} (Lotes 1, 2, 3, 4 y 5)`);
     
     // Iniciar transacción
     await client.query('BEGIN');
