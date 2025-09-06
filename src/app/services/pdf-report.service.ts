@@ -30,6 +30,83 @@ export class PdfReportService {
   constructor() { }
 
   /**
+   * Carga una imagen y la convierte a base64 para usar en PDF
+   */
+  private async loadImageAsBase64(imagePath: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        ctx?.drawImage(img, 0, 0);
+        
+        try {
+          const dataURL = canvas.toDataURL('image/png');
+          resolve(dataURL);
+        } catch (error) {
+          console.warn('Error converting image to base64, using fallback');
+          resolve(''); // Fallback: imagen vacía
+        }
+      };
+      
+      img.onerror = () => {
+        console.warn('Error loading image, using fallback');
+        resolve(''); // Fallback: imagen vacía
+      };
+      
+      img.src = imagePath;
+    });
+  }
+
+  /**
+   * Añade encabezado al PDF con manejo de errores
+   */
+  private async addHeader(doc: any, title: string = ''): Promise<number> {
+    try {
+      // Intentar cargar la imagen del encabezado
+      const headerBase64 = await this.loadImageAsBase64('assets/envabezado.png');
+      
+      if (headerBase64) {
+        // Si la imagen se cargó correctamente, añadirla
+        doc.addImage(headerBase64, 'PNG', 20, 10, 170, 30);
+      }
+      
+      // Añadir título del documento debajo del encabezado
+      if (title) {
+        doc.setFontSize(16);
+        doc.setTextColor(44, 62, 80);
+        doc.text(title, 105, 55, { align: 'center' });
+      }
+      
+      // Línea separadora
+      doc.setLineWidth(0.5);
+      doc.setTextColor(0, 0, 0);
+      doc.line(20, 65, 190, 65);
+      
+      return 75; // Retorna la posición Y donde debe comenzar el contenido
+    } catch (error) {
+      console.warn('Error adding header:', error);
+      // Fallback: solo título sin imagen
+      if (title) {
+        doc.setFontSize(16);
+        doc.setTextColor(44, 62, 80);
+        doc.text(title, 20, 20);
+        doc.setLineWidth(0.5);
+        doc.setTextColor(0, 0, 0);
+        doc.line(20, 25, 190, 25);
+        return 35;
+      }
+      return 20;
+    }
+  }
+
+  /**
    * Verifica si las librerías de PDF están disponibles y las carga si es necesario
    */
   private async loadPdfLibraries(): Promise<any> {
@@ -315,10 +392,8 @@ export class PdfReportService {
       // Configurar fuente para soportar caracteres especiales
       doc.setFont('helvetica');
       
-      // Título del documento
-      doc.setFontSize(18);
-      doc.setTextColor(44, 62, 80);
-      doc.text('REPORTE DE ENTREGAS DE DOTACIÓN', 105, 20, { align: 'center' });
+      // Añadir encabezado
+      const startY = await this.addHeader(doc, 'REPORTE DE ENTREGAS DE DOTACIÓN');
       
       // Información del asociado
       doc.setFontSize(12);
@@ -327,20 +402,20 @@ export class PdfReportService {
       // Limpiar el nombre del asociado eliminando "undefined"
       const cleanAssociateName = associateName ? associateName.replace(/undefined/g, '').replace(/\s+/g, ' ').trim() : 'Sin nombre';
       
-      doc.text(`Asociado: ${cleanAssociateName}`, 20, 35);
-      doc.text(`Cédula: ${associateId || 'Sin cédula'}`, 20, 45);
-      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, 55);
+      doc.text(`Asociado: ${cleanAssociateName}`, 20, startY);
+      doc.text(`Cédula: ${associateId || 'Sin cédula'}`, 20, startY + 10);
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, startY + 20);
       
       // Línea separadora
       doc.setLineWidth(0.5);
-      doc.line(20, 65, 190, 65);
+      doc.line(20, startY + 30, 190, startY + 30);
       
       if (deliveries.length === 0) {
         doc.setFontSize(12);
-        doc.text('No hay entregas registradas para este asociado.', 20, 80);
+        doc.text('No hay entregas registradas para este asociado.', 20, startY + 45);
       } else {
         // Crear tabla manualmente si autoTable no está disponible
-        this.createManualTable(doc, deliveries, 75);
+        this.createManualTable(doc, deliveries, startY + 40);
         
         // Resumen al final
         const finalY = 75 + (deliveries.length * 10) + 30;
@@ -493,22 +568,20 @@ export class PdfReportService {
       // Configurar fuente
       doc.setFont('helvetica');
       
-      // Título del documento
-      doc.setFontSize(18);
-      doc.setTextColor(44, 62, 80);
-      doc.text('REPORTE GENERAL DE DOTACIONES POR ELEMENTO', 105, 20, { align: 'center' });
+      // Añadir encabezado
+      const startY = await this.addHeader(doc, 'REPORTE GENERAL DE DOTACIONES POR ELEMENTO');
       
       // Información del reporte
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, 35);
-      doc.text(`Total de elementos: ${elementSummaries.length}`, 20, 45);
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, startY);
+      doc.text(`Total de elementos: ${elementSummaries.length}`, 20, startY + 10);
       
       // Línea separadora
       doc.setLineWidth(0.5);
-      doc.line(20, 55, 190, 55);
+      doc.line(20, startY + 20, 190, startY + 20);
       
-      let currentY = 65;
+      let currentY = startY + 30;
       
       if (!elementSummaries || elementSummaries.length === 0) {
         doc.setFontSize(12);
@@ -578,29 +651,27 @@ export class PdfReportService {
       // Configurar fuente
       doc.setFont('helvetica');
       
-      // Título del documento
-      doc.setFontSize(18);
-      doc.setTextColor(44, 62, 80);
-      doc.text(`REPORTE DE ENTREGAS: ${elemento.toUpperCase()}`, 105, 20, { align: 'center' });
+      // Añadir encabezado
+      const startY = await this.addHeader(doc, `REPORTE DE ENTREGAS: ${elemento.toUpperCase()}`);
       
       // Información del reporte
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Elemento: ${elemento}`, 20, 35);
-      doc.text(`Total de entregas: ${deliveries.length}`, 20, 45);
-      doc.text(`Cantidad total entregada: ${deliveries.reduce((sum, d) => sum + d.cantidad, 0)} unidades`, 20, 55);
-      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, 65);
+      doc.text(`Elemento: ${elemento}`, 20, startY);
+      doc.text(`Total de entregas: ${deliveries.length}`, 20, startY + 10);
+      doc.text(`Cantidad total entregada: ${deliveries.reduce((sum, d) => sum + d.cantidad, 0)} unidades`, 20, startY + 20);
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO')}`, 20, startY + 30);
       
       // Línea separadora
       doc.setLineWidth(0.5);
-      doc.line(20, 75, 190, 75);
+      doc.line(20, startY + 40, 190, startY + 40);
       
       if (deliveries.length === 0) {
         doc.setFontSize(12);
-        doc.text('No hay entregas registradas para este elemento.', 20, 90);
+        doc.text('No hay entregas registradas para este elemento.', 20, startY + 55);
       } else {
         // Crear tabla manual
-        this.createElementTable(doc, deliveries, 85);
+        this.createElementTable(doc, deliveries, startY + 50);
       }
       
       // Pie de página
