@@ -12,8 +12,7 @@ export interface EntregaHistorial {
   fechaEntrega: Date;
   observaciones?: string;
   tipo: 'entrega' | 'devolucion';
-  firma?: string; // Firma digital en base64
-  firmaDigital?: string; // Campo de la base de datos
+  firma_url?: string; // URL pública de la firma en Supabase Storage
 }
 
 @Injectable({
@@ -49,7 +48,7 @@ export class EntregaDotacionService {
       cantidad: entrega.cantidad,
       fechaEntrega: entrega.fechaEntrega,
       observaciones: entrega.observaciones,
-      firmaDigital: entrega.firma || entrega.firmaDigital
+      firma_url: entrega.firma_url
     };
 
     return this.http.post(`${this.apiUrl}/delivery`, deliveryData);

@@ -1083,7 +1083,7 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           cantidad: delivery.cantidad,
           fechaEntrega: delivery.fechaEntrega,
           observaciones: delivery.observaciones,
-          firmaDigital: delivery.firmaDigital
+          firma_url: delivery.firma_url
         });
         
         await client.query(`
@@ -1097,7 +1097,7 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           delivery.cantidad || 1,
           delivery.fechaEntrega || new Date(),
           delivery.observaciones || null,
-          delivery.firmaDigital || null
+          delivery.firma_url || null
         ]);
         console.log('Entrega migrada exitosamente');
       }
@@ -1285,17 +1285,17 @@ app.use((err, req, res, next) => {
 // Guardar entrega de dotación
 app.post('/api/delivery', async (req, res) => {
   try {
-    const { userId, elemento, cantidad, fechaEntrega, observaciones, firmaDigital } = req.body;
+    const { userId, elemento, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
     
     console.log('Guardando entrega de dotación:', { userId, elemento, cantidad });
     
     const client = await pool.connect();
     
     const result = await client.query(`
-      INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", "firmaDigital", observaciones)
+      INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", "firma_url", observaciones)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
-    `, [userId, elemento, cantidad, fechaEntrega || new Date(), firmaDigital, observaciones]);
+    `, [userId, elemento, cantidad, fechaEntrega || new Date(), firma_url, observaciones]);
     
     client.release();
     
