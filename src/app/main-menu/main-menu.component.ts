@@ -34,20 +34,22 @@ export class MainMenuComponent {
   }
 
   openCleanupDialog() {
-    console.log('Funcionalidad de limpieza estará disponible próximamente');
-    // Temporalmente deshabilitado mientras se solucionan problemas de build
-    /*
-    const dialogRef = this.dialog.open(CleanupRegistrosComponent, {
-      width: '800px',
-      maxHeight: '90vh',
-      disableClose: true
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        console.log('Limpieza completada:', result);
-      }
-    });
-    */
+    // Mostrar un dialog simple con confirmación de eliminación
+    const confirmation = confirm(
+      '🗑️ SISTEMA DE LIMPIEZA MASIVA\n\n' +
+      'Esta funcionalidad permite eliminar registros antiguos de entregas.\n\n' +
+      '⚠️ CARACTERÍSTICAS:\n' +
+      '• Protección automática - no elimina registros del último año\n' +
+      '• Requiere escribir "ELIMINAR" para confirmar\n' +
+      '• Elimina también las firmas digitales asociadas\n' +
+      '• Proceso irreversible\n\n' +
+      'Backend implementado ✅\n' +
+      'Frontend en desarrollo 🚧\n\n' +
+      '¿Desea continuar con el desarrollo de esta funcionalidad?'
+    );
+    
+    if (confirmation) {
+      alert('✅ Funcionalidad confirmada!\n\nEl sistema incluye:\n• Estadísticas por año/mes\n• Previsualización de eliminación\n• Confirmación con texto "ELIMINAR"\n• Eliminación masiva segura\n\n🔧 Próximamente disponible en el menú');
+    }
   }
 }
