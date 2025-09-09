@@ -9,7 +9,7 @@ import { LoginComponent } from './components/login/login.component';
 import { RetiredAssociatesComponent } from './components/retired-associates/retired-associates.component';
 import { AuthGuard } from './guards/auth.guard';
 
-const routes: Routes = [
+export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: '', component: MainMenuComponent, canActivate: [AuthGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },

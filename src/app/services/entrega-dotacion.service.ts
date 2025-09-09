@@ -36,7 +36,7 @@ export class EntregaDotacionService {
     return this.http.get<any[]>(`${this.apiUrl}/delivery/user/${userId}`).pipe(
       map(entregas => entregas.map(entrega => ({
         ...entrega,
-        firma: entrega.firmaDigital || entrega.firma // Mapear firmaDigital a firma
+        firma_url: entrega.firmaDigital || entrega.firma_url // Mapear firmaDigital a firma_url
       })))
     );
   }
