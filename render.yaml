@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: coraza-system
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.20.4
+      - key: NPM_VERSION
+        value: 8.19.4
