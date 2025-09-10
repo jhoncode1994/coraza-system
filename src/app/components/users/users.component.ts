@@ -400,7 +400,7 @@ export class UsersComponent implements OnInit {
           
           if (!validation.valid) {
             this.snackBar.open(
-              `Stock insuficiente para ${elemento.elemento}. Disponible: ${validation.availableQuantity}, Solicitado: ${elemento.cantidad}`,
+              `Stock insuficiente para ${elemento.elemento.toUpperCase()}. Disponible: ${validation.availableQuantity}, Solicitado: ${elemento.cantidad}`,
               'Cerrar',
               {
                 duration: 5000,
@@ -412,7 +412,7 @@ export class UsersComponent implements OnInit {
         } catch (error) {
           console.error(`Error validando stock para ${elemento.elemento}:`, error);
           this.snackBar.open(
-            `Error al validar stock para ${elemento.elemento}`,
+            `Error al validar stock para ${elemento.elemento.toUpperCase()}`,
             'Cerrar',
             {
               duration: 5000,
@@ -434,7 +434,7 @@ export class UsersComponent implements OnInit {
           
           if (!success) {
             this.snackBar.open(
-              `Error al actualizar stock para ${elemento.elemento}`,
+              `Error al actualizar stock para ${elemento.elemento.toUpperCase()}`,
               'Cerrar',
               {
                 duration: 5000,
@@ -462,7 +462,7 @@ export class UsersComponent implements OnInit {
           } catch (entregaError) {
             console.error(`Error al guardar entrega para ${elemento.elemento}:`, entregaError);
             this.snackBar.open(
-              `Error al guardar entrega para ${elemento.elemento}`,
+              `Error al guardar entrega para ${elemento.elemento.toUpperCase()}`,
               'Cerrar',
               {
                 duration: 5000,
@@ -475,7 +475,7 @@ export class UsersComponent implements OnInit {
         } catch (error) {
           console.error(`Error al procesar descuento para ${elemento.elemento}:`, error);
           this.snackBar.open(
-            `Error al procesar descuento para ${elemento.elemento}`,
+            `Error al procesar descuento para ${elemento.elemento.toUpperCase()}`,
             'Cerrar',
             {
               duration: 5000,

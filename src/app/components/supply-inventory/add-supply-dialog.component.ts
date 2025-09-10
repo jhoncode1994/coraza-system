@@ -19,7 +19,7 @@ import { SupplyInventoryService } from '../../services/supply-inventory.service'
           <mat-label>Elemento</mat-label>
           <mat-select [(ngModel)]="selectedItem">
             <mat-option *ngFor="let item of supplyItems" [value]="item">
-              {{item.name}} ({{item.code}}) - Stock actual: {{item.quantity}}
+              {{item.name | uppercase}} ({{item.code}}) - Stock actual: {{item.quantity}}
             </mat-option>
           </mat-select>
         </mat-form-field>
@@ -30,7 +30,7 @@ import { SupplyInventoryService } from '../../services/supply-inventory.service'
         </mat-form-field>
 
         <div *ngIf="selectedItem" class="item-info">
-          <p><strong>Elemento seleccionado:</strong> {{selectedItem.name}}</p>
+          <p><strong>Elemento seleccionado:</strong> {{selectedItem.name | uppercase}}</p>
           <p><strong>Stock actual:</strong> {{selectedItem.quantity}}</p>
           <p><strong>Stock después:</strong> {{selectedItem.quantity + (quantity || 0)}}</p>
         </div>

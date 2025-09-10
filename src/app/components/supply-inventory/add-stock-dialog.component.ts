@@ -29,7 +29,7 @@ export interface AddStockResult {
     
     <mat-dialog-content class="dialog-content">
       <div class="supply-info">
-        <h3>{{data.supply.name}}</h3>
+        <h3>{{data.supply.name | uppercase}}</h3>
         <p><strong>Código:</strong> {{data.supply.code}}</p>
         <p><strong>Stock actual:</strong> 
           <span class="current-stock">{{data.supply.quantity}} unidades</span>

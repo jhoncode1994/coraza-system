@@ -59,7 +59,7 @@
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Elemento </th>
           <td mat-cell *matCellDef="let element"> 
-            {{element.name}} 
+            {{element.name | uppercase}} 
             <mat-icon *ngIf="element.quantity < element.minimumQuantity" 
                       color="warn" 
                       matTooltip="Stock bajo">warning</mat-icon>

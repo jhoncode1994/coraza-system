@@ -49,7 +49,7 @@ export interface EntregaDotacion {
               <mat-label>Elemento de dotación</mat-label>
               <mat-select formControlName="elemento" (selectionChange)="onElementSelected($event.value)">
                 <mat-option *ngFor="let item of getAvailableItems()" [value]="item.name">
-                  {{item.name}} - Disponible: {{item.quantity}}
+                  {{item.name | uppercase}} - Disponible: {{item.quantity}}
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -82,7 +82,7 @@ export interface EntregaDotacion {
           <mat-list-item *ngFor="let elemento of selectedElements; let i = index">
             <div class="element-item">
               <div class="element-info">
-                <span class="element-name">{{elemento.elemento}}</span>
+                <span class="element-name">{{elemento.elemento | uppercase}}</span>
                 <span class="element-quantity">Cantidad: {{elemento.cantidad}}</span>
               </div>
               <button mat-icon-button color="warn" (click)="removeElement(i)" matTooltip="Eliminar">

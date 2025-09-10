@@ -119,7 +119,7 @@ export class SupplyInventoryComponent implements OnInit {
           .subscribe({
             next: (response) => {
               this.snackBar.open(
-                `Se agregaron ${result.quantity} unidades de ${item.name}`, 
+                `Se agregaron ${result.quantity} unidades de ${item.name.toUpperCase()}`, 
                 'Cerrar', 
                 { duration: 3000 }
               );
