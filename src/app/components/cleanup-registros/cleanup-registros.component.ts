@@ -9,8 +9,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
@@ -43,8 +41,6 @@ interface ConfirmacionEliminacion {
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatProgressBarModule,
     MatSnackBarModule,
     MatDividerModule,
@@ -100,7 +96,6 @@ interface ConfirmacionEliminacion {
                   <mat-select formControlName="tipoEliminacion" (selectionChange)="onTipoChange()">
                     <mat-option value="anio">Por Año Completo</mat-option>
                     <mat-option value="mes">Por Mes Específico</mat-option>
-                    <mat-option value="rango">Por Rango de Fechas</mat-option>
                   </mat-select>
                 </mat-form-field>
 
@@ -143,51 +138,23 @@ interface ConfirmacionEliminacion {
                   </mat-form-field>
                 </div>
 
-                <div *ngIf="cleanupForm.get('tipoEliminacion')?.value === 'rango'">
-                  <mat-form-field appearance="fill">
-                    <mat-label>Fecha Inicio</mat-label>
-                    <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio" [max]="fechaMaxima">
-                    <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
-                    <mat-datepicker #pickerInicio></mat-datepicker>
-                  </mat-form-field>
-                  <mat-form-field appearance="fill">
-                    <mat-label>Fecha Fin</mat-label>
-                    <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin" [max]="fechaMaxima">
-                    <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
-                    <mat-datepicker #pickerFin></mat-datepicker>
-                  </mat-form-field>
-                </div>
+
               </form>
             </div>
           </div>
 
-          <!-- Paso 2: Previsualización -->
-          <div *ngIf="currentStep === 'preview'" class="step-container">
-            <h3>👁️ Previsualización de Eliminación</h3>
-            <div *ngIf="previewData" class="preview-info">
-              <div class="warning-box">
-                <mat-icon>warning</mat-icon>
-                <div>
-                  <p><strong>¡ATENCIÓN!</strong> Esta acción eliminará permanentemente:</p>
-                  <ul>
-                    <li><strong>{{ previewData.cantidad | number }}</strong> registros de entregas</li>
-                    <li><strong>{{ previewData.firmas.length | number }}</strong> archivos de firmas digitales</li>
-                  </ul>
-                  <p><strong>Esta acción NO se puede deshacer.</strong></p>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Paso 3: Confirmación -->
+
+          <!-- Paso 2: Confirmación -->
           <div *ngIf="currentStep === 'confirm'" class="step-container">
             <h3>✋ Confirmación Requerida</h3>
             <div class="confirmation-section">
               <div class="danger-box">
                 <mat-icon>dangerous</mat-icon>
                 <p><strong>CONFIRMACIÓN FINAL:</strong></p>
-                <p>Para proceder con la eliminación de <strong>{{ previewData?.cantidad | number }}</strong> registros, 
-                   escriba exactamente la palabra <strong>"ELIMINAR"</strong> en el campo de abajo:</p>
+                <p>Está a punto de eliminar registros {{ getCriterioTexto() }}.</p>
+                <p><strong>Esta acción NO se puede deshacer.</strong></p>
+                <p>Para proceder, escriba exactamente la palabra <strong>"ELIMINAR"</strong> en el campo de abajo:</p>
               </div>
               
               <mat-form-field appearance="fill" class="confirmation-input">
@@ -235,18 +202,11 @@ interface ConfirmacionEliminacion {
             
             <div class="action-buttons">
               <button *ngIf="currentStep === 'stats'" 
-                      mat-raised-button color="primary" 
-                      (click)="previsualizarEliminacion()"
+                      mat-raised-button color="warn" 
+                      (click)="iniciarEliminacion()"
                       [disabled]="!cleanupForm.valid || procesando">
-                <mat-icon>visibility</mat-icon>
-                Previsualizar
-              </button>
-              
-              <button *ngIf="currentStep === 'preview'" 
-                      mat-raised-button color="accent" 
-                      (click)="currentStep = 'confirm'">
-                <mat-icon>arrow_forward</mat-icon>
-                Continuar
+                <mat-icon>delete_sweep</mat-icon>
+                Eliminar Registros
               </button>
               
               <button *ngIf="currentStep === 'confirm'" 
@@ -461,7 +421,6 @@ export class CleanupRegistrosComponent implements OnInit {
   confirmacionTexto = '';
   confirmacionValida = false;
   
-  fechaMaxima: Date;
   aniosDisponibles: { anio: number; cantidad: number }[] = [];
 
   private apiUrl = getApiBaseUrl();
@@ -472,16 +431,10 @@ export class CleanupRegistrosComponent implements OnInit {
     private dialogRef: MatDialogRef<CleanupRegistrosComponent>,
     private snackBar: MatSnackBar
   ) {
-    // Fecha máxima: hace un año desde hoy
-    this.fechaMaxima = new Date();
-    this.fechaMaxima.setFullYear(this.fechaMaxima.getFullYear() - 1);
-
     this.cleanupForm = this.fb.group({
       tipoEliminacion: ['', Validators.required],
       anio: [''],
-      mes: [''],
-      fechaInicio: [''],
-      fechaFin: ['']
+      mes: ['']
     });
   }
 
@@ -535,70 +488,44 @@ export class CleanupRegistrosComponent implements OnInit {
     // Reset form fields
     this.cleanupForm.patchValue({
       anio: '',
-      mes: '',
-      fechaInicio: '',
-      fechaFin: ''
+      mes: ''
     });
 
     // Update validators
     const anioControl = this.cleanupForm.get('anio');
     const mesControl = this.cleanupForm.get('mes');
-    const fechaInicioControl = this.cleanupForm.get('fechaInicio');
-    const fechaFinControl = this.cleanupForm.get('fechaFin');
 
     // Clear all validators first
     anioControl?.clearValidators();
     mesControl?.clearValidators();
-    fechaInicioControl?.clearValidators();
-    fechaFinControl?.clearValidators();
 
     if (tipo === 'anio') {
       anioControl?.setValidators([Validators.required]);
     } else if (tipo === 'mes') {
       anioControl?.setValidators([Validators.required]);
       mesControl?.setValidators([Validators.required]);
-    } else if (tipo === 'rango') {
-      fechaInicioControl?.setValidators([Validators.required]);
-      fechaFinControl?.setValidators([Validators.required]);
     }
 
     // Update validity
     anioControl?.updateValueAndValidity();
     mesControl?.updateValueAndValidity();
-    fechaInicioControl?.updateValueAndValidity();
-    fechaFinControl?.updateValueAndValidity();
   }
 
-  async previsualizarEliminacion() {
+  iniciarEliminacion() {
     if (!this.cleanupForm.valid) return;
+    this.currentStep = 'confirm';
+  }
 
-    try {
-      this.procesando = true;
-      const formData = this.cleanupForm.value;
-      let params: any = {};
-
-      if (formData.tipoEliminacion === 'anio') {
-        params.anio = formData.anio;
-      } else if (formData.tipoEliminacion === 'mes') {
-        params.anio = formData.anio;
-        params.mes = formData.mes;
-      } else if (formData.tipoEliminacion === 'rango') {
-        params.fechaInicio = formData.fechaInicio.toISOString().split('T')[0];
-        params.fechaFin = formData.fechaFin.toISOString().split('T')[0];
-      }
-
-      const response = await this.http.get<ConfirmacionEliminacion>(`${this.apiUrl}/api/delivery/preview-delete`, { params }).toPromise();
-      
-      if (response) {
-        this.previewData = response;
-        this.currentStep = 'preview';
-      }
-    } catch (error) {
-      console.error('Error en previsualización:', error);
-      this.snackBar.open('Error en previsualización', 'Cerrar', { duration: 5000 });
-    } finally {
-      this.procesando = false;
+  getCriterioTexto(): string {
+    const formData = this.cleanupForm.value;
+    if (formData.tipoEliminacion === 'anio') {
+      return `del año ${formData.anio}`;
+    } else if (formData.tipoEliminacion === 'mes') {
+      const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      return `de ${meses[formData.mes]} ${formData.anio}`;
     }
+    return '';
   }
 
   validarConfirmacion() {
@@ -606,7 +533,7 @@ export class CleanupRegistrosComponent implements OnInit {
   }
 
   async ejecutarEliminacion() {
-    if (!this.confirmacionValida || !this.previewData) return;
+    if (!this.confirmacionValida) return;
 
     try {
       this.procesando = true;
@@ -621,9 +548,6 @@ export class CleanupRegistrosComponent implements OnInit {
       } else if (formData.tipoEliminacion === 'mes') {
         params.anio = formData.anio;
         params.mes = formData.mes;
-      } else if (formData.tipoEliminacion === 'rango') {
-        params.fechaInicio = formData.fechaInicio.toISOString().split('T')[0];
-        params.fechaFin = formData.fechaFin.toISOString().split('T')[0];
       }
 
       // Primero obtener las firmas a eliminar
