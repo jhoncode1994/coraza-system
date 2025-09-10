@@ -445,8 +445,8 @@ export class CleanupRegistrosComponent implements OnInit {
   async cargarEstadisticas() {
     try {
       this.procesando = true;
-      console.log('Cargando estadísticas desde:', `${this.apiUrl}/api/delivery/stats`);
-      const response = await this.http.get<RegistroStats>(`${this.apiUrl}/api/delivery/stats`).toPromise();
+      console.log('Cargando estadísticas desde:', `${this.apiUrl}/delivery/stats`);
+      const response = await this.http.get<RegistroStats>(`${this.apiUrl}/delivery/stats`).toPromise();
       
       console.log('Response recibida:', response);
       if (response) {
@@ -552,7 +552,7 @@ export class CleanupRegistrosComponent implements OnInit {
 
       // Primero obtener las firmas a eliminar
       this.progresoMensaje = 'Obteniendo lista de firmas...';
-      const firmasResponse = await this.http.get<{firmas: string[]}>(`${this.apiUrl}/api/delivery/get-firmas-to-delete`, { params }).toPromise();
+      const firmasResponse = await this.http.get<{firmas: string[]}>(`${this.apiUrl}/delivery/get-firmas-to-delete`, { params }).toPromise();
 
       // Eliminar las firmas del storage
       if (firmasResponse && firmasResponse.firmas.length > 0) {
@@ -564,7 +564,7 @@ export class CleanupRegistrosComponent implements OnInit {
 
       // Eliminar los registros de la base de datos
       this.progresoMensaje = 'Eliminando registros de la base de datos...';
-      const deleteResponse = await this.http.delete<any>(`${this.apiUrl}/api/delivery/bulk-delete`, { params }).toPromise();
+      const deleteResponse = await this.http.delete<any>(`${this.apiUrl}/delivery/bulk-delete`, { params }).toPromise();
 
       if (deleteResponse) {
         this.resultadoEliminacion = deleteResponse;
