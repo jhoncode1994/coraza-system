@@ -373,11 +373,25 @@
   border: 1px solid #e9ecef;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
+  overflow: hidden;
+}
+
+.reports-card ::ng-deep .mat-mdc-card-header {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%) !important;
+  color: white !important;
+}
+
+.reports-card ::ng-deep .mat-mdc-card-title {
+  color: white !important;
+}
+
+.reports-card ::ng-deep .mat-mdc-card-subtitle {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .reports-card mat-card-header {
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-  color: white;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%) !important;
+  color: white !important;
   padding: 20px;
   border-radius: 8px 8px 0 0;
   margin: -24px -24px 20px -24px;
@@ -390,17 +404,18 @@
   font-size: 1.4rem;
   font-weight: 600;
   margin: 0;
+  color: white !important;
 }
 
 .reports-card mat-card-title mat-icon {
-  color: white;
+  color: white !important;
   font-size: 28px;
   width: 28px;
   height: 28px;
 }
 
 .reports-card mat-card-subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.9) !important;
   margin: 8px 0 0 0;
   font-size: 1rem;
 }
