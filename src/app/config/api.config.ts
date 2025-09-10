@@ -5,10 +5,10 @@ export function getApiBaseUrl(): string {
     
     // Si estamos en localhost o desarrollo
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3000/api';
+      return 'http://localhost:3000';
     }
   }
   
-  // En producción, usar URL relativa
-  return '/api';
+  // En producción, usar URL base sin /api
+  return '';
 }
