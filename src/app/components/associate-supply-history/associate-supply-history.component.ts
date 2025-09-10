@@ -14,7 +14,8 @@ import { SignatureViewerComponent } from '../signature-viewer/signature-viewer.c
   templateUrl: './associate-supply-history.component.html',
   styleUrls: ['./associate-supply-history.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatProgressSpinnerModule, MatCardModule, MatButtonModule, MatIconModule, MatDialogModule]
+  imports: [CommonModule, MatTableModule, MatProgressSpinnerModule, MatCardModule, MatButtonModule, MatIconModule, MatDialogModule],
+  providers: []
 })
 export class AssociateSupplyHistoryComponent implements OnInit {
   @Input() associateId!: number;

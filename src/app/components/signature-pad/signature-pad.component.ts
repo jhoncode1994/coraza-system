@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { SupabaseSignatureService } from '../../services/supabase-signature.service';
+// import { SupabaseSignatureService } from '../../services/supabase-signature.service'; // Temporalmente deshabilitado
 
 // Implementación nativa de firma digital sin dependencias externas
 class SimpleSignaturePad {
@@ -301,7 +301,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   isDrawing = false;
   isUploading = false;
 
-  constructor(private supabaseSignatureService: SupabaseSignatureService) {}
+  constructor(/* private supabaseSignatureService: SupabaseSignatureService */) {} // Temporalmente deshabilitado
 
   ngOnInit() {
     // Configuración inicial
@@ -374,15 +374,17 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
           canvas.toBlob((blob) => resolve(blob!), 'image/png');
         });
         
-        // Subir a Supabase Storage y obtener URL pública
-        const publicUrl = await this.supabaseSignatureService.uploadSignature(blob, this.userId);
+        // TODO: Supabase temporalmente deshabilitado por problemas de build
+        // const publicUrl = await this.supabaseSignatureService.uploadSignature(blob, this.userId);
+        // this.signatureChange.emit(publicUrl);
         
-        // Emitir la URL pública en lugar del base64
-        this.signatureChange.emit(publicUrl);
+        // Usar base64 directamente (método actual)
+        const dataURL = this.signaturePad.toDataURL('image/png');
+        this.signatureChange.emit(dataURL);
         
       } catch (error) {
-        console.error('Error subiendo la firma:', error);
-        // Fallback: emitir base64 si falla la subida
+        console.error('Error procesando la firma:', error);
+        // Fallback: emitir base64
         const dataURL = this.signaturePad.toDataURL('image/png');
         this.signatureChange.emit(dataURL);
       } finally {

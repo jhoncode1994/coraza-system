@@ -3,10 +3,10 @@ services:
     name: coraza-system
     env: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm cache clean --force && npm ci && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
-        value: 18.20.4
+        value: 20.17.0
       - key: NPM_VERSION
-        value: 8.19.4
+        value: 10.8.1
