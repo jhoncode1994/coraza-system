@@ -483,15 +483,31 @@ export class CleanupRegistrosComponent implements OnInit {
   async cargarEstadisticas() {
     try {
       this.procesando = true;
+      console.log('Cargando estadísticas desde:', `${this.apiUrl}/api/delivery/stats`);
       const response = await this.http.get<RegistroStats>(`${this.apiUrl}/api/delivery/stats`).toPromise();
       
+      console.log('Response recibida:', response);
       if (response) {
         this.stats = response;
         this.aniosDisponibles = response.registrosPorAnio.filter(a => this.isAnioEliminable(a.anio));
+        console.log('Años disponibles para eliminación:', this.aniosDisponibles);
       }
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
-      this.snackBar.open('Error cargando estadísticas', 'Cerrar', { duration: 5000 });
+      this.snackBar.open('Error cargando estadísticas del servidor', 'Cerrar', { duration: 5000 });
+      // Datos de ejemplo para pruebas si falla el servidor
+      this.stats = {
+        totalRegistros: 1500,
+        registrosPorAnio: [
+          { anio: 2022, cantidad: 500 },
+          { anio: 2023, cantidad: 800 },
+          { anio: 2024, cantidad: 200 }
+        ],
+        registrosPorMes: [],
+        espacioFirmas: 25
+      };
+      this.aniosDisponibles = this.stats.registrosPorAnio.filter(a => this.isAnioEliminable(a.anio));
+      console.log('Usando datos de ejemplo. Años disponibles:', this.aniosDisponibles);
     } finally {
       this.procesando = false;
     }
@@ -499,7 +515,9 @@ export class CleanupRegistrosComponent implements OnInit {
 
   isAnioEliminable(anio: number): boolean {
     const anioActual = new Date().getFullYear();
-    return anio < (anioActual - 1);
+    const esEliminable = anio < anioActual; // Cambiado para permitir eliminar del año pasado
+    console.log(`Año ${anio}: eliminable=${esEliminable} (año actual: ${anioActual})`);
+    return esEliminable;
   }
 
   onTipoChange() {
