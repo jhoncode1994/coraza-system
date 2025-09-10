@@ -78,9 +78,12 @@ export class DashboardComponent implements OnInit {
 
   openCleanupDialog() {
     const dialogRef = this.dialog.open(CleanupRegistrosComponent, {
-      width: '700px',
-      maxWidth: '95vw',
-      disableClose: true
+      width: '600px',
+      maxWidth: '90vw',
+      maxHeight: '80vh',
+      disableClose: true,
+      hasBackdrop: true,
+      panelClass: 'cleanup-dialog'
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result && result.eliminados) {

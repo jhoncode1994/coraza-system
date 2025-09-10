@@ -4,6 +4,16 @@
   min-height: 100vh;
 }
 
+// Estilos para el diálogo de cleanup
+::ng-deep .cleanup-dialog .mat-mdc-dialog-container {
+  max-height: 85vh !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .cleanup-dialog .mdc-dialog__surface {
+  overflow: hidden !important;
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;

@@ -271,13 +271,17 @@ interface ConfirmacionEliminacion {
   `,
   styles: [`
     .cleanup-container {
-      padding: 20px;
-      max-width: 800px;
-      margin: 0 auto;
+      padding: 16px;
+      max-width: 100%;
+      margin: 0;
+      max-height: 65vh;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     
     .cleanup-card {
       width: 100%;
+      box-shadow: none;
       min-height: 500px;
     }
     
@@ -295,9 +299,9 @@ interface ConfirmacionEliminacion {
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin: 20px 0;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
     }
     
     .stat-card {
@@ -333,12 +337,17 @@ interface ConfirmacionEliminacion {
     }
     
     .form-section {
-      margin: 24px 0;
+      margin: 16px 0;
     }
     
     .form-section mat-form-field {
       width: 100%;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+    }
+    
+    .form-section h4 {
+      margin-bottom: 12px;
+      font-size: 1.1rem;
     }
     
     .warning-box {
