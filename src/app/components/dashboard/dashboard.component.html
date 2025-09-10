@@ -16,6 +16,12 @@
   </div>
 
   <div *ngIf="!isLoading" class="dashboard-content">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+      <button mat-raised-button color="warn" (click)="openCleanupDialog()">
+        <mat-icon>delete_sweep</mat-icon>
+        Eliminar registros antiguos
+      </button>
+    </div>
     <!-- Métricas principales -->
     <div class="metrics-grid">
       <mat-card class="metric-card primary">

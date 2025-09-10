@@ -10,6 +10,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { CleanupRegistrosComponent } from '../cleanup-registros/cleanup-registros.component';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -74,6 +75,20 @@ export class DashboardComponent implements OnInit {
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {}
+
+  openCleanupDialog() {
+    const dialogRef = this.dialog.open(CleanupRegistrosComponent, {
+      width: '700px',
+      maxWidth: '95vw',
+      disableClose: true
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result && result.eliminados) {
+        this.snackBar.open(`Se eliminaron ${result.eliminados} registros antiguos.`, 'Cerrar', { duration: 5000 });
+        this.refreshData?.();
+      }
+    });
+  }
 
   ngOnInit() {
     this.loadDashboardData();
