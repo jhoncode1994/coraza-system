@@ -27,7 +27,7 @@ export interface EntregaDotacion {
   elementos: EntregaDotacionItem[];
   fechaEntrega: Date;
   observaciones?: string;
-  firma?: string; // Firma digital en base64
+  firma_url?: string; // URL pública de la firma en Supabase Storage
 }
 
 @Component({
@@ -122,6 +122,7 @@ export interface EntregaDotacion {
       <!-- Componente de Firma Digital -->
       <div class="signature-section" *ngIf="selectedElements.length > 0">
         <app-signature-pad 
+          [userId]="data.user.id"
           (signatureChange)="onSignatureChange($event)"
           [showError]="showSignatureError">
         </app-signature-pad>
@@ -417,7 +418,7 @@ export class EntregaDotacionDialogComponent implements OnInit {
         elementos: this.selectedElements,
         fechaEntrega: this.deliveryForm.get('fechaEntrega')?.value,
         observaciones: this.deliveryForm.get('observaciones')?.value || '',
-        firma: this.signature
+        firma_url: this.signature
       };
       this.dialogRef.close(entrega);
     }

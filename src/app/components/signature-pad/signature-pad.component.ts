@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { SupabaseSignatureService } from '../../services/supabase-signature.service';
 
 // Implementación nativa de firma digital sin dependencias externas
 class SimpleSignaturePad {
@@ -148,14 +149,15 @@ class SimpleSignaturePad {
           </div>
           
           <div class="signature-actions">
-            <button mat-stroked-button (click)="clear()" [disabled]="isEmpty" color="warn">
+            <button mat-stroked-button (click)="clear()" [disabled]="isEmpty || isUploading" color="warn">
               <mat-icon>clear</mat-icon>
               Limpiar
             </button>
             
-            <button mat-raised-button (click)="save()" [disabled]="isEmpty" color="primary">
-              <mat-icon>check_circle</mat-icon>
-              Confirmar Firma
+            <button mat-raised-button (click)="save()" [disabled]="isEmpty || isUploading" color="primary">
+              <mat-icon *ngIf="!isUploading">check_circle</mat-icon>
+              <mat-icon *ngIf="isUploading" class="spinning">sync</mat-icon>
+              {{isUploading ? 'Subiendo...' : 'Confirmar Firma'}}
             </button>
           </div>
           
@@ -275,6 +277,16 @@ class SimpleSignaturePad {
         height: 280px;
       }
     }
+
+    /* Animación de carga para el ícono */
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   `]
 })
 export class SignaturePadComponent implements AfterViewInit, OnInit {
@@ -282,10 +294,14 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   @Output() signatureChange = new EventEmitter<string | null>();
   @Input() showError = false;
   @Input() required = true;
+  @Input() userId: string | number = ''; // ID del usuario para nombrar el archivo
 
   private signaturePad!: SimpleSignaturePad;
   isEmpty = true;
   isDrawing = false;
+  isUploading = false;
+
+  constructor(private supabaseSignatureService: SupabaseSignatureService) {}
 
   ngOnInit() {
     // Configuración inicial
@@ -345,13 +361,33 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
     }
   }
 
-  private emitSignature() {
+  private async emitSignature() {
     if (this.isEmpty) {
       this.signatureChange.emit(null);
     } else {
-      // Emitir la firma como base64
-      const dataURL = this.signaturePad.toDataURL('image/png');
-      this.signatureChange.emit(dataURL);
+      try {
+        this.isUploading = true;
+        
+        // Convertir canvas a blob PNG
+        const canvas = this.canvasRef.nativeElement;
+        const blob = await new Promise<Blob>((resolve) => {
+          canvas.toBlob((blob) => resolve(blob!), 'image/png');
+        });
+        
+        // Subir a Supabase Storage y obtener URL pública
+        const publicUrl = await this.supabaseSignatureService.uploadSignature(blob, this.userId);
+        
+        // Emitir la URL pública en lugar del base64
+        this.signatureChange.emit(publicUrl);
+        
+      } catch (error) {
+        console.error('Error subiendo la firma:', error);
+        // Fallback: emitir base64 si falla la subida
+        const dataURL = this.signaturePad.toDataURL('image/png');
+        this.signatureChange.emit(dataURL);
+      } finally {
+        this.isUploading = false;
+      }
     }
   }
 

@@ -1083,7 +1083,7 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           cantidad: delivery.cantidad,
           fechaEntrega: delivery.fechaEntrega,
           observaciones: delivery.observaciones,
-          firmaDigital: delivery.firmaDigital
+          firma_url: delivery.firma_url
         });
         
         await client.query(`
@@ -1097,7 +1097,7 @@ app.post('/api/associates/:id/retire', async (req, res) => {
           delivery.cantidad || 1,
           delivery.fechaEntrega || new Date(),
           delivery.observaciones || null,
-          delivery.firmaDigital || null
+          delivery.firma_url || null
         ]);
         console.log('Entrega migrada exitosamente');
       }
@@ -1285,17 +1285,17 @@ app.use((err, req, res, next) => {
 // Guardar entrega de dotación
 app.post('/api/delivery', async (req, res) => {
   try {
-    const { userId, elemento, cantidad, fechaEntrega, observaciones, firmaDigital } = req.body;
+    const { userId, elemento, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
     
     console.log('Guardando entrega de dotación:', { userId, elemento, cantidad });
     
     const client = await pool.connect();
     
     const result = await client.query(`
-      INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", "firmaDigital", observaciones)
+      INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", "firma_url", observaciones)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
-    `, [userId, elemento, cantidad, fechaEntrega || new Date(), firmaDigital, observaciones]);
+    `, [userId, elemento, cantidad, fechaEntrega || new Date(), firma_url, observaciones]);
     
     client.release();
     
@@ -1493,6 +1493,215 @@ app.get('/api/delivery/element/:elementName/pdf-data', async (req, res) => {
   } catch (error) {
     console.error('Error obteniendo datos del elemento:', error);
     res.status(500).json({ error: 'Error al obtener datos del elemento' });
+  }
+});
+
+// Endpoints para limpieza masiva de registros
+
+// Obtener estadísticas de registros para limpieza
+app.get('/api/delivery/stats', async (req, res) => {
+  try {
+    console.log('Obteniendo estadísticas de registros...');
+    
+    const client = await pool.connect();
+    
+    // Total de registros
+    const totalResult = await client.query('SELECT COUNT(*) as total FROM entrega_dotacion');
+    const totalRegistros = parseInt(totalResult.rows[0].total);
+    
+    // Registros por año
+    const aniosResult = await client.query(`
+      SELECT 
+        EXTRACT(YEAR FROM "fechaEntrega") as anio,
+        COUNT(*) as cantidad
+      FROM entrega_dotacion
+      GROUP BY EXTRACT(YEAR FROM "fechaEntrega")
+      ORDER BY anio DESC
+    `);
+    
+    // Registros por mes
+    const mesesResult = await client.query(`
+      SELECT 
+        EXTRACT(YEAR FROM "fechaEntrega") as anio,
+        EXTRACT(MONTH FROM "fechaEntrega") as mes,
+        COUNT(*) as cantidad,
+        COUNT(CASE WHEN "firma_url" IS NOT NULL AND "firma_url" != '' THEN 1 END) as firmas
+      FROM entrega_dotacion
+      GROUP BY EXTRACT(YEAR FROM "fechaEntrega"), EXTRACT(MONTH FROM "fechaEntrega")
+      ORDER BY anio DESC, mes DESC
+    `);
+    
+    // Estimar espacio en firmas (aproximado)
+    const firmasResult = await client.query(`
+      SELECT COUNT(*) as total_firmas 
+      FROM entrega_dotacion 
+      WHERE "firma_url" IS NOT NULL AND "firma_url" != ''
+    `);
+    
+    const espacioFirmas = Math.round(parseInt(firmasResult.rows[0].total_firmas) * 0.05); // ~50KB por firma
+    
+    client.release();
+    
+    res.json({
+      totalRegistros,
+      registrosPorAnio: aniosResult.rows.map(row => ({
+        anio: parseInt(row.anio),
+        cantidad: parseInt(row.cantidad)
+      })),
+      registrosPorMes: mesesResult.rows.map(row => ({
+        anio: parseInt(row.anio),
+        mes: parseInt(row.mes),
+        cantidad: parseInt(row.cantidad),
+        firmas: parseInt(row.firmas)
+      })),
+      espacioFirmas
+    });
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+});
+
+// Previsualizar eliminación masiva
+app.get('/api/delivery/preview-delete', async (req, res) => {
+  try {
+    const { anio, mes, fechaInicio, fechaFin } = req.query;
+    console.log('Previsualizando eliminación:', { anio, mes, fechaInicio, fechaFin });
+    
+    const client = await pool.connect();
+    
+    let whereClause = '';
+    let params = [];
+    
+    if (anio && mes) {
+      whereClause = 'WHERE EXTRACT(YEAR FROM "fechaEntrega") = $1 AND EXTRACT(MONTH FROM "fechaEntrega") = $2';
+      params = [anio, mes];
+    } else if (anio) {
+      whereClause = 'WHERE EXTRACT(YEAR FROM "fechaEntrega") = $1';
+      params = [anio];
+    } else if (fechaInicio && fechaFin) {
+      whereClause = 'WHERE "fechaEntrega" >= $1 AND "fechaEntrega" <= $2';
+      params = [fechaInicio, fechaFin];
+    }
+    
+    // Obtener cantidad total
+    const countResult = await client.query(`
+      SELECT COUNT(*) as cantidad FROM entrega_dotacion ${whereClause}
+    `, params);
+    
+    // Obtener URLs de firmas
+    const firmasResult = await client.query(`
+      SELECT "firma_url" FROM entrega_dotacion 
+      ${whereClause} AND "firma_url" IS NOT NULL AND "firma_url" != ''
+    `, params);
+    
+    client.release();
+    
+    res.json({
+      cantidad: parseInt(countResult.rows[0].cantidad),
+      firmas: firmasResult.rows.map(row => row.firma_url).filter(url => url)
+    });
+  } catch (error) {
+    console.error('Error en previsualización:', error);
+    res.status(500).json({ error: 'Error en previsualización' });
+  }
+});
+
+// Obtener firmas a eliminar
+app.get('/api/delivery/get-firmas-to-delete', async (req, res) => {
+  try {
+    const { anio, mes, fechaInicio, fechaFin } = req.query;
+    console.log('Obteniendo firmas a eliminar:', { anio, mes, fechaInicio, fechaFin });
+    
+    const client = await pool.connect();
+    
+    let whereClause = '';
+    let params = [];
+    
+    if (anio && mes) {
+      whereClause = 'WHERE EXTRACT(YEAR FROM "fechaEntrega") = $1 AND EXTRACT(MONTH FROM "fechaEntrega") = $2';
+      params = [anio, mes];
+    } else if (anio) {
+      whereClause = 'WHERE EXTRACT(YEAR FROM "fechaEntrega") = $1';
+      params = [anio];
+    } else if (fechaInicio && fechaFin) {
+      whereClause = 'WHERE "fechaEntrega" >= $1 AND "fechaEntrega" <= $2';
+      params = [fechaInicio, fechaFin];
+    }
+    
+    const result = await client.query(`
+      SELECT "firma_url" FROM entrega_dotacion 
+      ${whereClause} AND "firma_url" IS NOT NULL AND "firma_url" != ''
+    `, params);
+    
+    client.release();
+    
+    res.json({
+      firmas: result.rows.map(row => row.firma_url).filter(url => url)
+    });
+  } catch (error) {
+    console.error('Error obteniendo firmas:', error);
+    res.status(500).json({ error: 'Error al obtener firmas' });
+  }
+});
+
+// Eliminación masiva de registros
+app.delete('/api/delivery/bulk-delete', async (req, res) => {
+  try {
+    const { anio, mes, fechaInicio, fechaFin } = req.query;
+    console.log('Eliminación masiva:', { anio, mes, fechaInicio, fechaFin });
+    
+    // Validar que no se eliminen registros del último año
+    const anioActual = new Date().getFullYear();
+    if (anio && parseInt(anio) >= (anioActual - 1)) {
+      return res.status(400).json({ error: 'No se pueden eliminar registros del último año' });
+    }
+    
+    const client = await pool.connect();
+    
+    let whereClause = '';
+    let params = [];
+    
+    if (anio && mes) {
+      whereClause = 'WHERE EXTRACT(YEAR FROM "fechaEntrega") = $1 AND EXTRACT(MONTH FROM "fechaEntrega") = $2';
+      params = [anio, mes];
+    } else if (anio) {
+      whereClause = 'WHERE EXTRACT(YEAR FROM "fechaEntrega") = $1';
+      params = [anio];
+    } else if (fechaInicio && fechaFin) {
+      whereClause = 'WHERE "fechaEntrega" >= $1 AND "fechaEntrega" <= $2';
+      params = [fechaInicio, fechaFin];
+      
+      // Validar fechas
+      const fechaInicioDate = new Date(fechaInicio);
+      const fechaLimite = new Date();
+      fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
+      
+      if (fechaInicioDate >= fechaLimite) {
+        return res.status(400).json({ error: 'No se pueden eliminar registros del último año' });
+      }
+    }
+    
+    if (!whereClause) {
+      return res.status(400).json({ error: 'Parámetros de eliminación inválidos' });
+    }
+    
+    const result = await client.query(`
+      DELETE FROM entrega_dotacion ${whereClause}
+    `, params);
+    
+    client.release();
+    
+    console.log(`Eliminados ${result.rowCount} registros`);
+    
+    res.json({
+      success: true,
+      eliminados: result.rowCount,
+      message: `Eliminados ${result.rowCount} registros exitosamente`
+    });
+  } catch (error) {
+    console.error('Error en eliminación masiva:', error);
+    res.status(500).json({ error: 'Error en eliminación masiva' });
   }
 });
 

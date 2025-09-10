@@ -8,7 +8,7 @@ export interface EntregaDotacion {
   cantidad: number;
   fechaEntrega: Date | string;
   observaciones?: string;
-  firmaDigital?: string;
+  firma_url?: string; // URL pública de la firma en Supabase Storage
 }
 
 export async function getAllEntregas() {
@@ -26,7 +26,7 @@ export async function getEntregasByUser(userId: number) {
 
 export async function createEntrega(entrega: EntregaDotacion) {
   const result = await query(
-    `INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", observaciones, "firmaDigital")
+    `INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", observaciones, "firma_url")
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
     [
@@ -35,7 +35,7 @@ export async function createEntrega(entrega: EntregaDotacion) {
       entrega.cantidad,
       entrega.fechaEntrega,
       entrega.observaciones || '',
-      entrega.firmaDigital || ''
+      entrega.firma_url || ''
     ]
   );
   return result.rows[0];
@@ -45,7 +45,7 @@ export async function updateEntrega(id: number, entrega: EntregaDotacion) {
   const result = await query(
     `UPDATE entrega_dotacion 
      SET "userId" = $1, elemento = $2, cantidad = $3, "fechaEntrega" = $4, 
-         observaciones = $5, "firmaDigital" = $6
+         observaciones = $5, "firma_url" = $6
      WHERE id = $7 
      RETURNING *`,
     [
@@ -54,7 +54,7 @@ export async function updateEntrega(id: number, entrega: EntregaDotacion) {
       entrega.cantidad,
       entrega.fechaEntrega,
       entrega.observaciones || '',
-      entrega.firmaDigital || '',
+      entrega.firma_url || '',
       id
     ]
   );
