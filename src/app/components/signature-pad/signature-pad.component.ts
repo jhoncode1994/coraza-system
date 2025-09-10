@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-// import { SupabaseSignatureService } from '../../services/supabase-signature.service'; // Temporalmente deshabilitado
+
 
 // Implementación nativa de firma digital sin dependencias externas
 class SimpleSignaturePad {
@@ -301,7 +301,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   isDrawing = false;
   isUploading = false;
 
-  constructor(/* private supabaseSignatureService: SupabaseSignatureService */) {} // Temporalmente deshabilitado
+  constructor() {}
 
   ngOnInit() {
     // Configuración inicial
@@ -374,13 +374,9 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
           canvas.toBlob((blob) => resolve(blob!), 'image/png');
         });
         
-        // TODO: Supabase temporalmente deshabilitado por problemas de build
-        // const publicUrl = await this.supabaseSignatureService.uploadSignature(blob, this.userId);
-        // this.signatureChange.emit(publicUrl);
-        
-        // Usar base64 directamente (método actual)
-        const dataURL = this.signaturePad.toDataURL('image/png');
-        this.signatureChange.emit(dataURL);
+  // Usar base64 directamente
+  const dataURL = this.signaturePad.toDataURL('image/png');
+  this.signatureChange.emit(dataURL);
         
       } catch (error) {
         console.error('Error procesando la firma:', error);

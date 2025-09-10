@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
-// import { SupabaseSignatureService } from './supabase-signature.service'; // Temporalmente deshabilitado
+
 
 @Injectable({ providedIn: 'root' })
 export class SignatureCleanupService {
   
-  constructor(/* private supabaseSignatureService: SupabaseSignatureService */) {} // Temporalmente deshabilitado
+  constructor() {}
 
   /**
    * Elimina una firma del storage cuando se elimine una entrega
@@ -14,9 +14,7 @@ export class SignatureCleanupService {
     if (!firmaUrl || firmaUrl === 'MIGRATED_FROM_BASE64') return;
     
     try {
-      // TODO: Supabase temporalmente deshabilitado
-      // await this.supabaseSignatureService.deleteSignature(firmaUrl);
-      console.log('⚠️ Cleanup de firmas temporalmente deshabilitado (Supabase)');
+  // Cleanup de firmas deshabilitado (Supabase eliminado)
     } catch (error) {
       console.warn('⚠️ Error eliminando firma del storage:', error);
       // No lanzar error para no bloquear la eliminación de la entrega

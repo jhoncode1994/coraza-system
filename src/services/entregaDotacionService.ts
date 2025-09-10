@@ -8,7 +8,7 @@ export interface EntregaDotacion {
   cantidad: number;
   fechaEntrega: Date | string;
   observaciones?: string;
-  firma_url?: string; // URL pública de la firma en Supabase Storage
+  firma_url?: string;
 }
 
 export async function getAllEntregas() {

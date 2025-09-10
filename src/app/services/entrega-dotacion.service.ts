@@ -12,7 +12,7 @@ export interface EntregaHistorial {
   fechaEntrega: Date;
   observaciones?: string;
   tipo: 'entrega' | 'devolucion';
-  firma_url?: string; // URL pública de la firma en Supabase Storage
+  firma_url?: string;
 }
 
 @Injectable({

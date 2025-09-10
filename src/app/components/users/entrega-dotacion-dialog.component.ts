@@ -27,7 +27,7 @@ export interface EntregaDotacion {
   elementos: EntregaDotacionItem[];
   fechaEntrega: Date;
   observaciones?: string;
-  firma_url?: string; // URL pública de la firma en Supabase Storage
+  firma_url?: string;
 }
 
 @Component({
