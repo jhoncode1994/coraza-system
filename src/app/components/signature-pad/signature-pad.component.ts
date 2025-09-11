@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { SupabaseSignatureService } from '../../services/supabase-signature.service';
 
 
 // Implementación nativa de firma digital sin dependencias externas
@@ -165,6 +166,11 @@ class SimpleSignaturePad {
             <mat-icon>error</mat-icon>
             La firma es requerida para completar la entrega
           </div>
+          
+          <div class="error-message" *ngIf="uploadError">
+            <mat-icon>cloud_off</mat-icon>
+            {{ uploadError }}
+          </div>
         </mat-card-content>
       </mat-card>
     </div>
@@ -291,7 +297,8 @@ class SimpleSignaturePad {
 })
 export class SignaturePadComponent implements AfterViewInit, OnInit {
   @ViewChild('signatureCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @Output() signatureChange = new EventEmitter<string | null>();
+  @Output() signatureChange = new EventEmitter<string | null>(); // Ahora emite la URL de Supabase
+  @Output() signatureUploaded = new EventEmitter<string>(); // Nueva salida para URL confirmada
   @Input() showError = false;
   @Input() required = true;
   @Input() userId: string | number = ''; // ID del usuario para nombrar el archivo
@@ -300,8 +307,9 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   isEmpty = true;
   isDrawing = false;
   isUploading = false;
+  uploadError: string | null = null;
 
-  constructor() {}
+  constructor(private supabaseSignatureService: SupabaseSignatureService) {}
 
   ngOnInit() {
     // Configuración inicial
@@ -364,28 +372,39 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   private async emitSignature() {
     if (this.isEmpty) {
       this.signatureChange.emit(null);
-    } else {
-      try {
-        this.isUploading = true;
-        
-        // Convertir canvas a blob PNG
-        const canvas = this.canvasRef.nativeElement;
-        const blob = await new Promise<Blob>((resolve) => {
-          canvas.toBlob((blob) => resolve(blob!), 'image/png');
-        });
-        
-  // Usar base64 directamente
-  const dataURL = this.signaturePad.toDataURL('image/png');
-  this.signatureChange.emit(dataURL);
-        
-      } catch (error) {
-        console.error('Error procesando la firma:', error);
-        // Fallback: emitir base64
-        const dataURL = this.signaturePad.toDataURL('image/png');
-        this.signatureChange.emit(dataURL);
-      } finally {
-        this.isUploading = false;
-      }
+      return;
+    }
+
+    try {
+      this.isUploading = true;
+      this.uploadError = null;
+      
+      // Obtener la firma en base64
+      const signatureBase64 = this.signaturePad.toDataURL('image/png');
+      
+      // Generar nombre único para el archivo
+      const timestamp = Date.now();
+      const fileName = `signature_${this.userId || 'user'}_${timestamp}.png`;
+      
+      // Subir a Supabase Storage
+      const publicUrl = await this.supabaseSignatureService.uploadSignature(signatureBase64, fileName);
+      
+      // Emitir la URL pública de Supabase
+      this.signatureChange.emit(publicUrl);
+      this.signatureUploaded.emit(publicUrl);
+      
+      console.log('Firma subida exitosamente a:', publicUrl);
+      
+    } catch (error) {
+      console.error('Error subiendo firma a Supabase:', error);
+      this.uploadError = 'Error subiendo la firma. Intente nuevamente.';
+      
+      // Fallback: emitir base64 si Supabase falla
+      const dataURL = this.signaturePad.toDataURL('image/png');
+      this.signatureChange.emit(dataURL);
+      
+    } finally {
+      this.isUploading = false;
     }
   }
 
