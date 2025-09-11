@@ -43,7 +43,7 @@ export class SupabaseTestService {
         return false;
       }
       
-      const signaturesBucket = data?.find(bucket => bucket.name === 'signatures');
+      const signaturesBucket = data?.find((bucket: any) => bucket.name === 'signatures');
       const exists = !!signaturesBucket;
       
       console.log('Bucket signatures existe:', exists);
