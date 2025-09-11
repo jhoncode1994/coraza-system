@@ -21,6 +21,8 @@ import { SupplyInventoryService } from '../../services/supply-inventory.service'
 import { EntregaDotacionService, EntregaHistorial } from '../../services/entrega-dotacion.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 import { PdfReportService } from '../../services/pdf-report.service';
+import { AssociateSelectionDialogComponent } from '../associate-selection-dialog/associate-selection-dialog.component';
+import { ElementSelectionDialogComponent } from '../element-selection-dialog/element-selection-dialog.component';
 
 interface DashboardMetrics {
   totalAssociates: number;
@@ -372,42 +374,37 @@ export class DashboardComponent implements OnInit {
 
   private showElementSelectionDialog(elements: { value: string, viewValue: string }[]): Promise<string | null> {
     return new Promise((resolve) => {
-      const elementsList = elements.map((el, index) => `${index + 1}. ${el.value}`).join('\n');
-      const userInput = prompt(`📋 SELECCIONE ELEMENTO PARA REPORTE\n\n${elementsList}\n\nIngrese el número del elemento:`);
-      
-      if (userInput) {
-        const selectedIndex = parseInt(userInput) - 1;
-        if (selectedIndex >= 0 && selectedIndex < elements.length) {
-          resolve(elements[selectedIndex].value);
-        } else {
-          alert('❌ Número inválido. Por favor intente de nuevo.');
-          resolve(null);
-        }
-      } else {
-        resolve(null);
-      }
+      const dialogRef = this.dialog.open(ElementSelectionDialogComponent, {
+        width: '600px',
+        maxWidth: '90vw',
+        data: {
+          elements: elements,
+          title: 'Seleccionar Elemento para Reporte'
+        },
+        disableClose: true
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        resolve(result);
+      });
     });
   }
 
   private showAssociateSelectionDialog(users: any[]): Promise<any | null> {
     return new Promise((resolve) => {
-      const usersList = users.map((user, index) => 
-        `${index + 1}. ${user.nombre} ${user.apellido} (${user.cedula})`
-      ).join('\n');
-      
-      const userInput = prompt(`👥 SELECCIONE ASOCIADO PARA REPORTE\n\n${usersList}\n\nIngrese el número del asociado:`);
-      
-      if (userInput) {
-        const selectedIndex = parseInt(userInput) - 1;
-        if (selectedIndex >= 0 && selectedIndex < users.length) {
-          resolve(users[selectedIndex]);
-        } else {
-          alert('❌ Número inválido. Por favor intente de nuevo.');
-          resolve(null);
-        }
-      } else {
-        resolve(null);
-      }
+      const dialogRef = this.dialog.open(AssociateSelectionDialogComponent, {
+        width: '600px',
+        maxWidth: '90vw',
+        data: {
+          associates: users,
+          title: 'Seleccionar Asociado para Reporte'
+        },
+        disableClose: true
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        resolve(result);
+      });
     });
   }
 
