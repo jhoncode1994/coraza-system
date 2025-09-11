@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "ng serve --proxy-config proxy.conf.json",
     "build": "npx --yes @angular/cli@16.2.16 build --configuration production",
+    "build:prod": "ng build --configuration production",
     "build:dev": "npx --yes @angular/cli@16.2.16 build",
     "watch": "npx --yes @angular/cli@16.2.16 build --watch --configuration development",
     "test": "npx --yes @angular/cli@16.2.16 test",
