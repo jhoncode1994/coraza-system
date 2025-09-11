@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, Output, EventEmitter, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, Output, EventEmitter, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -295,7 +295,7 @@ class SimpleSignaturePad {
     }
   `]
 })
-export class SignaturePadComponent implements AfterViewInit, OnInit {
+export class SignaturePadComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild('signatureCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @Output() signatureChange = new EventEmitter<string | null>(); // Ahora emite la URL de Supabase
   @Output() signatureUploaded = new EventEmitter<string>(); // Nueva salida para URL confirmada
@@ -308,6 +308,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   isDrawing = false;
   isUploading = false;
   uploadError: string | null = null;
+  private uploadTimer: any = null; // Timer para evitar uploads múltiples
 
   constructor(private signatureStorageService: SignatureStorageService) {}
 
@@ -317,6 +318,14 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
 
   ngAfterViewInit() {
     this.initializeSignaturePad();
+  }
+
+  ngOnDestroy() {
+    // Limpiar timer al destruir el componente
+    if (this.uploadTimer) {
+      clearTimeout(this.uploadTimer);
+      this.uploadTimer = null;
+    }
   }
 
   private initializeSignaturePad() {
@@ -332,7 +341,16 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
     this.signaturePad.addEventListener('endStroke', () => {
       this.isDrawing = false;
       this.isEmpty = this.signaturePad.empty;
-      this.emitSignature();
+      
+      // Limpiar timer anterior si existe
+      if (this.uploadTimer) {
+        clearTimeout(this.uploadTimer);
+      }
+      
+      // Solo subir después de 2 segundos de inactividad
+      this.uploadTimer = setTimeout(() => {
+        this.emitSignature();
+      }, 2000);
     });
 
     // Redimensionar cuando cambie el tamaño de la ventana
@@ -360,11 +378,23 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   clear() {
     this.signaturePad.clear();
     this.isEmpty = true;
-    this.emitSignature();
+    
+    // Limpiar timer si existe
+    if (this.uploadTimer) {
+      clearTimeout(this.uploadTimer);
+      this.uploadTimer = null;
+    }
+    
+    this.signatureChange.emit(null);
   }
 
   save() {
     if (!this.isEmpty) {
+      // Limpiar timer y subir inmediatamente
+      if (this.uploadTimer) {
+        clearTimeout(this.uploadTimer);
+        this.uploadTimer = null;
+      }
       this.emitSignature();
     }
   }
