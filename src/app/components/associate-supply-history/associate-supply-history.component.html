@@ -37,10 +37,10 @@
     <ng-container matColumnDef="firma">
       <th mat-header-cell *matHeaderCellDef> Firma </th>
       <td mat-cell *matCellDef="let item">
-        <button mat-icon-button *ngIf="item.firma" (click)="viewSignature(item.firma)" color="primary">
+        <button mat-icon-button *ngIf="item.firma_url" (click)="viewSignature(item.firma_url)" color="primary">
           <mat-icon>visibility</mat-icon>
         </button>
-        <span *ngIf="!item.firma" class="no-signature">Sin firma</span>
+        <span *ngIf="!item.firma_url" class="no-signature">Sin firma</span>
       </td>
     </ng-container>
 
