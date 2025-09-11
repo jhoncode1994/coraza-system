@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { supabase } from '../config/supabase.config';
 
+// visualizacion de firmas-prueba: comentario agregado para forzar commit
+
 @Injectable({
   providedIn: 'root'
 })
