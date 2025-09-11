@@ -11,6 +11,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { CleanupRegistrosComponent } from '../cleanup-registros/cleanup-registros.component';
+import { SupabaseTestService } from '../../services/supabase-test.service';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -73,7 +74,8 @@ export class DashboardComponent implements OnInit {
     private pdfReportService: PdfReportService,
     private http: HttpClient,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private supabaseTestService: SupabaseTestService
   ) {}
 
   openCleanupDialog() {
@@ -91,6 +93,17 @@ export class DashboardComponent implements OnInit {
         this.refreshData?.();
       }
     });
+  }
+
+  async testSupabaseConnection() {
+    try {
+      this.snackBar.open('Probando conexión con Supabase...', 'Cerrar', { duration: 2000 });
+      await this.supabaseTestService.runFullTest();
+      this.snackBar.open('✅ Prueba de Supabase completada. Revisa la consola.', 'Cerrar', { duration: 5000 });
+    } catch (error) {
+      console.error('Error en prueba de Supabase:', error);
+      this.snackBar.open('❌ Error en prueba de Supabase. Revisa la consola.', 'Cerrar', { duration: 5000 });
+    }
   }
 
   ngOnInit() {

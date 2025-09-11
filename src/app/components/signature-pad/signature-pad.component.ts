@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { SupabaseSignatureService } from '../../services/supabase-signature.service';
+import { SignatureStorageService } from '../../services/signature-storage.service';
 
 
 // Implementación nativa de firma digital sin dependencias externas
@@ -309,7 +309,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
   isUploading = false;
   uploadError: string | null = null;
 
-  constructor(private supabaseSignatureService: SupabaseSignatureService) {}
+  constructor(private signatureStorageService: SignatureStorageService) {}
 
   ngOnInit() {
     // Configuración inicial
@@ -387,7 +387,7 @@ export class SignaturePadComponent implements AfterViewInit, OnInit {
       const fileName = `signature_${this.userId || 'user'}_${timestamp}.png`;
       
       // Subir a Supabase Storage
-      const publicUrl = await this.supabaseSignatureService.uploadSignature(signatureBase64, fileName);
+      const publicUrl = await this.signatureStorageService.uploadSignature(signatureBase64, fileName);
       
       // Emitir la URL pública de Supabase
       this.signatureChange.emit(publicUrl);
