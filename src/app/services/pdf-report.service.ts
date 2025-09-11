@@ -415,10 +415,18 @@ export class PdfReportService {
         doc.text('No hay entregas registradas para este asociado.', 20, startY + 45);
       } else {
         // Crear tabla manualmente si autoTable no está disponible
-        this.createManualTable(doc, deliveries, startY + 40);
+        const tableEndY = this.createManualTable(doc, deliveries, startY + 40);
         
-        // Resumen al final
-        const finalY = 75 + (deliveries.length * 10) + 30;
+        // Resumen al final - usar la posición real donde terminó la tabla
+        let finalY = tableEndY + 20;
+        
+        // Verificar si necesitamos nueva página para el resumen
+        const pageHeight = doc.internal.pageSize.height;
+        if (finalY > pageHeight - 50) {
+          doc.addPage();
+          finalY = 30;
+        }
+        
         doc.setFontSize(12);
         doc.setTextColor(44, 62, 80);
         doc.text('RESUMEN:', 20, finalY);
@@ -431,9 +439,27 @@ export class PdfReportService {
         
         let summaryY = finalY + 10;
         Object.entries(elementCount).forEach(([elemento, cantidad]) => {
+          // Verificar si necesitamos nueva página para cada línea del resumen
+          if (summaryY > pageHeight - 30) {
+            doc.addPage();
+            summaryY = 30;
+            // Redibujar el título del resumen en la nueva página
+            doc.setFontSize(12);
+            doc.setTextColor(44, 62, 80);
+            doc.text('RESUMEN (continuación):', 20, summaryY);
+            summaryY += 15;
+          }
+          
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
-          doc.text(`• ${elemento}: ${cantidad} unidad(es)`, 25, summaryY);
+          
+          // Truncar nombre del elemento si es muy largo para evitar desbordamiento
+          let elementoText = elemento;
+          if (elemento.length > 45) {
+            elementoText = elemento.substring(0, 42) + '...';
+          }
+          
+          doc.text(`• ${elementoText}: ${cantidad} unidad(es)`, 25, summaryY);
           summaryY += 8;
         });
       }
@@ -459,10 +485,11 @@ export class PdfReportService {
   /**
    * Crea una tabla manual cuando autoTable no está disponible
    */
-  private createManualTable(doc: any, deliveries: DeliveryRecord[], startY: number): void {
+  private createManualTable(doc: any, deliveries: DeliveryRecord[], startY: number): number {
     const headers = ['Fecha', 'Elemento', 'Cantidad', 'Observaciones'];
     const rowHeight = 8;
-    const colWidths = [40, 80, 25, 45];
+    // Ajustar anchos para que quepan en el PDF (ancho útil: 170mm desde x=20 hasta x=190)
+    const colWidths = [35, 70, 20, 45]; // Total: 170mm
     let currentY = startY;
     
     // Dibujar encabezados con mejor manejo de colores
@@ -550,6 +577,9 @@ export class PdfReportService {
       
       currentY += rowHeight;
     });
+    
+    // Retornar la posición Y donde terminó la tabla
+    return currentY;
   }
 
   /**
@@ -698,7 +728,8 @@ export class PdfReportService {
   private createElementTable(doc: any, deliveries: DeliveryRecord[], startY: number): void {
     const headers = ['Fecha', 'Asociado', 'Cédula', 'Cantidad', 'Observaciones'];
     const rowHeight = 8;
-    const colWidths = [35, 50, 30, 25, 50];
+    // Ajustar anchos para que quepan en el PDF (ancho útil: 170mm desde x=20 hasta x=190)
+    const colWidths = [30, 45, 25, 20, 50]; // Total: 170mm
     let currentY = startY;
     
     // Dibujar encabezados con mejor manejo de colores
