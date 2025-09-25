@@ -113,12 +113,13 @@ export class SupplyInventoryComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // result contains: { quantity: number, reason: string, notes?: string }
-        this.movementsService.addStock(item.id, result.quantity, result.reason, result.notes)
+        // result contains: { quantity: number, reason: string, notes?: string, talla?: string }
+        this.movementsService.addStock(item.id, result.quantity, result.reason, result.notes, result.talla)
           .subscribe({
             next: (response) => {
+              const tallaText = result.talla ? ` (Talla: ${result.talla})` : '';
               this.snackBar.open(
-                `Se agregaron ${result.quantity} unidades de ${item.name.toUpperCase()}`, 
+                `Se agregaron ${result.quantity} unidades de ${item.name.toUpperCase()}${tallaText}`, 
                 'Cerrar', 
                 { duration: 3000 }
               );

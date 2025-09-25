@@ -753,7 +753,7 @@ app.put('/api/users/:id', async (req, res) => {
 // Add stock to inventory item with movement tracking
 app.post('/api/inventory-movements/add-stock', async (req, res) => {
   try {
-    const { supplyId, quantity, reason, notes } = req.body;
+    const { supplyId, quantity, reason, notes, talla } = req.body;
     
     if (!supplyId || !quantity || !reason) {
       return res.status(400).json({ 
@@ -767,30 +767,71 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
       // Start transaction
       await client.query('BEGIN');
       
-      // Get current quantity
-      const currentResult = await client.query(
-        'SELECT quantity FROM supply_inventory WHERE id = $1',
-        [supplyId]
-      );
+      let inventoryQuery, inventoryParams;
       
-      if (currentResult.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Elemento de inventario no encontrado' });
+      if (talla) {
+        // Para elementos con talla, buscar el registro específico por talla
+        inventoryQuery = `
+          SELECT id, quantity, name, category 
+          FROM supply_inventory 
+          WHERE (id = $1 OR (name = (SELECT name FROM supply_inventory WHERE id = $1) 
+                            AND category = (SELECT category FROM supply_inventory WHERE id = $1)))
+            AND talla = $2
+        `;
+        inventoryParams = [supplyId, talla];
+      } else {
+        // Para elementos sin talla, buscar el registro normal
+        inventoryQuery = 'SELECT id, quantity, name, category FROM supply_inventory WHERE id = $1 AND talla IS NULL';
+        inventoryParams = [supplyId];
       }
       
-      const previousQuantity = currentResult.rows[0].quantity;
-      const newQuantity = previousQuantity + quantity;
+      const currentResult = await client.query(inventoryQuery, inventoryParams);
       
-      // Update inventory quantity
-      await client.query(
-        'UPDATE supply_inventory SET quantity = $1, last_update = CURRENT_TIMESTAMP WHERE id = $2',
-        [newQuantity, supplyId]
-      );
+      let targetInventoryId, previousQuantity, newQuantity;
+      
+      if (currentResult.rows.length === 0 && talla) {
+        // Si no existe un registro para esta talla, crear uno nuevo
+        const baseItemQuery = 'SELECT name, category, minimum_quantity, code FROM supply_inventory WHERE id = $1';
+        const baseItem = await client.query(baseItemQuery, [supplyId]);
+        
+        if (baseItem.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: 'Elemento de inventario no encontrado' });
+        }
+        
+        const { name, category, minimum_quantity, code } = baseItem.rows[0];
+        
+        // Crear nuevo registro con talla
+        const insertResult = await client.query(
+          'INSERT INTO supply_inventory (name, category, quantity, minimum_quantity, code, talla, last_update) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING id',
+          [name, category, quantity, minimum_quantity, `${code}-${talla}`, talla]
+        );
+        
+        targetInventoryId = insertResult.rows[0].id;
+        previousQuantity = 0;
+        newQuantity = quantity;
+        
+      } else if (currentResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Elemento de inventario no encontrado' });
+      } else {
+        // Actualizar registro existente
+        const currentItem = currentResult.rows[0];
+        targetInventoryId = currentItem.id;
+        previousQuantity = currentItem.quantity;
+        newQuantity = previousQuantity + quantity;
+        
+        // Update inventory quantity
+        await client.query(
+          'UPDATE supply_inventory SET quantity = $1, last_update = CURRENT_TIMESTAMP WHERE id = $2',
+          [newQuantity, targetInventoryId]
+        );
+      }
       
       // Record movement
       await client.query(
         'INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [supplyId, 'entrada', quantity, reason, notes, previousQuantity, newQuantity]
+        [targetInventoryId, 'entrada', quantity, reason, notes, previousQuantity, newQuantity]
       );
       
       // Commit transaction
@@ -798,10 +839,12 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
       
       res.json({
         success: true,
-        message: 'Stock agregado exitosamente',
+        message: `Stock agregado exitosamente${talla ? ` (Talla: ${talla})` : ''}`,
         previousQuantity,
         newQuantity,
-        quantityAdded: quantity
+        quantityAdded: quantity,
+        talla: talla || null,
+        inventoryId: targetInventoryId
       });
       
     } catch (error) {

@@ -67,18 +67,12 @@ export class SupplyInventoryService {
     );
   }
 
-  // Method to increase stock quantity (what the dialog should actually do)
-  addSupply(elementId: number, quantityToAdd: number): Observable<SupplyItem> {
-    return this.getAllSupplies().pipe(
-      map(supplies => supplies.find(s => s.id === elementId)),
-      switchMap(supply => {
-        if (supply) {
-          const newQuantity = supply.quantity + quantityToAdd;
-          return this.updateSupplyQuantity(elementId, newQuantity);
-        }
-        throw new Error('Supply item not found');
-      })
-    );
+  // Method to increase stock quantity with size support
+  addSupply(elementId: number, quantityToAdd: number, talla?: string): Observable<SupplyItem> {
+    const payload: any = { quantityToAdd };
+    if (talla) payload.talla = talla;
+    
+    return this.http.post<SupplyItem>(`${this.apiUrl}/${elementId}/add-stock`, payload);
   }
 
   validateStock(elementIdOrName: number | string, quantity: number): Observable<any> {

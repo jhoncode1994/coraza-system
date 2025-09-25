@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
+import { requiereTalla, getTallasDisponibles } from '../../config/tallas.config';
 
 export interface AddStockDialogData {
   supply: SupplyItem;
@@ -17,6 +18,7 @@ export interface AddStockResult {
   quantity: number;
   reason: string;
   notes?: string;
+  talla?: string;
 }
 
 @Component({
@@ -54,6 +56,20 @@ export interface AddStockResult {
           </mat-error>
         </mat-form-field>
 
+        <!-- Campo de talla (solo se muestra para elementos que requieren talla) -->
+        <mat-form-field appearance="outline" *ngIf="requiereSeleccionTalla()">
+          <mat-label>Talla</mat-label>
+          <mat-select formControlName="talla">
+            <mat-option *ngFor="let talla of getTallasDisponiblesParaElemento()" [value]="talla">
+              {{talla}}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>straighten</mat-icon>
+          <mat-error *ngIf="addStockForm.get('talla')?.hasError('required')">
+            La talla es requerida para este elemento
+          </mat-error>
+        </mat-form-field>
+
         <mat-form-field appearance="outline">
           <mat-label>Motivo de entrada</mat-label>
           <mat-select formControlName="reason">
@@ -82,6 +98,7 @@ export interface AddStockResult {
           <h4>Resumen del movimiento:</h4>
           <p><strong>Stock actual:</strong> {{data.supply.quantity}} unidades</p>
           <p><strong>Cantidad a agregar:</strong> +{{addStockForm.get('quantity')?.value}} unidades</p>
+          <p *ngIf="requiereSeleccionTalla()"><strong>Talla:</strong> {{addStockForm.get('talla')?.value}}</p>
           <p><strong>Stock resultante:</strong> 
             <span class="new-stock">{{data.supply.quantity + addStockForm.get('quantity')?.value}} unidades</span>
           </p>
@@ -201,8 +218,23 @@ export class AddStockDialogComponent {
     this.addStockForm = this.fb.group({
       quantity: [1, [Validators.required, Validators.min(1)]],
       reason: ['', Validators.required],
-      notes: ['']
+      notes: [''],
+      talla: ['']
     });
+
+    // Si el elemento requiere talla, hacer el campo obligatorio
+    if (this.requiereSeleccionTalla()) {
+      this.addStockForm.get('talla')?.setValidators([Validators.required]);
+      this.addStockForm.get('talla')?.updateValueAndValidity();
+    }
+  }
+
+  requiereSeleccionTalla(): boolean {
+    return requiereTalla(this.data.supply.category);
+  }
+
+  getTallasDisponiblesParaElemento(): string[] {
+    return getTallasDisponibles(this.data.supply.category);
   }
 
   getReasonText(reason: string): string {
