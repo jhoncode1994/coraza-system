@@ -1331,7 +1331,25 @@ app.post('/api/delivery', async (req, res) => {
   try {
     const { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
     
-    console.log('Guardando entrega de dotación:', { userId, elemento, talla, cantidad });
+    console.log('=== INICIANDO PROCESO DE ENTREGA ===');
+    console.log('Datos recibidos:', {
+      userId,
+      elemento,
+      talla,
+      cantidad,
+      fechaEntrega,
+      observaciones: observaciones ? 'Presente' : 'Ausente',
+      firma_url: firma_url ? 'Presente' : 'Ausente'
+    });
+    
+    // Validar datos requeridos
+    if (!userId || !elemento || !cantidad) {
+      throw new Error('Datos faltantes: userId, elemento y cantidad son requeridos');
+    }
+    
+    if (cantidad <= 0) {
+      throw new Error('La cantidad debe ser mayor a 0');
+    }
     
     client = await pool.connect();
     
@@ -1342,10 +1360,12 @@ app.post('/api/delivery', async (req, res) => {
     let findQuery;
     let findParams;
     
+    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}"`);
+    
     if (talla) {
       // Buscar por nombre del elemento y talla específica
       findQuery = `
-        SELECT id, quantity 
+        SELECT id, name, quantity, talla 
         FROM supply_inventory 
         WHERE LOWER(name) LIKE LOWER($1) AND talla = $2
         ORDER BY quantity DESC
@@ -1355,7 +1375,7 @@ app.post('/api/delivery', async (req, res) => {
     } else {
       // Buscar solo por nombre del elemento
       findQuery = `
-        SELECT id, quantity 
+        SELECT id, name, quantity, talla 
         FROM supply_inventory 
         WHERE LOWER(name) LIKE LOWER($1) AND (talla IS NULL OR talla = '')
         ORDER BY quantity DESC
@@ -1364,10 +1384,18 @@ app.post('/api/delivery', async (req, res) => {
       findParams = [`%${elemento}%`];
     }
     
+    console.log('Query SQL:', findQuery);
+    console.log('Parámetros:', findParams);
+    
     const inventoryResult = await client.query(findQuery, findParams);
     
+    console.log(`Elementos encontrados: ${inventoryResult.rows.length}`);
+    if (inventoryResult.rows.length > 0) {
+      console.log('Elemento encontrado:', inventoryResult.rows[0]);
+    }
+    
     if (inventoryResult.rows.length === 0) {
-      throw new Error(`No se encontró el elemento ${elemento}${talla ? ` con talla ${talla}` : ''} en el inventario`);
+      throw new Error(`No se encontró el elemento "${elemento}"${talla ? ` con talla "${talla}"` : ''} en el inventario. Verifica que el elemento exista y tenga stock disponible.`);
     }
     
     const inventoryItem = inventoryResult.rows[0];
@@ -1416,12 +1444,26 @@ app.post('/api/delivery', async (req, res) => {
   } catch (error) {
     // Revertir transacción en caso de error
     if (client) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error en rollback:', rollbackError);
+      }
     }
-    console.error('Error guardando entrega:', error);
+    
+    console.error('Error detallado guardando entrega:', {
+      error: error.message,
+      stack: error.stack,
+      elemento: req.body.elemento,
+      talla: req.body.talla,
+      cantidad: req.body.cantidad,
+      userId: req.body.userId
+    });
+    
     res.status(500).json({ 
       error: 'Error al procesar entrega', 
-      details: error.message 
+      details: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
     });
   } finally {
     if (client) {
