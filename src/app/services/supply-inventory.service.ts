@@ -13,7 +13,12 @@ export class SupplyInventoryService {
   constructor(private http: HttpClient) {}
 
   getAllSupplies(): Observable<SupplyItem[]> {
-    return this.http.get<SupplyItem[]>(this.apiUrl);
+    return this.http.get<SupplyItem[]>(this.apiUrl).pipe(
+      map(supplies => {
+        this.allSupplies = supplies; // Actualizar cache
+        return supplies;
+      })
+    );
   }
 
   updateSupplyQuantity(id: number, quantity: number): Observable<SupplyItem> {
@@ -109,4 +114,30 @@ export class SupplyInventoryService {
       })
     );
   }
+
+  // Nuevos métodos para el sistema de tallas mejorado
+  getTallasDisponiblesPorElemento(nombreBase: string, categoria: string): string[] {
+    // Este método debería obtener las tallas disponibles desde el servidor
+    // Por ahora lo implementamos usando el caché local
+    return this.allSupplies
+      .filter(item => this.getNombreBase(item.name) === nombreBase && item.category === categoria && item.quantity > 0)
+      .map(item => item.talla)
+      .filter(talla => talla !== null && talla !== undefined) as string[];
+  }
+
+  getStockEspecificoPorTalla(nombreBase: string, categoria: string, talla: string): number {
+    const item = this.allSupplies.find(supply => 
+      this.getNombreBase(supply.name) === nombreBase && 
+      supply.category === categoria && 
+      supply.talla === talla
+    );
+    return item ? item.quantity : 0;
+  }
+
+  private getNombreBase(nombre: string): string {
+    // Extraer el nombre base sin información de talla
+    return nombre.split(' ')[0]; // Por ejemplo, "Pantalón Talla 36" -> "Pantalón"
+  }
+
+  private allSupplies: SupplyItem[] = [];
 }

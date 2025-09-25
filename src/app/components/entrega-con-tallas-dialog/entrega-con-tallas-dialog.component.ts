@@ -325,12 +325,47 @@ export class EntregaConTallasDialogComponent implements OnInit {
   loadAvailableItems() {
     this.supplyInventoryService.getAllSupplies().subscribe({
       next: (items) => {
-        this.availableItems = items.filter(item => item.quantity > 0);
+        // Filtrar solo elementos con stock disponible
+        const itemsConStock = items.filter(item => item.quantity > 0);
+        
+        // Agrupar elementos similares (mismo nombre base) para evitar duplicados
+        const elementosAgrupados = new Map<string, SupplyItem>();
+        
+        for (const item of itemsConStock) {
+          const nombreBase = this.getNombreBase(item.name);
+          const key = `${nombreBase}-${item.category}`;
+          
+          if (!elementosAgrupados.has(key)) {
+            // Si es el primer elemento de este tipo, agregarlo como representante
+            elementosAgrupados.set(key, {
+              ...item,
+              name: nombreBase, // Usar nombre base para evitar confusión
+              quantity: this.getTotalStockPorTipo(itemsConStock, nombreBase, item.category)
+            });
+          }
+        }
+        
+        this.availableItems = Array.from(elementosAgrupados.values());
+        console.log('Elementos disponibles agrupados:', this.availableItems);
       },
       error: (error) => {
         console.error('Error cargando elementos:', error);
       }
     });
+  }
+
+  private getNombreBase(nombre: string): string {
+    // Extraer el nombre base sin información de talla
+    return nombre.split(' ')[0]; // Por ejemplo, "Pantalón Talla 36" -> "Pantalón"
+  }
+
+  private getTotalStockPorTipo(items: SupplyItem[], nombreBase: string, categoria: string): number {
+    return items
+      .filter(item => 
+        this.getNombreBase(item.name) === nombreBase && 
+        item.category === categoria
+      )
+      .reduce((total, item) => total + item.quantity, 0);
   }
 
   agregarElemento() {
@@ -380,16 +415,22 @@ export class EntregaConTallasDialogComponent implements OnInit {
     if (categoria) {
       const key = `${categoria}-${talla || 'null'}`;
       
-      try {
-        const stock = await this.supplyInventoryService.getAvailableStock(categoria, talla).toPromise();
-        this.stockCache.set(key, stock?.quantity || 0);
-      } catch (error) {
-        console.error('Error obteniendo stock:', error);
-        // Fallback: buscar en availableItems
-        const item = this.availableItems.find(item => 
-          item.category === categoria && item.talla === talla
-        );
-        this.stockCache.set(key, item?.quantity || 0);
+      // Encontrar el elemento seleccionado
+      const selectedItem = this.availableItems.find(item => item.category === categoria);
+      if (!selectedItem) {
+        this.stockCache.set(key, 0);
+        return;
+      }
+      
+      const nombreBase = selectedItem.name;
+      
+      if (talla) {
+        // Si hay talla específica, obtener stock específico por talla
+        const stock = this.supplyInventoryService.getStockEspecificoPorTalla(nombreBase, categoria, talla);
+        this.stockCache.set(key, stock);
+      } else {
+        // Si no hay talla específica, usar el stock total del elemento agrupado
+        this.stockCache.set(key, selectedItem.quantity);
       }
     }
   }
@@ -427,7 +468,16 @@ export class EntregaConTallasDialogComponent implements OnInit {
   }
 
   getTallasDisponibles(categoria: string): string[] {
-    return getTallasDisponibles(categoria);
+    if (!categoria) return [];
+    
+    // Encontrar el elemento seleccionado en availableItems
+    const selectedItem = this.availableItems.find(item => item.category === categoria);
+    if (!selectedItem) return [];
+    
+    const nombreBase = selectedItem.name;
+    
+    // Obtener tallas disponibles usando el servicio
+    return this.supplyInventoryService.getTallasDisponiblesPorElemento(nombreBase, categoria);
   }
 
   onSignatureChange(signatureUrl: string | null): void {
