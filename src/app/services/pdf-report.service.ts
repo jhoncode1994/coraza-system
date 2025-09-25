@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 export interface DeliveryRecord {
   fecha: string;
   elemento: string;
+  talla?: string;  // Nueva propiedad para talla
   cantidad: number;
   observaciones?: string;
   asociado?: string;
@@ -431,9 +432,12 @@ export class PdfReportService {
         doc.setTextColor(44, 62, 80);
         doc.text('RESUMEN:', 20, finalY);
         
-        // Contar elementos
+        // Contar elementos (incluyendo talla)
         const elementCount = deliveries.reduce((acc, delivery) => {
-          acc[delivery.elemento] = (acc[delivery.elemento] || 0) + delivery.cantidad;
+          const elementoKey = delivery.talla 
+            ? `${delivery.elemento} - Talla: ${delivery.talla}`
+            : delivery.elemento;
+          acc[elementoKey] = (acc[elementoKey] || 0) + delivery.cantidad;
           return acc;
         }, {} as { [key: string]: number });
         
@@ -521,9 +525,14 @@ export class PdfReportService {
     doc.setTextColor(0, 0, 0); // Asegurar texto negro para las filas
     
     deliveries.forEach((delivery, rowIndex) => {
+      // Formatear elemento con talla si existe
+      const elementoConTalla = delivery.talla 
+        ? `${delivery.elemento} - Talla: ${delivery.talla}`
+        : delivery.elemento;
+      
       const rowData = [
         delivery.fecha,
-        delivery.elemento,
+        elementoConTalla,
         delivery.cantidad.toString(),
         delivery.observaciones || '-'
       ];

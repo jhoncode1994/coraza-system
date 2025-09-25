@@ -16,7 +16,10 @@
   <table mat-table [dataSource]="history" *ngIf="history.length > 0" class="history-table">
     <ng-container matColumnDef="elemento">
       <th mat-header-cell *matHeaderCellDef> Elemento </th>
-      <td mat-cell *matCellDef="let item"> {{item.elemento | uppercase}} </td>
+      <td mat-cell *matCellDef="let item"> 
+        {{item.elemento | uppercase}}
+        <span *ngIf="item.talla" class="talla-info"> - Talla: {{item.talla}}</span>
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="cantidad">

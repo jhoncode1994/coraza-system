@@ -1328,17 +1328,17 @@ app.use((err, req, res, next) => {
 // Guardar entrega de dotación
 app.post('/api/delivery', async (req, res) => {
   try {
-    const { userId, elemento, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
+    const { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
     
-    console.log('Guardando entrega de dotación:', { userId, elemento, cantidad });
+    console.log('Guardando entrega de dotación:', { userId, elemento, talla, cantidad });
     
     const client = await pool.connect();
     
     const result = await client.query(`
-      INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", "firma_url", observaciones)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO entrega_dotacion ("userId", elemento, talla, cantidad, "fechaEntrega", "firma_url", observaciones)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
-    `, [userId, elemento, cantidad, fechaEntrega || new Date(), firma_url, observaciones]);
+    `, [userId, elemento, talla, cantidad, fechaEntrega || new Date(), firma_url, observaciones]);
     
     client.release();
     
