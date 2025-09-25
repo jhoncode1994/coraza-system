@@ -1327,29 +1327,106 @@ app.use((err, req, res, next) => {
 
 // Guardar entrega de dotación
 app.post('/api/delivery', async (req, res) => {
+  let client;
   try {
     const { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
     
     console.log('Guardando entrega de dotación:', { userId, elemento, talla, cantidad });
     
-    const client = await pool.connect();
+    client = await pool.connect();
     
+    // Iniciar transacción para asegurar consistencia
+    await client.query('BEGIN');
+    
+    // 1. Buscar el item específico en supply_inventory
+    let findQuery;
+    let findParams;
+    
+    if (talla) {
+      // Buscar por nombre del elemento y talla específica
+      findQuery = `
+        SELECT id, quantity 
+        FROM supply_inventory 
+        WHERE LOWER(name) LIKE LOWER($1) AND talla = $2
+        ORDER BY quantity DESC
+        LIMIT 1
+      `;
+      findParams = [`%${elemento}%`, talla];
+    } else {
+      // Buscar solo por nombre del elemento
+      findQuery = `
+        SELECT id, quantity 
+        FROM supply_inventory 
+        WHERE LOWER(name) LIKE LOWER($1) AND (talla IS NULL OR talla = '')
+        ORDER BY quantity DESC
+        LIMIT 1
+      `;
+      findParams = [`%${elemento}%`];
+    }
+    
+    const inventoryResult = await client.query(findQuery, findParams);
+    
+    if (inventoryResult.rows.length === 0) {
+      throw new Error(`No se encontró el elemento ${elemento}${talla ? ` con talla ${talla}` : ''} en el inventario`);
+    }
+    
+    const inventoryItem = inventoryResult.rows[0];
+    
+    if (inventoryItem.quantity < cantidad) {
+      throw new Error(`Stock insuficiente. Disponible: ${inventoryItem.quantity}, Solicitado: ${cantidad}`);
+    }
+    
+    // 2. Actualizar el stock en supply_inventory
+    const newQuantity = inventoryItem.quantity - cantidad;
+    await client.query(
+      'UPDATE supply_inventory SET quantity = $1 WHERE id = $2',
+      [newQuantity, inventoryItem.id]
+    );
+    
+    console.log(`Stock actualizado: ${elemento}${talla ? ` (${talla})` : ''} - Cantidad anterior: ${inventoryItem.quantity}, Nueva cantidad: ${newQuantity}`);
+    
+    // 3. Registrar la entrega en entrega_dotacion
     const result = await client.query(`
       INSERT INTO entrega_dotacion ("userId", elemento, talla, cantidad, "fechaEntrega", "firma_url", observaciones)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `, [userId, elemento, talla, cantidad, fechaEntrega || new Date(), firma_url, observaciones]);
     
-    client.release();
+    // 4. Registrar el movimiento en inventory_movements
+    await client.query(`
+      INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, created_by)
+      VALUES ($1, 'SALIDA', $2, $3, 'SISTEMA')
+    `, [inventoryItem.id, cantidad, `Entrega a usuario ${userId}: ${elemento}${talla ? ` (${talla})` : ''}`]);
+    
+    // Confirmar transacción
+    await client.query('COMMIT');
     
     res.json({ 
       success: true, 
-      message: 'Entrega guardada exitosamente',
-      id: result.rows[0].id 
+      message: `Entrega guardada exitosamente. Stock actualizado: ${newQuantity} unidades restantes.`,
+      id: result.rows[0].id,
+      stockActualizado: {
+        elemento: elemento,
+        talla: talla,
+        stockAnterior: inventoryItem.quantity,
+        stockActual: newQuantity,
+        cantidadEntregada: cantidad
+      }
     });
   } catch (error) {
+    // Revertir transacción en caso de error
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error('Error guardando entrega:', error);
-    res.status(500).json({ error: 'Error al guardar entrega' });
+    res.status(500).json({ 
+      error: 'Error al procesar entrega', 
+      details: error.message 
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
