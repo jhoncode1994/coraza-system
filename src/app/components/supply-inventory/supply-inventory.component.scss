@@ -54,6 +54,25 @@
     }
   }
 
+  .talla-badge {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1565c0;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #90caf9;
+    min-width: 35px;
+    text-align: center;
+    display: inline-block;
+  }
+
+  .no-talla {
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+  }
+
   .mat-mdc-card-header {
     margin-bottom: 20px;
   }

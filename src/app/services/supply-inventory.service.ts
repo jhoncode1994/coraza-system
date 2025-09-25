@@ -32,14 +32,26 @@ export class SupplyInventoryService {
     return this.getLowStockItems();
   }
 
+  validateStockWithSizes(elementos: Array<{category: string, talla?: string, quantity: number}>): Observable<{valid: boolean, validations: any[]}> {
+    return this.http.post<{valid: boolean, validations: any[]}>(`${this.apiUrl}/validate-stock-sizes`, { elementos });
+  }
+
+  getAvailableStock(category: string, talla?: string): Observable<{quantity: number}> {
+    const params: any = { category };
+    if (talla) params.talla = talla;
+    
+    return this.http.get<{quantity: number}>(`${this.apiUrl}/available-stock`, { params });
+  }
+
   exportToExcel(): Observable<Blob> {
     return this.getAllSupplies().pipe(
       map(supplies => {
-        const headers = ['Código', 'Elemento', 'Categoría', 'Cantidad', 'Cantidad Mínima', 'Última Actualización'];
+        const headers = ['Código', 'Elemento', 'Categoría', 'Talla', 'Cantidad', 'Cantidad Mínima', 'Última Actualización'];
         const rows = supplies.map(item => [
           item.code,
           item.name,
           item.category,
+          item.talla || 'N/A',
           item.quantity.toString(),
           item.minimumQuantity?.toString() || '10',
           new Date(item.lastUpdate || new Date()).toLocaleDateString()

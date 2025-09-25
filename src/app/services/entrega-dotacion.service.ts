@@ -8,6 +8,7 @@ export interface EntregaHistorial {
   id: number;
   userId: number;
   elemento: string;
+  talla?: string;  // Nueva propiedad para talla
   cantidad: number;
   fechaEntrega: Date;
   observaciones?: string;
@@ -45,6 +46,7 @@ export class EntregaDotacionService {
     const deliveryData = {
       userId: entrega.userId,
       elemento: entrega.elemento,
+      talla: entrega.talla,  // Incluir talla
       cantidad: entrega.cantidad,
       fechaEntrega: entrega.fechaEntrega,
       observaciones: entrega.observaciones,

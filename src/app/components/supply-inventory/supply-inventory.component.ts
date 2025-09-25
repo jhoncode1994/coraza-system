@@ -19,6 +19,7 @@ import { SupplyInventoryService } from '../../services/supply-inventory.service'
 import { InventoryMovementsService } from '../../services/inventory-movements.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.component';
+import { requiereTalla } from '../../config/tallas.config';
 
 @Component({
   selector: 'app-supply-inventory',
@@ -48,7 +49,7 @@ import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.
 })
 export class SupplyInventoryComponent implements OnInit {
   dataSource: MatTableDataSource<SupplyItem>;
-  displayedColumns: string[] = ['code', 'name', 'category', 'quantity', 'minimumQuantity', 'lastUpdate', 'addStock'];
+  displayedColumns: string[] = ['code', 'name', 'category', 'talla', 'quantity', 'minimumQuantity', 'lastUpdate', 'addStock'];
   isLoading = false;
   error: string | null = null;
   lowStockItems: SupplyItem[] = [];
@@ -145,5 +146,9 @@ export class SupplyInventoryComponent implements OnInit {
         });
       }
     });
+  }
+
+  requiereTalla(category: string): boolean {
+    return requiereTalla(category);
   }
 }

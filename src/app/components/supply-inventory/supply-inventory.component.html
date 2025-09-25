@@ -78,6 +78,19 @@
           </td>
         </ng-container>
 
+        <!-- Talla Column -->
+        <ng-container matColumnDef="talla">
+          <th mat-header-cell *matHeaderCellDef> Talla </th>
+          <td mat-cell *matCellDef="let element">
+            <span *ngIf="element.talla" class="talla-badge">
+              {{ element.talla }}
+            </span>
+            <span *ngIf="!element.talla" class="no-talla">
+              {{ requiereTalla(element.category) ? 'Sin especificar' : 'No aplica' }}
+            </span>
+          </td>
+        </ng-container>
+
         <!-- Cantidad Column -->
         <ng-container matColumnDef="quantity">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Cantidad </th>

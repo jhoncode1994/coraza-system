@@ -1,0 +1,494 @@
+import { Component, Inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { User } from '../../interfaces/user.interface';
+import { SupplyItem } from '../../interfaces/supply-item.interface';
+import { SupplyInventoryService } from '../../services/supply-inventory.service';
+import { EntregaDotacionService } from '../../services/entrega-dotacion.service';
+import { requiereTalla, getTallasDisponibles, getDisplayName } from '../../config/tallas.config';
+import { SignaturePadComponent } from '../signature-pad/signature-pad.component';
+
+interface ElementoEntrega {
+  categoria: string;
+  talla?: string;
+  cantidad: number;
+  stockDisponible?: number;
+  elementoCompleto?: SupplyItem;
+}
+
+@Component({
+  selector: 'app-entrega-con-tallas-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatChipsModule,
+    SignaturePadComponent
+  ],
+  template: `
+    <div class="entrega-dialog-container">
+      <h2 mat-dialog-title>
+        <mat-icon>assignment</mat-icon>
+        Entrega de Dotación - {{ user.nombres }} {{ user.apellidos }}
+      </h2>
+
+      <mat-dialog-content>
+        <form [formGroup]="entregaForm" class="entrega-form">
+          
+          <!-- Información del Usuario -->
+          <mat-card class="user-info-card" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>person</mat-icon>
+                Información del Asociado
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="user-details">
+                <p><strong>Nombre:</strong> {{ user.nombres }} {{ user.apellidos }}</p>
+                <p><strong>Cédula:</strong> {{ user.cedula }}</p>
+                <p><strong>Área:</strong> {{ user.area }} | <strong>Cargo:</strong> {{ user.cargo }}</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Elementos a Entregar -->
+          <mat-card class="elementos-card" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>inventory_2</mat-icon>
+                Elementos a Entregar
+                <button mat-icon-button color="primary" (click)="agregarElemento()" type="button">
+                  <mat-icon>add_circle</mat-icon>
+                </button>
+              </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div formArrayName="elementos" class="elementos-list">
+                <div *ngFor="let elemento of elementosFormArray.controls; let i = index" 
+                     [formGroupName]="i" 
+                     class="elemento-item">
+                  
+                  <div class="elemento-row">
+                    <!-- Categoria -->
+                    <mat-form-field appearance="outline" class="categoria-field">
+                      <mat-label>Elemento</mat-label>
+                      <mat-select formControlName="categoria" (selectionChange)="onCategoriaChange(i)">
+                        <mat-option *ngFor="let item of availableItems" [value]="item.category">
+                          {{ item.name }} (Stock: {{ item.quantity }})
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                    <!-- Talla (solo si es necesario) -->
+                    <mat-form-field appearance="outline" 
+                                    class="talla-field" 
+                                    *ngIf="requiereTalla(elemento.get('categoria')?.value)">
+                      <mat-label>Talla</mat-label>
+                      <mat-select formControlName="talla" (selectionChange)="onTallaChange(i)">
+                        <mat-option *ngFor="let talla of getTallasDisponibles(elemento.get('categoria')?.value)" 
+                                    [value]="talla">
+                          {{ talla }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                    <!-- Cantidad -->
+                    <mat-form-field appearance="outline" class="cantidad-field">
+                      <mat-label>Cantidad</mat-label>
+                      <input matInput type="number" formControlName="cantidad" min="1" max="10">
+                    </mat-form-field>
+
+                    <!-- Stock Disponible -->
+                    <div class="stock-info" *ngIf="getStockDisponible(i) !== null">
+                      <mat-chip-listbox>
+                        <mat-chip [color]="getStockColor(i)" selected>
+                          Stock: {{ getStockDisponible(i) }}
+                        </mat-chip>
+                      </mat-chip-listbox>
+                    </div>
+
+                    <!-- Botón Eliminar -->
+                    <button mat-icon-button color="warn" 
+                            (click)="eliminarElemento(i)" 
+                            type="button"
+                            class="delete-button">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+
+                  <!-- Alertas de Stock -->
+                  <div class="stock-alerts">
+                    <mat-chip-listbox *ngIf="getStockDisponible(i) === 0">
+                      <mat-chip color="warn" selected>
+                        <mat-icon>warning</mat-icon>
+                        Sin stock disponible
+                      </mat-chip>
+                    </mat-chip-listbox>
+
+                    <mat-chip-listbox *ngIf="getStockDisponible(i) !== null && 
+                                           getStockDisponible(i)! < elemento.get('cantidad')?.value">
+                      <mat-chip color="accent" selected>
+                        <mat-icon>info</mat-icon>
+                        Stock insuficiente (Disponible: {{ getStockDisponible(i) }})
+                      </mat-chip>
+                    </mat-chip-listbox>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón para agregar primer elemento -->
+              <div class="add-first-section" *ngIf="elementosFormArray.length === 0">
+                <button mat-stroked-button color="primary" (click)="agregarElemento()" type="button">
+                  <mat-icon>add</mat-icon>
+                  Agregar Primer Elemento
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Observaciones -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Observaciones</mat-label>
+            <textarea matInput formControlName="observaciones" rows="3" 
+                      placeholder="Observaciones adicionales (opcional)"></textarea>
+          </mat-form-field>
+
+          <!-- Firma -->
+          <mat-card class="firma-card" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>draw</mat-icon>
+                Firma del Asociado
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-signature-pad 
+                (signatureChange)="onSignatureChange($event)">
+              </app-signature-pad>
+            </mat-card-content>
+          </mat-card>
+
+        </form>
+      </mat-dialog-content>
+
+      <mat-dialog-actions align="end">
+        <button mat-button (click)="onCancel()" class="cancel-button">
+          <mat-icon>cancel</mat-icon>
+          Cancelar
+        </button>
+        
+        <button mat-raised-button color="primary" 
+                (click)="onSave()" 
+                [disabled]="!isFormValid() || saving"
+                class="save-button">
+          <mat-icon>{{ saving ? 'hourglass_empty' : 'save' }}</mat-icon>
+          {{ saving ? 'Procesando...' : 'Entregar Dotación' }}
+        </button>
+      </mat-dialog-actions>
+    </div>
+  `,
+  styles: [`
+    .entrega-dialog-container {
+      min-width: 700px;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .entrega-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .user-info-card, .elementos-card, .firma-card {
+      margin-bottom: 16px;
+    }
+
+    .user-details p {
+      margin: 8px 0;
+      color: #666;
+    }
+
+    .elementos-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .elemento-item {
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+
+    .elemento-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 100px auto auto;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .stock-info {
+      display: flex;
+      justify-content: center;
+    }
+
+    .stock-alerts {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .add-first-section {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .mat-dialog-actions {
+      padding: 20px 0;
+      gap: 12px;
+    }
+
+    .cancel-button, .save-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .entrega-dialog-container {
+        min-width: 500px;
+      }
+      
+      .elemento-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+  `]
+})
+export class EntregaConTallasDialogComponent implements OnInit {
+  entregaForm: FormGroup;
+  availableItems: SupplyItem[] = [];
+  saving = false;
+  signature: string | null = null;
+  stockCache = new Map<string, number>();
+
+  constructor(
+    private fb: FormBuilder,
+    private supplyInventoryService: SupplyInventoryService,
+    private entregaDotacionService: EntregaDotacionService,
+    private dialogRef: MatDialogRef<EntregaConTallasDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public user: User
+  ) {
+    this.entregaForm = this.fb.group({
+      elementos: this.fb.array([]),
+      observaciones: [''],
+      firma: ['', Validators.required]
+    });
+  }
+
+  ngOnInit() {
+    this.loadAvailableItems();
+    this.agregarElemento();
+  }
+
+  get elementosFormArray() {
+    return this.entregaForm.get('elementos') as FormArray;
+  }
+
+  loadAvailableItems() {
+    this.supplyInventoryService.getAllSupplies().subscribe({
+      next: (items) => {
+        this.availableItems = items.filter(item => item.quantity > 0);
+      },
+      error: (error) => {
+        console.error('Error cargando elementos:', error);
+      }
+    });
+  }
+
+  agregarElemento() {
+    const elementoGroup = this.fb.group({
+      categoria: ['', Validators.required],
+      talla: [''],
+      cantidad: [1, [Validators.required, Validators.min(1)]]
+    });
+    
+    this.elementosFormArray.push(elementoGroup);
+  }
+
+  eliminarElemento(index: number) {
+    this.elementosFormArray.removeAt(index);
+    this.clearStockCache(index);
+  }
+
+  onCategoriaChange(index: number) {
+    const elementoGroup = this.elementosFormArray.at(index);
+    const categoria = elementoGroup.get('categoria')?.value;
+    
+    // Limpiar talla
+    elementoGroup.get('talla')?.setValue('');
+    
+    // Configurar validación de talla
+    const tallaControl = elementoGroup.get('talla');
+    if (this.requiereTalla(categoria)) {
+      tallaControl?.setValidators([Validators.required]);
+    } else {
+      tallaControl?.clearValidators();
+    }
+    tallaControl?.updateValueAndValidity();
+    
+    // Actualizar stock
+    this.updateStock(index);
+  }
+
+  onTallaChange(index: number) {
+    this.updateStock(index);
+  }
+
+  async updateStock(index: number) {
+    const elementoGroup = this.elementosFormArray.at(index);
+    const categoria = elementoGroup.get('categoria')?.value;
+    const talla = elementoGroup.get('talla')?.value;
+    
+    if (categoria) {
+      const key = `${categoria}-${talla || 'null'}`;
+      
+      try {
+        const stock = await this.supplyInventoryService.getAvailableStock(categoria, talla).toPromise();
+        this.stockCache.set(key, stock?.quantity || 0);
+      } catch (error) {
+        console.error('Error obteniendo stock:', error);
+        // Fallback: buscar en availableItems
+        const item = this.availableItems.find(item => 
+          item.category === categoria && item.talla === talla
+        );
+        this.stockCache.set(key, item?.quantity || 0);
+      }
+    }
+  }
+
+  getStockDisponible(index: number): number | null {
+    const elementoGroup = this.elementosFormArray.at(index);
+    const categoria = elementoGroup.get('categoria')?.value;
+    const talla = elementoGroup.get('talla')?.value;
+    
+    if (!categoria) return null;
+    
+    const key = `${categoria}-${talla || 'null'}`;
+    return this.stockCache.get(key) ?? null;
+  }
+
+  getStockColor(index: number): 'primary' | 'accent' | 'warn' {
+    const stock = this.getStockDisponible(index);
+    if (stock === null || stock === 0) return 'warn';
+    if (stock <= 5) return 'accent';
+    return 'primary';
+  }
+
+  clearStockCache(index: number) {
+    // Limpia el cache para elementos eliminados
+    const keys = Array.from(this.stockCache.keys());
+    keys.forEach(key => {
+      if (key.includes(`-${index}-`)) {
+        this.stockCache.delete(key);
+      }
+    });
+  }
+
+  requiereTalla(categoria: string): boolean {
+    return requiereTalla(categoria);
+  }
+
+  getTallasDisponibles(categoria: string): string[] {
+    return getTallasDisponibles(categoria);
+  }
+
+  onSignatureChange(signatureUrl: string | null): void {
+    this.signature = signatureUrl;
+    this.entregaForm.get('firma')?.setValue(signatureUrl);
+    console.log('Signature updated:', signatureUrl ? 'Signature captured' : 'Signature cleared');
+  }
+
+  isFormValid(): boolean {
+    const formValid = this.entregaForm.valid;
+    const hasElements = this.elementosFormArray.length > 0;
+    const hasSignature = !!this.signature;
+    
+    // Verificar stock suficiente
+    let stockSuficiente = true;
+    for (let i = 0; i < this.elementosFormArray.length; i++) {
+      const elementoGroup = this.elementosFormArray.at(i);
+      const cantidad = elementoGroup.get('cantidad')?.value || 0;
+      const stockDisponible = this.getStockDisponible(i) || 0;
+      
+      if (cantidad > stockDisponible) {
+        stockSuficiente = false;
+        break;
+      }
+    }
+    
+    return formValid && hasElements && hasSignature && stockSuficiente;
+  }
+
+  async onSave() {
+    if (this.isFormValid()) {
+      this.saving = true;
+      
+      try {
+        const elementos = this.elementosFormArray.value.map((elemento: any) => ({
+          categoria: elemento.categoria,
+          talla: elemento.talla || null,
+          cantidad: elemento.cantidad
+        }));
+        
+        const entregaData = {
+          userId: this.user.id,
+          elementos,
+          observaciones: this.entregaForm.get('observaciones')?.value || '',
+          firma_url: this.signature
+        };
+        
+        console.log('Datos de entrega:', entregaData);
+        
+        this.saving = false;
+        this.dialogRef.close(entregaData);
+        
+      } catch (error) {
+        console.error('Error procesando entrega:', error);
+        alert('Error procesando la entrega. Intenta de nuevo.');
+        this.saving = false;
+      }
+    }
+  }
+
+  onCancel() {
+    this.dialogRef.close(false);
+  }
+}

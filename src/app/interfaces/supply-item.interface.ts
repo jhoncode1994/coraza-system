@@ -7,6 +7,7 @@ export interface SupplyItem {
   minimumQuantity?: number;
   code: string;
   category: string;
+  talla?: string;  // Nueva propiedad para talla
   // API response fields (snake_case)
   minimum_quantity?: number;
   last_update?: string;
