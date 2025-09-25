@@ -611,26 +611,32 @@ app.get('/api/supply-inventory/available-sizes/:element/:category', async (req, 
     const client = await pool.connect();
     
     // Obtener todas las tallas disponibles para este elemento con stock > 0
+    // Buscar por code que comience con el elemento especificado
     const result = await client.query(`
-      SELECT DISTINCT talla, quantity
+      SELECT DISTINCT talla, quantity, code
       FROM supply_inventory 
-      WHERE LOWER(name) = LOWER($1) 
+      WHERE code LIKE $1 
         AND category = $2 
         AND talla IS NOT NULL 
         AND quantity > 0
       ORDER BY talla
-    `, [element, category]);
+    `, [`${element}%`, category]);
     
     client.release();
     
-    const availableSizes = result.rows.map(row => row.talla);
+    const availableSizes = result.rows.map(row => ({
+      talla: row.talla,
+      quantity: row.quantity,
+      code: row.code
+    }));
     
-    console.log(`✅ Available sizes for "${element}": [${availableSizes.join(', ')}]`);
+    console.log(`✅ Available sizes for "${element}":`, availableSizes);
     
     res.json({
       element,
       category,
-      available_sizes: availableSizes
+      available_sizes: availableSizes.map(s => s.talla),
+      stock_details: availableSizes
     });
     
   } catch (error) {
