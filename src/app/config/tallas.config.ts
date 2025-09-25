@@ -9,11 +9,69 @@ export const TALLAS_CONFIG = {
 export const ELEMENTOS_CON_TALLA = ['botas', 'camisa', 'chaqueta', 'overol', 'pantalon'];
 
 export function requiereTalla(tipo: string): boolean {
-  return ELEMENTOS_CON_TALLA.includes(tipo.toLowerCase());
+  if (!tipo) return false;
+  
+  const tipoLower = tipo.toLowerCase().trim();
+  
+  // Buscar coincidencias exactas primero
+  if (ELEMENTOS_CON_TALLA.includes(tipoLower)) {
+    return true;
+  }
+  
+  // Categorías especiales de la base de datos
+  if (tipoLower === 'uniforme' || tipoLower === 'calzado') {
+    return true;
+  }
+  
+  // Buscar coincidencias parciales para mayor flexibilidad
+  const coincidencias = [
+    { palabras: ['pantalon', 'pantalón'], categoria: 'pantalon' },
+    { palabras: ['camisa', 'camisas'], categoria: 'camisa' },
+    { palabras: ['chaqueta', 'chaquetas', 'jacket'], categoria: 'chaqueta' },
+    { palabras: ['overol', 'overoles', 'overall'], categoria: 'overol' },
+    { palabras: ['bota', 'botas', 'zapato', 'zapatos', 'calzado'], categoria: 'botas' }
+  ];
+  
+  for (const grupo of coincidencias) {
+    for (const palabra of grupo.palabras) {
+      if (tipoLower.includes(palabra)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
 }
 
 export function getTallasDisponibles(tipo: string): string[] {
-  return TALLAS_CONFIG[tipo.toLowerCase() as keyof typeof TALLAS_CONFIG] || [];
+  if (!tipo) return [];
+  
+  const tipoLower = tipo.toLowerCase().trim();
+  
+  // Buscar coincidencias exactas primero
+  const tallasExactas = TALLAS_CONFIG[tipoLower as keyof typeof TALLAS_CONFIG];
+  if (tallasExactas) {
+    return tallasExactas;
+  }
+  
+  // Buscar coincidencias parciales
+  const coincidencias = [
+    { palabras: ['pantalon', 'pantalón'], categoria: 'pantalon' },
+    { palabras: ['camisa', 'camisas'], categoria: 'camisa' },
+    { palabras: ['chaqueta', 'chaquetas', 'jacket'], categoria: 'chaqueta' },
+    { palabras: ['overol', 'overoles', 'overall'], categoria: 'overol' },
+    { palabras: ['bota', 'botas', 'zapato', 'zapatos', 'calzado'], categoria: 'botas' }
+  ];
+  
+  for (const grupo of coincidencias) {
+    for (const palabra of grupo.palabras) {
+      if (tipoLower.includes(palabra)) {
+        return TALLAS_CONFIG[grupo.categoria as keyof typeof TALLAS_CONFIG] || [];
+      }
+    }
+  }
+  
+  return [];
 }
 
 export function getDisplayName(tipo: string, talla?: string): string {

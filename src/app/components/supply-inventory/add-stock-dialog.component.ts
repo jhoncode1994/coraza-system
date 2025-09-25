@@ -215,6 +215,13 @@ export class AddStockDialogComponent {
     public dialogRef: MatDialogRef<AddStockDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: AddStockDialogData
   ) {
+    console.log('AddStockDialog - Datos del elemento:', {
+      name: this.data.supply.name,
+      category: this.data.supply.category,
+      requiereTalla: this.requiereSeleccionTalla(),
+      tallasDisponibles: this.getTallasDisponiblesParaElemento()
+    });
+
     this.addStockForm = this.fb.group({
       quantity: [1, [Validators.required, Validators.min(1)]],
       reason: ['', Validators.required],
@@ -224,17 +231,49 @@ export class AddStockDialogComponent {
 
     // Si el elemento requiere talla, hacer el campo obligatorio
     if (this.requiereSeleccionTalla()) {
+      console.log('Elemento requiere talla, haciendo campo obligatorio');
       this.addStockForm.get('talla')?.setValidators([Validators.required]);
       this.addStockForm.get('talla')?.updateValueAndValidity();
     }
   }
 
   requiereSeleccionTalla(): boolean {
-    return requiereTalla(this.data.supply.category);
+    // Verificar por categoría primero
+    const porCategoria = requiereTalla(this.data.supply.category);
+    
+    // Si no funciona por categoría, verificar por nombre
+    const porNombre = requiereTalla(this.data.supply.name);
+    
+    const resultado = porCategoria || porNombre;
+    console.log(`¿Requiere talla? Categoría: "${this.data.supply.category}" -> ${porCategoria}, Nombre: "${this.data.supply.name}" -> ${porNombre}, Final: ${resultado}`);
+    return resultado;
   }
 
   getTallasDisponiblesParaElemento(): string[] {
-    return getTallasDisponibles(this.data.supply.category);
+    // Función para detectar tipo de talla basado en nombre
+    const detectarTipoTalla = (nombre: string) => {
+      const nombreLower = nombre.toLowerCase();
+      if (nombreLower.includes('pantalon') || nombreLower.includes('pantalón')) return 'pantalon';
+      if (nombreLower.includes('camisa')) return 'camisa';
+      if (nombreLower.includes('chaqueta')) return 'chaqueta';
+      if (nombreLower.includes('overol')) return 'overol';
+      if (nombreLower.includes('bota') || nombreLower.includes('zapato') || nombreLower.includes('calzado')) return 'botas';
+      return null;
+    };
+
+    // Intentar por categoría primero
+    let tallas = getTallasDisponibles(this.data.supply.category);
+    
+    // Si la categoría es genérica (como "uniforme"), usar el nombre del elemento
+    if (tallas.length === 0) {
+      const tipoDetectado = detectarTipoTalla(this.data.supply.name);
+      if (tipoDetectado) {
+        tallas = getTallasDisponibles(tipoDetectado);
+      }
+    }
+    
+    console.log(`Tallas para "${this.data.supply.name}" (Cat: "${this.data.supply.category}"):`, tallas);
+    return tallas;
   }
 
   getReasonText(reason: string): string {
