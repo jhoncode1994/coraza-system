@@ -610,27 +610,40 @@ app.get('/api/supply-inventory/available-sizes/:element/:category', async (req, 
     
     const client = await pool.connect();
     
-    // Obtener todas las tallas disponibles para este elemento con stock > 0
-    // Buscar por code que comience con el elemento especificado
+    // Buscar por nombre exacto del elemento con stock > 0
     const result = await client.query(`
-      SELECT DISTINCT talla, quantity, code
+      SELECT talla, quantity, code, name
       FROM supply_inventory 
-      WHERE code LIKE $1 
+      WHERE LOWER(name) = LOWER($1)
         AND category = $2 
         AND talla IS NOT NULL 
         AND quantity > 0
-      ORDER BY talla
-    `, [`${element}%`, category]);
+      ORDER BY 
+        CASE talla
+          WHEN '28' THEN 1
+          WHEN '30' THEN 2  
+          WHEN '32' THEN 3
+          WHEN '34' THEN 4
+          WHEN '36' THEN 5
+          WHEN '38' THEN 6
+          WHEN '40' THEN 7
+          WHEN '42' THEN 8
+          WHEN '44' THEN 9
+          ELSE 10
+        END,
+        CAST(talla AS INTEGER)
+    `, [element, category]);
     
     client.release();
     
     const availableSizes = result.rows.map(row => ({
       talla: row.talla,
       quantity: row.quantity,
-      code: row.code
+      code: row.code,
+      name: row.name
     }));
     
-    console.log(`✅ Available sizes for "${element}":`, availableSizes);
+    console.log(`✅ Available sizes for "${element}" in ${category}:`, availableSizes);
     
     res.json({
       element,
