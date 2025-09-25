@@ -26,7 +26,8 @@ import { Subscription, firstValueFrom } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { UsersService } from './users.service';
 import { HistoryDialogComponent } from './history-dialog.component';
-import { EntregaDotacionDialogComponent, EntregaDotacion } from './entrega-dotacion-dialog.component';
+import { EntregaConTallasDialogComponent } from '../entrega-con-tallas-dialog/entrega-con-tallas-dialog.component';
+import { User as UserInterface } from '../../interfaces/user.interface';
 import { EntregaDotacionService } from '../../services/entrega-dotacion.service';
 import { HttpClient } from '@angular/common/http';
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
@@ -374,20 +375,34 @@ export class UsersComponent implements OnInit {
   }
 
   entregarDotacion(user: User) {
-    const dialogRef = this.dialog.open(EntregaDotacionDialogComponent, {
-      width: '500px',
-      data: { user }
+    // Convertir el User local al formato esperado por el dialog
+    const userData: UserInterface = {
+      id: user.id,
+      nombres: user.nombre,
+      apellidos: user.apellido,
+      cedula: user.cedula,
+      email: user.cedula + '@empresa.com', // Valor temporal
+      cargo: user.cargo,
+      area: user.zona?.toString(),
+      fechaIngreso: typeof user.fechaIngreso === 'string' ? user.fechaIngreso : user.fechaIngreso.toISOString(),
+      activo: true
+    };
+
+    const dialogRef = this.dialog.open(EntregaConTallasDialogComponent, {
+      width: '800px',
+      maxWidth: '90vw',
+      data: userData
     });
 
-    dialogRef.afterClosed().subscribe((result: EntregaDotacion) => {
+    dialogRef.afterClosed().subscribe((result: any) => {
       if (result) {
-        // Aquí procesaremos la entrega de dotación
-        this.procesarEntregaDotacion(user, result);
+        // Procesar la entrega con tallas
+        this.procesarEntregaConTallas(user, result);
       }
     });
   }
 
-  private async procesarEntregaDotacion(user: User, entrega: EntregaDotacion) {
+  private async procesarEntregaDotacion(user: User, entrega: any) {
     try {
       // Primero validar que hay stock suficiente para todos los elementos
       console.log('Iniciando validación de stock para:', entrega.elementos);
@@ -489,7 +504,7 @@ export class UsersComponent implements OnInit {
       console.log('Entrega múltiple procesada exitosamente:', entrega);
       
       // Crear mensaje de resumen
-      const elementosTexto = entrega.elementos.map(el => `${el.cantidad} ${el.elemento}(s)`).join(', ');
+      const elementosTexto = entrega.elementos.map((el: any) => `${el.cantidad} ${el.elemento}(s)`).join(', ');
       
       // Mostrar mensaje de éxito
       this.snackBar.open(
@@ -510,6 +525,58 @@ export class UsersComponent implements OnInit {
           duration: 5000,
           panelClass: ['error-snackbar']
         }
+      );
+    }
+  }
+
+  private async procesarEntregaConTallas(user: User, entregaData: any) {
+    try {
+      console.log('Procesando entrega con tallas:', entregaData);
+      
+      // Iterar sobre cada elemento de la entrega
+      for (const elemento of entregaData.elementos) {
+        const registroEntrega = {
+          userId: user.id,
+          elemento: elemento.categoria,
+          talla: elemento.talla || null,
+          cantidad: elemento.cantidad,
+          fechaEntrega: new Date(),
+          observaciones: entregaData.observaciones || '',
+          tipo: 'entrega' as const,
+          firma_url: entregaData.firma_url
+        };
+
+        try {
+          // Registrar la entrega en el servicio
+          await firstValueFrom(this.entregaDotacionService.addEntrega(registroEntrega));
+          
+          // Actualizar el inventario (reducir stock)
+          // El backend debería manejar esto automáticamente
+          console.log('Entrega registrada exitosamente:', registroEntrega);
+          
+        } catch (error) {
+          console.error('Error registrando elemento:', error);
+          throw error;
+        }
+      }
+
+      // Mostrar mensaje de éxito
+      const elementosTexto = entregaData.elementos
+        .map((el: any) => `${el.cantidad} ${el.categoria}${el.talla ? ` (${el.talla})` : ''}`)
+        .join(', ');
+      
+      this.snackBar.open(
+        `✅ Entrega exitosa para ${user.nombre} ${user.apellido}: ${elementosTexto}. Stock actualizado.`,
+        'Cerrar',
+        { duration: 5000 }
+      );
+
+    } catch (error) {
+      console.error('Error procesando entrega:', error);
+      this.snackBar.open(
+        '❌ Error al procesar la entrega. Intente nuevamente.',
+        'Cerrar',
+        { duration: 5000 }
       );
     }
   }
