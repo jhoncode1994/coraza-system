@@ -602,6 +602,46 @@ app.get('/api/supply-inventory/stats', async (req, res) => {
   }
 });
 
+// Get available sizes for a specific element
+app.get('/api/supply-inventory/available-sizes/:element/:category', async (req, res) => {
+  try {
+    const { element, category } = req.params;
+    console.log(`🔍 Getting available sizes for element: "${element}" in category: "${category}"`);
+    
+    const client = await pool.connect();
+    
+    // Obtener todas las tallas disponibles para este elemento con stock > 0
+    const result = await client.query(`
+      SELECT DISTINCT talla, quantity
+      FROM supply_inventory 
+      WHERE LOWER(name) = LOWER($1) 
+        AND category = $2 
+        AND talla IS NOT NULL 
+        AND quantity > 0
+      ORDER BY talla
+    `, [element, category]);
+    
+    client.release();
+    
+    const availableSizes = result.rows.map(row => row.talla);
+    
+    console.log(`✅ Available sizes for "${element}": [${availableSizes.join(', ')}]`);
+    
+    res.json({
+      element,
+      category,
+      available_sizes: availableSizes
+    });
+    
+  } catch (error) {
+    console.error('Error fetching available sizes:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener tallas disponibles',
+      details: error.message
+    });
+  }
+});
+
 // Create new user
 app.post('/api/users', async (req, res) => {
   try {
@@ -1405,6 +1445,7 @@ app.post('/api/delivery', async (req, res) => {
     }
     
     // 2. Actualizar el stock en supply_inventory
+    const previousQuantity = inventoryItem.quantity;
     const newQuantity = inventoryItem.quantity - cantidad;
     await client.query(
       'UPDATE supply_inventory SET quantity = $1 WHERE id = $2',
@@ -1422,9 +1463,9 @@ app.post('/api/delivery', async (req, res) => {
     
     // 4. Registrar el movimiento en inventory_movements
     await client.query(`
-      INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, created_by)
-      VALUES ($1, 'SALIDA', $2, $3, 'SISTEMA')
-    `, [inventoryItem.id, cantidad, `Entrega a usuario ${userId}: ${elemento}${talla ? ` (${talla})` : ''}`]);
+      INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, previous_quantity, new_quantity)
+      VALUES ($1, 'salida', $2, $3, $4, $5)
+    `, [inventoryItem.id, cantidad, `Entrega a usuario ${userId}: ${elemento}${talla ? ` (${talla})` : ''}`, previousQuantity, newQuantity]);
     
     // Confirmar transacción
     await client.query('COMMIT');

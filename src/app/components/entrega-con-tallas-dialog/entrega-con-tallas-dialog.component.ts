@@ -298,6 +298,7 @@ export class EntregaConTallasDialogComponent implements OnInit {
   saving = false;
   signature: string | null = null;
   stockCache = new Map<string, number>();
+  tallasCache = new Map<string, string[]>(); // Cache para tallas disponibles
 
   constructor(
     private fb: FormBuilder,
@@ -347,6 +348,9 @@ export class EntregaConTallasDialogComponent implements OnInit {
         
         this.availableItems = Array.from(elementosAgrupados.values());
         console.log('Elementos disponibles agrupados:', this.availableItems);
+        
+        // Precargar tallas para elementos que las requieren
+        this.precargarTallas();
       },
       error: (error) => {
         console.error('Error cargando elementos:', error);
@@ -354,15 +358,35 @@ export class EntregaConTallasDialogComponent implements OnInit {
     });
   }
 
+  private precargarTallas() {
+    this.availableItems.forEach(item => {
+      if (requiereTalla(item.category)) {
+        const cacheKey = `${item.name}-${item.category}`;
+        
+        this.supplyInventoryService.getTallasDisponiblesPorElemento(item.name, item.category).subscribe({
+          next: (tallas) => {
+            this.tallasCache.set(cacheKey, tallas);
+            console.log(`Tallas cargadas para ${item.name}: [${tallas.join(', ')}]`);
+          },
+          error: (error) => {
+            console.error(`Error cargando tallas para ${item.name}:`, error);
+            this.tallasCache.set(cacheKey, []);
+          }
+        });
+      }
+    });
+  }
+
   private getNombreBase(nombre: string): string {
-    // Extraer el nombre base sin información de talla
-    return nombre.split(' ')[0]; // Por ejemplo, "Pantalón Talla 36" -> "Pantalón"
+    // Los nombres en la BD ya son nombre base (pantalón, camiseta, etc.)
+    // No necesitamos extraer nada, solo retornar el nombre completo
+    return nombre;
   }
 
   private getTotalStockPorTipo(items: SupplyItem[], nombreBase: string, categoria: string): number {
     return items
       .filter(item => 
-        this.getNombreBase(item.name) === nombreBase && 
+        item.name === nombreBase && 
         item.category === categoria
       )
       .reduce((total, item) => total + item.quantity, 0);
@@ -487,9 +511,26 @@ export class EntregaConTallasDialogComponent implements OnInit {
     if (!categoriaValue) return [];
     
     const { nombre, categoria } = this.parseElementoValue(categoriaValue);
+    const cacheKey = `${nombre}-${categoria}`;
     
-    // Obtener tallas disponibles usando el servicio
-    return this.supplyInventoryService.getTallasDisponiblesPorElemento(nombre, categoria);
+    // Verificar si ya tenemos las tallas en cache
+    if (this.tallasCache.has(cacheKey)) {
+      return this.tallasCache.get(cacheKey)!;
+    }
+    
+    // Si no está en cache, cargar desde el servidor
+    this.supplyInventoryService.getTallasDisponiblesPorElemento(nombre, categoria).subscribe({
+      next: (tallas) => {
+        this.tallasCache.set(cacheKey, tallas);
+      },
+      error: (error) => {
+        console.error('Error cargando tallas:', error);
+        this.tallasCache.set(cacheKey, []);
+      }
+    });
+    
+    // Retornar lo que tengamos en cache (puede ser array vacío)
+    return this.tallasCache.get(cacheKey) || [];
   }
 
   onSignatureChange(signatureUrl: string | null): void {
@@ -524,14 +565,22 @@ export class EntregaConTallasDialogComponent implements OnInit {
       this.saving = true;
       
       try {
-        const elementos = this.elementosFormArray.value.map((elemento: any) => {
+        console.log('=== DEBUG ENTREGA ===');
+        console.log('elementosFormArray.value:', this.elementosFormArray.value);
+        
+        const elementos = this.elementosFormArray.value.map((elemento: any, index: number) => {
+          console.log(`Elemento ${index}:`, elemento);
           const { nombre, categoria } = this.parseElementoValue(elemento.categoria);
-          return {
+          console.log(`  parseElementoValue("${elemento.categoria}") ->`, { nombre, categoria });
+          
+          const result = {
             categoria: nombre, // Guardar el nombre específico del elemento (ej: "pantalón")
             categoriaOriginal: categoria, // Mantener la categoría original por si es necesaria
             talla: elemento.talla || null,
             cantidad: elemento.cantidad
           };
+          console.log(`  resultado final:`, result);
+          return result;
         });
         
         const entregaData = {
@@ -541,7 +590,8 @@ export class EntregaConTallasDialogComponent implements OnInit {
           firma_url: this.signature
         };
         
-        console.log('Datos de entrega:', entregaData);
+        console.log('Datos de entrega completos:', entregaData);
+        console.log('=== FIN DEBUG ENTREGA ===');
         
         this.saving = false;
         this.dialogRef.close(entregaData);

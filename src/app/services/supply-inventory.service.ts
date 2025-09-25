@@ -116,18 +116,32 @@ export class SupplyInventoryService {
   }
 
   // Nuevos métodos para el sistema de tallas mejorado
-  getTallasDisponiblesPorElemento(nombreBase: string, categoria: string): string[] {
-    // Este método debería obtener las tallas disponibles desde el servidor
-    // Por ahora lo implementamos usando el caché local
+  getTallasDisponiblesPorElemento(nombreBase: string, categoria: string): Observable<string[]> {
+    // Obtener tallas disponibles desde el servidor
+    return this.http.get<{element: string, category: string, available_sizes: string[]}>
+      (`${this.apiUrl}/available-sizes/${encodeURIComponent(nombreBase)}/${encodeURIComponent(categoria)}`)
+      .pipe(
+        map(response => response.available_sizes)
+      );
+  }
+
+  // Método sincrónico para compatibilidad con el código existente
+  getTallasDisponiblesPorElementoSync(nombreBase: string, categoria: string): string[] {
+    // Buscar por nombre exacto, no por nombre base
     return this.allSupplies
-      .filter(item => this.getNombreBase(item.name) === nombreBase && item.category === categoria && item.quantity > 0)
-      .map(item => item.talla)
-      .filter(talla => talla !== null && talla !== undefined) as string[];
+      .filter(item => 
+        item.name.toLowerCase() === nombreBase.toLowerCase() && 
+        item.category === categoria && 
+        item.quantity > 0 && 
+        item.talla !== null && 
+        item.talla !== undefined
+      )
+      .map(item => item.talla) as string[];
   }
 
   getStockEspecificoPorTalla(nombreBase: string, categoria: string, talla: string): number {
     const item = this.allSupplies.find(supply => 
-      this.getNombreBase(supply.name) === nombreBase && 
+      supply.name.toLowerCase() === nombreBase.toLowerCase() && 
       supply.category === categoria && 
       supply.talla === talla
     );
@@ -135,8 +149,8 @@ export class SupplyInventoryService {
   }
 
   private getNombreBase(nombre: string): string {
-    // Extraer el nombre base sin información de talla
-    return nombre.split(' ')[0]; // Por ejemplo, "Pantalón Talla 36" -> "Pantalón"
+    // Los nombres en la BD ya son nombres base (pantalón, camiseta, etc.)
+    return nombre;
   }
 
   private allSupplies: SupplyItem[] = [];
