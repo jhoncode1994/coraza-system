@@ -22,7 +22,6 @@ interface ElementoConTallas {
   baseCode: string;
   name: string;
   category: string;
-  unitPrice: number;
   tallas: TallaInfo[];
 }
 
@@ -112,7 +111,7 @@ interface ElementoEntrega {
                     <div class="elemento-info">
                       <h4>{{ elemento.name }}</h4>
                       <p class="categoria">{{ elemento.category }}</p>
-                      <p class="precio">{{ elemento.unitPrice | currency:'COP':'symbol':'1.0-0' }}</p>
+                      <p class="tipo-dotacion">Elemento de dotación laboral</p>
                     </div>
                     
                     <div class="elemento-actions">
@@ -164,7 +163,7 @@ interface ElementoEntrega {
                   <div class="elemento-seleccionado-header">
                     <div class="elemento-info">
                       <h4>{{ getElementoNombre(i) }}</h4>
-                      <p class="precio">{{ getElementoPrecio(i) | currency:'COP':'symbol':'1.0-0' }}</p>
+                      <p class="tipo-dotacion">Dotación laboral</p>
                     </div>
                     
                     <button mat-icon-button color="warn" 
@@ -234,7 +233,7 @@ interface ElementoEntrega {
               <div class="resumen-grid">
                 <div>Total elementos: {{ elementosSeleccionados.length }}</div>
                 <div>Total unidades: {{ getTotalUnidades() }}</div>
-                <div>Valor total: {{ getValorTotal() | currency:'COP':'symbol':'1.0-0' }}</div>
+                <div>Tipo: Entrega de dotación laboral</div>
               </div>
             </mat-card-content>
           </mat-card>
@@ -343,10 +342,11 @@ interface ElementoEntrega {
       text-transform: capitalize;
     }
 
-    .precio {
+    .tipo-dotacion {
       margin: 0;
       font-weight: bold;
-      color: #2196f3;
+      color: #4caf50;
+      font-size: 0.85em;
     }
 
     .tallas-grid {
@@ -583,7 +583,6 @@ export class EntregaConTallasOptimizedComponent implements OnInit, OnDestroy {
           baseCode,
           name: item.name,
           category: item.category,
-          unitPrice: item.unit_price || 0,
           tallas: []
         });
       }
@@ -716,13 +715,6 @@ export class EntregaConTallasOptimizedComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  getElementoPrecio(index: number): number {
-    if (index >= 0 && index < this.elementosSeleccionados.length) {
-      return this.elementosSeleccionados[index].elementoConTallas.unitPrice;
-    }
-    return 0;
-  }
-
   getStockInsuficiente(index: number): boolean {
     if (index >= 0 && index < this.elementosSeleccionados.length) {
       const elemento = this.elementosSeleccionados[index];
@@ -746,9 +738,10 @@ export class EntregaConTallasOptimizedComponent implements OnInit, OnDestroy {
     return this.elementosSeleccionados.reduce((total, elemento) => total + elemento.cantidad, 0);
   }
 
-  getValorTotal(): number {
+  getTotalDotaciones(): number {
+    // Para sistema de dotación, contamos total de elementos entregados
     return this.elementosSeleccionados.reduce((total, elemento) => 
-      total + (elemento.cantidad * elemento.elementoConTallas.unitPrice), 0);
+      total + elemento.cantidad, 0);
   }
 
   onSignatureChange(signatureUrl: string | null): void {
