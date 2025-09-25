@@ -91,7 +91,7 @@ interface ElementoEntrega {
                     <mat-form-field appearance="outline" class="categoria-field">
                       <mat-label>Elemento</mat-label>
                       <mat-select formControlName="categoria" (selectionChange)="onCategoriaChange(i)">
-                        <mat-option *ngFor="let item of availableItems" [value]="item.category">
+                        <mat-option *ngFor="let item of availableItems" [value]="item.name + '|' + item.category">
                           {{ item.name }} (Stock: {{ item.quantity }})
                         </mat-option>
                       </mat-select>
@@ -368,6 +368,25 @@ export class EntregaConTallasDialogComponent implements OnInit {
       .reduce((total, item) => total + item.quantity, 0);
   }
 
+  // Métodos para manejar el formato combinado "nombre|categoria"
+  private parseElementoValue(value: string): { nombre: string, categoria: string } {
+    if (!value || !value.includes('|')) {
+      return { nombre: '', categoria: value || '' };
+    }
+    const [nombre, categoria] = value.split('|');
+    return { nombre, categoria };
+  }
+
+  private getElementoNombre(categoriaValue: string): string {
+    const { nombre } = this.parseElementoValue(categoriaValue);
+    return nombre;
+  }
+
+  private getElementoCategoria(categoriaValue: string): string {
+    const { categoria } = this.parseElementoValue(categoriaValue);
+    return categoria;
+  }
+
   agregarElemento() {
     const elementoGroup = this.fb.group({
       categoria: ['', Validators.required],
@@ -409,28 +428,24 @@ export class EntregaConTallasDialogComponent implements OnInit {
 
   async updateStock(index: number) {
     const elementoGroup = this.elementosFormArray.at(index);
-    const categoria = elementoGroup.get('categoria')?.value;
+    const categoriaValue = elementoGroup.get('categoria')?.value;
     const talla = elementoGroup.get('talla')?.value;
     
-    if (categoria) {
-      const key = `${categoria}-${talla || 'null'}`;
+    if (categoriaValue) {
+      const key = `${categoriaValue}-${talla || 'null'}`;
       
-      // Encontrar el elemento seleccionado
-      const selectedItem = this.availableItems.find(item => item.category === categoria);
-      if (!selectedItem) {
-        this.stockCache.set(key, 0);
-        return;
-      }
-      
-      const nombreBase = selectedItem.name;
+      const { nombre, categoria } = this.parseElementoValue(categoriaValue);
       
       if (talla) {
         // Si hay talla específica, obtener stock específico por talla
-        const stock = this.supplyInventoryService.getStockEspecificoPorTalla(nombreBase, categoria, talla);
+        const stock = this.supplyInventoryService.getStockEspecificoPorTalla(nombre, categoria, talla);
         this.stockCache.set(key, stock);
       } else {
-        // Si no hay talla específica, usar el stock total del elemento agrupado
-        this.stockCache.set(key, selectedItem.quantity);
+        // Si no hay talla específica, obtener el stock total del elemento agrupado
+        const selectedItem = this.availableItems.find(item => 
+          item.name === nombre && item.category === categoria
+        );
+        this.stockCache.set(key, selectedItem ? selectedItem.quantity : 0);
       }
     }
   }
@@ -463,21 +478,18 @@ export class EntregaConTallasDialogComponent implements OnInit {
     });
   }
 
-  requiereTalla(categoria: string): boolean {
+  requiereTalla(categoriaValue: string): boolean {
+    const categoria = this.getElementoCategoria(categoriaValue);
     return requiereTalla(categoria);
   }
 
-  getTallasDisponibles(categoria: string): string[] {
-    if (!categoria) return [];
+  getTallasDisponibles(categoriaValue: string): string[] {
+    if (!categoriaValue) return [];
     
-    // Encontrar el elemento seleccionado en availableItems
-    const selectedItem = this.availableItems.find(item => item.category === categoria);
-    if (!selectedItem) return [];
-    
-    const nombreBase = selectedItem.name;
+    const { nombre, categoria } = this.parseElementoValue(categoriaValue);
     
     // Obtener tallas disponibles usando el servicio
-    return this.supplyInventoryService.getTallasDisponiblesPorElemento(nombreBase, categoria);
+    return this.supplyInventoryService.getTallasDisponiblesPorElemento(nombre, categoria);
   }
 
   onSignatureChange(signatureUrl: string | null): void {
@@ -512,11 +524,15 @@ export class EntregaConTallasDialogComponent implements OnInit {
       this.saving = true;
       
       try {
-        const elementos = this.elementosFormArray.value.map((elemento: any) => ({
-          categoria: elemento.categoria,
-          talla: elemento.talla || null,
-          cantidad: elemento.cantidad
-        }));
+        const elementos = this.elementosFormArray.value.map((elemento: any) => {
+          const { nombre, categoria } = this.parseElementoValue(elemento.categoria);
+          return {
+            categoria: nombre, // Guardar el nombre específico del elemento (ej: "pantalón")
+            categoriaOriginal: categoria, // Mantener la categoría original por si es necesaria
+            talla: elemento.talla || null,
+            cantidad: elemento.cantidad
+          };
+        });
         
         const entregaData = {
           userId: this.user.id,
