@@ -850,20 +850,41 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
       
       if (currentResult.rows.length === 0 && talla) {
         // Si no existe un registro para esta talla, crear uno nuevo
-        const baseItemQuery = 'SELECT name, category, minimum_quantity, code FROM supply_inventory WHERE id = $1';
-        const baseItem = await client.query(baseItemQuery, [supplyId]);
+        // Primero buscar el registro base (sin talla) para obtener el código original
+        const baseItemQuery = `
+          SELECT name, category, minimum_quantity, code 
+          FROM supply_inventory 
+          WHERE (id = $1 OR (name = (SELECT name FROM supply_inventory WHERE id = $1) 
+                            AND category = (SELECT category FROM supply_inventory WHERE id = $1)))
+            AND talla IS NULL
+          LIMIT 1
+        `;
+        let baseItem = await client.query(baseItemQuery, [supplyId]);
         
+        // Si no se encuentra registro base sin talla, usar el registro actual pero limpiar el código
         if (baseItem.rows.length === 0) {
-          await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Elemento de inventario no encontrado' });
+          const fallbackQuery = 'SELECT name, category, minimum_quantity, code FROM supply_inventory WHERE id = $1';
+          baseItem = await client.query(fallbackQuery, [supplyId]);
+          
+          if (baseItem.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Elemento de inventario no encontrado' });
+          }
         }
         
         const { name, category, minimum_quantity, code } = baseItem.rows[0];
         
+        // Extraer el código base (sin tallas) para evitar códigos concatenados
+        // Tomar solo la primera parte antes del primer guión para asegurar código limpio
+        const baseCode = code.split('-')[0];
+        const newCode = `${baseCode}-${talla}`;
+        
+        console.log(`Creando nuevo registro con talla: ${name} - Talla ${talla} - Código: ${newCode}`);
+        
         // Crear nuevo registro con talla
         const insertResult = await client.query(
           'INSERT INTO supply_inventory (name, category, quantity, minimum_quantity, code, talla, last_update) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING id',
-          [name, category, quantity, minimum_quantity, `${code}-${talla}`, talla]
+          [name, category, quantity, minimum_quantity, newCode, talla]
         );
         
         targetInventoryId = insertResult.rows[0].id;
