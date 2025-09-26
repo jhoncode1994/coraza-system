@@ -4,13 +4,10 @@
   </div>
   
   <div class="login-content">
-    <!-- Logo y título del sistema -->
-    <div class="system-header">
-      <div class="logo-container">
-        <img src="assets/logo.png" alt="Logo Coraza" class="system-logo">
-      </div>
+    <!-- Logo compacto -->
+    <div class="system-header-compact">
+      <img src="assets/logo.png" alt="Logo Coraza" class="system-logo">
       <h1>Sistema de Gestión de Dotación</h1>
-      <p class="system-subtitle">Control y administración de recursos</p>
     </div>
 
     <!-- Formulario de login -->
@@ -20,9 +17,6 @@
           <mat-icon>login</mat-icon>
           Iniciar Sesión
         </mat-card-title>
-        <mat-card-subtitle>
-          Ingrese sus credenciales para acceder al sistema
-        </mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
@@ -55,9 +49,7 @@
               matSuffix 
               type="button"
               (click)="togglePasswordVisibility()"
-              [disabled]="isLoading"
-              [attr.aria-label]="'Hide password'" 
-              [attr.aria-pressed]="hidePassword">
+              [disabled]="isLoading">
               <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
             <mat-error *ngIf="passwordError">{{ passwordError }}</mat-error>
@@ -82,53 +74,13 @@
         </form>
       </mat-card-content>
 
-      <mat-card-actions class="login-actions">
-        <button 
-          mat-button 
-          color="accent" 
-          type="button" 
-          (click)="onForgotPassword()"
-          [disabled]="isLoading">
-          <mat-icon>help</mat-icon>
-          ¿Olvidó su contraseña?
-        </button>
-      </mat-card-actions>
-
-      <mat-divider></mat-divider>
-
-      <!-- Información de seguridad -->
-      <mat-card-content class="security-section">
-        <p class="security-title">
-          <mat-icon>security</mat-icon>
-          Sistema Seguro
+      <!-- Footer compacto dentro de la tarjeta -->
+      <mat-card-content class="compact-footer">
+        <p>
+          <mat-icon>shield</mat-icon>
+          Conexión segura • v{{ systemInfo.version }} • {{ systemInfo.lastUpdate }}
         </p>
-        <div class="security-info">
-          <span>• Autenticación encriptada</span>
-          <span>• Sesiones con expiración automática</span>
-          <span>• Protección contra intentos de acceso</span>
-        </div>
       </mat-card-content>
     </mat-card>
-
-    <!-- Información del sistema -->
-    <div class="system-info">
-      <div class="info-item">
-        <mat-icon>info</mat-icon>
-        <span>Versión {{ systemInfo.version }}</span>
-      </div>
-      <div class="info-item">
-        <mat-icon>update</mat-icon>
-        <span>Actualizado en {{ systemInfo.lastUpdate }}</span>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="login-footer">
-      <p>&copy; 2025 Sistema Coraza - Gestión de Dotación</p>
-      <p class="security-notice">
-        <mat-icon>shield</mat-icon>
-        Conexión segura SSL/TLS
-      </p>
-    </div>
   </div>
 </div>

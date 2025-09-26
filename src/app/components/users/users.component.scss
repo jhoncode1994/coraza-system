@@ -1,10 +1,13 @@
 .user-form-container {
-  max-width: 800px;
-  margin: 40px auto;
+  padding: 20px; /* Similar al inventario */
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding: 0 16px;
+  gap: 20px; /* Reducir gap para ser más compacto */
+  
+  /* Eliminar max-width para usar todo el ancho disponible como inventario */
+  mat-card {
+    margin-bottom: 20px;
+  }
 }
 
 .form-row {
@@ -91,9 +94,22 @@
   margin-bottom: 20px !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
+  margin-top: 20px !important; /* Espacio superior como inventario */
+  
+  /* Estilos de celdas similar a inventario */
+  .mat-mdc-cell {
+    vertical-align: middle !important;
+    padding: 12px 8px !important;
+  }
+  
+  .mat-mdc-header-cell {
+    vertical-align: middle !important;
+    padding: 12px 8px !important;
+    font-weight: 600 !important;
+  }
 }
 
-/* Contenedor con scroll horizontal */
+/* Contenedor con scroll horizontal - Mejorado como inventario */
 ::ng-deep .mat-table-container {
   overflow-x: auto !important;
   width: 100% !important;
@@ -177,17 +193,18 @@
   color: #3f51b5 !important;
 }
 
-/* Estilos para la barra de búsqueda */
+/* Estilos para la barra de búsqueda - Similar a filtros de inventario */
 .search-container {
   display: flex;
+  gap: 16px;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 0 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .search-field {
   flex: 1;
+  min-width: 200px;
   max-width: 400px;
 }
 
@@ -197,7 +214,6 @@
 
 .search-results {
   margin-bottom: 16px;
-  padding: 0 16px;
 }
 
 .search-message {
