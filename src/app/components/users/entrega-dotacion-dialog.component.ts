@@ -289,19 +289,19 @@ export class EntregaDotacionDialogComponent implements OnInit {
   showSignatureError: boolean = false;
   
   elementosDotacion = [
-    { name: 'camisa', code: 'CAM' },
-    { name: 'corbata', code: 'COR' },
-    { name: 'apellido', code: 'APE' },
-    { name: 'pantalon', code: 'PAN' },
-    { name: 'cinturon', code: 'CIN' },
-    { name: 'kepis', code: 'KEP' },
-    { name: 'botas', code: 'BOT' },
-    { name: 'overol', code: 'OVE' },
-    { name: 'reata', code: 'REA' },
-    { name: 'goleana', code: 'GOL' },
-    { name: 'moña', code: 'MOÑ' },
-    { name: 'carnet', code: 'CAR' },
-    { name: 'cinta', code: 'CIN' }
+    { name: 'camisa', code: 'CAM001' },
+    { name: 'corbata', code: 'COR001' },
+    { name: 'apellido', code: 'APE001' },
+    { name: 'pantalon', code: 'PAN001' },
+    { name: 'cinturon', code: 'CIN001' },
+    { name: 'kepis', code: 'KEP001' },
+    { name: 'botas', code: 'BOT001' },
+    { name: 'overol', code: 'OVE001' },
+    { name: 'reata', code: 'REA001' },
+    { name: 'goleana', code: 'GOL001' },
+    { name: 'moña', code: 'MOÑ001' },
+    { name: 'carnet', code: 'CAR001' },
+    { name: 'cinta', code: 'CIN002' }
   ];
 
   constructor(

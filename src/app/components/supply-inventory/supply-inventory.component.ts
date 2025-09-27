@@ -49,7 +49,7 @@ import { requiereTalla } from '../../config/tallas.config';
 })
 export class SupplyInventoryComponent implements OnInit {
   dataSource: MatTableDataSource<SupplyItem>;
-  displayedColumns: string[] = ['code', 'name', 'category', 'talla', 'quantity', 'minimumQuantity', 'lastUpdate', 'addStock'];
+  displayedColumns: string[] = ['name', 'category', 'talla', 'quantity', 'minimumQuantity', 'lastUpdate', 'addStock'];
   isLoading = false;
   error: string | null = null;
   lowStockItems: SupplyItem[] = [];

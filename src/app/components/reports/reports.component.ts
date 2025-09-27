@@ -84,7 +84,7 @@ export class ReportsComponent implements OnInit {
   
   // Configuración de tablas
   deliveryColumns: string[] = ['associateName', 'cedula', 'zona', 'elemento', 'cantidad', 'fechaEntrega'];
-  inventoryColumns: string[] = ['code', 'name', 'category', 'currentStock', 'minimumStock', 'status'];
+  inventoryColumns: string[] = ['name', 'category', 'currentStock', 'minimumStock', 'status'];
   consumptionColumns: string[] = ['elemento', 'totalEntregado', 'numeroEntregas', 'promedioEntrega', 'zona'];
   
   // Estados

@@ -17,10 +17,6 @@
 
   <div *ngIf="!isLoading" class="dashboard-content">
     <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 16px;">
-      <button mat-raised-button color="primary" (click)="testSupabaseConnection()">
-        <mat-icon>cloud</mat-icon>
-        Probar Supabase
-      </button>
       <button mat-raised-button color="warn" (click)="openCleanupDialog()">
         <mat-icon>delete_sweep</mat-icon>
         Eliminar registros antiguos

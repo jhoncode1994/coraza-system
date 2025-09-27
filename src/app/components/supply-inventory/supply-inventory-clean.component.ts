@@ -47,7 +47,7 @@ import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.
 })
 export class SupplyInventoryComponent implements OnInit {
   dataSource: MatTableDataSource<SupplyItem>;
-  displayedColumns: string[] = ['code', 'name', 'category', 'quantity', 'minimumQuantity', 'actions'];
+  displayedColumns: string[] = ['name', 'category', 'quantity', 'minimumQuantity', 'actions'];
   isLoading = false;
   error: string | null = null;
   lowStockItems: SupplyItem[] = [];

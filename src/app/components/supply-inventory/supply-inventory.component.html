@@ -49,12 +49,6 @@
       <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8" 
              *ngIf="!isLoading && dataSource.data.length > 0">
         
-        <!-- Código Column -->
-        <ng-container matColumnDef="code">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Código </th>
-          <td mat-cell *matCellDef="let element"> {{element.code}} </td>
-        </ng-container>
-
         <!-- Nombre Column -->
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Elemento </th>

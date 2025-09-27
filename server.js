@@ -1948,6 +1948,92 @@ app.delete('/api/delivery/bulk-delete', async (req, res) => {
   }
 });
 
+// Update product code
+app.put('/api/update-code', async (req, res) => {
+  try {
+    const { oldCode, newCode } = req.body;
+    
+    if (!oldCode || !newCode) {
+      return res.status(400).json({ error: 'oldCode and newCode are required' });
+    }
+    
+    const client = await pool.connect();
+    
+    // Check if new code already exists
+    const existingResult = await client.query('SELECT * FROM supply_inventory WHERE code = $1', [newCode]);
+    if (existingResult.rows.length > 0) {
+      client.release();
+      return res.status(400).json({ error: `Code ${newCode} already exists` });
+    }
+    
+    // Update the code
+    const result = await client.query(
+      'UPDATE supply_inventory SET code = $1 WHERE code = $2 RETURNING *',
+      [newCode, oldCode]
+    );
+    
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `Code ${oldCode} not found` });
+    }
+    
+    res.json({
+      success: true,
+      message: `Code updated from ${oldCode} to ${newCode}`,
+      updatedItem: result.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('Error updating code:', error);
+    res.status(500).json({ 
+      error: 'Error updating code',
+      details: error.message
+    });
+  }
+});
+
+// Add new supply inventory item
+app.post('/api/supply-inventory', async (req, res) => {
+  try {
+    const { code, name, category, quantity, minimum_quantity, description } = req.body;
+    
+    if (!code || !name || !category) {
+      return res.status(400).json({ error: 'Code, name, and category are required' });
+    }
+    
+    const client = await pool.connect();
+    
+    // Check if code already exists
+    const existingResult = await client.query('SELECT * FROM supply_inventory WHERE code = $1', [code]);
+    if (existingResult.rows.length > 0) {
+      client.release();
+      return res.status(400).json({ error: `Code ${code} already exists` });
+    }
+    
+    // Insert new item
+    const result = await client.query(
+      'INSERT INTO supply_inventory (code, name, category, quantity, minimum_quantity, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [code, name, category, quantity || 0, minimum_quantity || 10, description]
+    );
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: 'Supply item created successfully',
+      item: result.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('Error creating supply item:', error);
+    res.status(500).json({ 
+      error: 'Error creating supply item',
+      details: error.message
+    });
+  }
+});
+
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
