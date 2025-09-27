@@ -73,7 +73,9 @@ export class SupplyInventoryComponent implements OnInit {
     this.isLoading = true;
     this.supplyInventoryService.getAllSupplies().subscribe({
       next: (supplies) => {
-        this.dataSource.data = supplies;
+        // Aplicar ordenamiento inteligente por tallas
+        const sortedSupplies = this.sortSuppliesIntelligently(supplies);
+        this.dataSource.data = sortedSupplies;
         this.dataSource.sort = this.sort;
         this.isLoading = false;
         this.error = null;
@@ -84,6 +86,61 @@ export class SupplyInventoryComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  /**
+   * Ordena los elementos de manera inteligente:
+   * 1. Por nombre del elemento
+   * 2. Por orden lógico de tallas
+   */
+  private sortSuppliesIntelligently(supplies: SupplyItem[]): SupplyItem[] {
+    return supplies.sort((a, b) => {
+      // Primero ordenar por nombre
+      const nameComparison = a.name.localeCompare(b.name);
+      if (nameComparison !== 0) {
+        return nameComparison;
+      }
+
+      // Si son del mismo nombre, ordenar por tallas de manera inteligente
+      return this.compareSizes(a.talla || null, b.talla || null);
+    });
+  }
+
+  /**
+   * Compara tallas de manera inteligente:
+   * - Tallas numéricas (28, 30, 32, etc.) en orden numérico
+   * - Tallas de texto (XS, S, M, L, XL, XXL) en orden lógico
+   * - Sin talla va primero
+   */
+  private compareSizes(sizeA: string | null, sizeB: string | null): number {
+    // Si no tienen talla, van primero
+    if (!sizeA && !sizeB) return 0;
+    if (!sizeA) return -1;
+    if (!sizeB) return 1;
+
+    // Definir orden para tallas de ropa
+    const clothingSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const sizeAIndex = clothingSizes.indexOf(sizeA);
+    const sizeBIndex = clothingSizes.indexOf(sizeB);
+
+    // Si ambas son tallas de ropa (XS, S, M, L, XL, XXL)
+    if (sizeAIndex !== -1 && sizeBIndex !== -1) {
+      return sizeAIndex - sizeBIndex;
+    }
+
+    // Si ambas son números (tallas de zapatos/pantalones)
+    const numA = parseInt(sizeA);
+    const numB = parseInt(sizeB);
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numA - numB;
+    }
+
+    // Si una es número y otra es texto, números van primero
+    if (!isNaN(numA) && isNaN(numB)) return -1;
+    if (isNaN(numA) && !isNaN(numB)) return 1;
+
+    // Fallback: ordenamiento alfabético
+    return sizeA.localeCompare(sizeB);
   }
 
   applyFilter(event: Event) {
