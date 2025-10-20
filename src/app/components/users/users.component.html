@@ -1,6 +1,6 @@
 <div class="user-form-container">
-  <!-- Formulario de usuario (solo visible cuando showForm es true) -->
-  <form [formGroup]="userForm" (ngSubmit)="addUser()" class="user-form" *ngIf="showForm" [@formAnimation]>
+  <!-- Formulario de usuario (solo visible cuando showForm es true Y el usuario puede editar asociados) -->
+  <form [formGroup]="userForm" (ngSubmit)="addUser()" class="user-form" *ngIf="showForm && canEditAssociates" [@formAnimation]>
     <mat-card>
       <mat-card-title>
         {{ editIndex !== null ? 'Editar Usuario' : 'Registrar Usuario' }}
@@ -89,9 +89,17 @@
   <mat-card>
     <mat-card-title>
       Asociados Registrados
-      <button mat-mini-fab color="primary" class="add-button" (click)="toggleForm()" *ngIf="!showForm">
+      <button mat-mini-fab color="primary" class="add-button" (click)="toggleForm()" *ngIf="!showForm && canEditAssociates">
         <mat-icon>add</mat-icon>
       </button>
+      
+      <!-- Mensaje informativo para usuarios sin permisos de edición -->
+      <div *ngIf="!canEditAssociates && canViewAssociates" class="info-message">
+        <mat-icon style="color: #2196F3; vertical-align: middle;">info</mat-icon>
+        <span style="margin-left: 8px; color: #2196F3; font-size: 14px;">
+          Solo puedes ver la información de los asociados y realizar entregas
+        </span>
+      </div>
     </mat-card-title>
     <mat-card-content>
       <!-- Barra de búsqueda por cédula -->
@@ -159,16 +167,35 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let user; let i = index">
-            <button mat-icon-button color="accent" (click)="editUser(i)" matTooltip="Editar usuario">
+            <!-- Botón Editar - Solo para administradores -->
+            <button mat-icon-button color="accent" 
+                    (click)="editUser(i)" 
+                    matTooltip="Editar usuario"
+                    *ngIf="canEditAssociates">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button color="warn" (click)="retireUser(i)" matTooltip="Retirar asociado">
+            
+            <!-- Botón Retirar - Solo para administradores -->
+            <button mat-icon-button color="warn" 
+                    (click)="retireUser(i)" 
+                    matTooltip="Retirar asociado"
+                    *ngIf="canEditAssociates">
               <mat-icon>person_remove</mat-icon>
             </button>
-            <button mat-icon-button color="primary" (click)="verHistorial(user)" matTooltip="Ver historial">
+            
+            <!-- Botón Ver Historial - Visible para todos los que pueden ver asociados -->
+            <button mat-icon-button color="primary" 
+                    (click)="verHistorial(user)" 
+                    matTooltip="Ver historial"
+                    *ngIf="canViewAssociates">
               <mat-icon>history</mat-icon>
             </button>
-            <button mat-icon-button style="color: #4CAF50;" (click)="entregarDotacion(user)" matTooltip="Entregar dotación">
+            
+            <!-- Botón Entregar Dotación - Solo para quienes pueden hacer entregas -->
+            <button mat-icon-button style="color: #4CAF50;" 
+                    (click)="entregarDotacion(user)" 
+                    matTooltip="Entregar dotación"
+                    *ngIf="canMakeDeliveries">
               <mat-icon>inventory</mat-icon>
             </button>
           </td>

@@ -44,7 +44,7 @@ export class LoginComponent implements OnInit {
     private snackBar: MatSnackBar
   ) {
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required]],
+      email: ['', [Validators.required]],
       password: ['', [Validators.required]]
     });
   }
@@ -115,10 +115,10 @@ export class LoginComponent implements OnInit {
   }
 
   // Getters para facilitar el acceso a los errores
-  get usernameError() {
-    const control = this.loginForm.get('username');
+  get emailError() {
+    const control = this.loginForm.get('email');
     if (control?.errors && control.touched) {
-      if (control.errors['required']) return 'El usuario es obligatorio';
+      if (control.errors['required']) return 'El email es obligatorio';
     }
     return null;
   }

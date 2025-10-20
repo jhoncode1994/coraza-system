@@ -21,17 +21,17 @@
 
       <mat-card-content>
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-          <!-- Campo de usuario -->
+          <!-- Campo de email -->
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Usuario</mat-label>
+            <mat-label>Email</mat-label>
             <input 
               matInput 
-              formControlName="username" 
-              placeholder="Ingrese su usuario"
-              autocomplete="username"
+              formControlName="email" 
+              placeholder="Ingrese su email"
+              autocomplete="email"
               [disabled]="isLoading">
-            <mat-icon matSuffix>person</mat-icon>
-            <mat-error *ngIf="usernameError">{{ usernameError }}</mat-error>
+            <mat-icon matSuffix>email</mat-icon>
+            <mat-error *ngIf="emailError">{{ emailError }}</mat-error>
           </mat-form-field>
 
           <!-- Campo de contraseña -->

@@ -7,6 +7,14 @@
           <mat-chip color="warn" selected>{{lowStockItems.length}} elementos con stock bajo</mat-chip>
         </mat-chip-listbox>
       </mat-card-title>
+      
+      <!-- Mensaje informativo para usuarios sin permisos de edición -->
+      <div *ngIf="!canEditInventory && canViewInventory" class="info-message" style="margin-top: 10px;">
+        <mat-icon style="color: #2196F3; vertical-align: middle;">info</mat-icon>
+        <span style="margin-left: 8px; color: #2196F3; font-size: 14px;">
+          Solo puedes ver el inventario. No tienes permisos para agregar stock.
+        </span>
+      </div>
     </mat-card-header>
     
     <mat-card-content>
@@ -40,9 +48,14 @@
       <!-- No Data Message -->
       <div *ngIf="!isLoading && !error && dataSource.data.length === 0" class="no-data-message">
         <p>No hay elementos en el inventario</p>
-        <button mat-raised-button color="primary" (click)="loadSupplies()">
+        <button mat-raised-button color="primary" 
+                (click)="loadSupplies()"
+                *ngIf="canEditInventory">
           Inicializar Inventario
         </button>
+        <p *ngIf="!canEditInventory" style="color: #999; font-style: italic;">
+          No tienes permisos para inicializar el inventario
+        </p>
       </div>
 
       <!-- Inventory Table -->
@@ -107,16 +120,23 @@
           <td mat-cell *matCellDef="let element"> {{element.lastUpdate | date:'short'}} </td>
         </ng-container>
 
-        <!-- Agregar Stock Column -->
+        <!-- Agregar Stock Column - Solo para usuarios con permisos de edición -->
         <ng-container matColumnDef="addStock">
-          <th mat-header-cell *matHeaderCellDef> Agregar Stock </th>
+          <th mat-header-cell *matHeaderCellDef> 
+            <span *ngIf="canEditInventory">Agregar Stock</span>
+            <span *ngIf="!canEditInventory" style="color: #666;">Solo Lectura</span>
+          </th>
           <td mat-cell *matCellDef="let element">
             <button mat-raised-button color="primary" 
                     (click)="openAddStockDialog(element)"
-                    [matTooltip]="'Agregar stock a ' + element.name">
+                    [matTooltip]="'Agregar stock a ' + element.name"
+                    *ngIf="canEditInventory">
               <mat-icon>add_box</mat-icon>
               Agregar
             </button>
+            <span *ngIf="!canEditInventory" style="color: #999; font-style: italic;">
+              Sin permisos
+            </span>
           </td>
         </ng-container>
 

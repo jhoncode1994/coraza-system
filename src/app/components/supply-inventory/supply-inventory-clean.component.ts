@@ -20,6 +20,7 @@ import { InventoryMovementsService } from '../../services/inventory-movements.se
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.component';
 import { requiereTalla } from '../../config/tallas.config';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-supply-inventory',
@@ -54,13 +55,27 @@ export class SupplyInventoryComponent implements OnInit {
   lowStockItems: SupplyItem[] = [];
   selectedCategory: string = '';
 
+  // Propiedades para verificar permisos
+  get canEditInventory(): boolean {
+    return this.authService.canEditInventory();
+  }
+  
+  get canViewInventory(): boolean {
+    return this.authService.hasPermission('canViewInventory');
+  }
+  
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private supplyInventoryService: SupplyInventoryService,
     private movementsService: InventoryMovementsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    public authService: AuthService
   ) {
     this.dataSource = new MatTableDataSource<SupplyItem>([]);
   }

@@ -33,6 +33,7 @@ import { HttpClient } from '@angular/common/http';
 import { SupplyInventoryService } from '../../services/supply-inventory.service';
 import { RetiredAssociatesService } from '../../services/retired-associates.service';
 import { RetireAssociateDialogComponent } from '../retire-associate-dialog/retire-associate-dialog.component';
+import { AuthService } from '../../services/auth.service';
 
 export interface User {
   id: number;
@@ -117,6 +118,23 @@ export class MyErrorStateMatcher implements ErrorStateMatcher {
 export class UsersComponent implements OnInit {
   userForm: FormGroup;
   users: User[] = [];
+  
+  // Propiedades para verificar permisos
+  get canEditAssociates(): boolean {
+    return this.authService.canEditAssociates();
+  }
+  
+  get canViewAssociates(): boolean {
+    return this.authService.hasPermission('canViewAssociates');
+  }
+  
+  get canMakeDeliveries(): boolean {
+    return this.authService.canMakeDeliveries();
+  }
+  
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
   filteredUsers: User[] = [];
   searchTerm: string = '';
   editIndex: number | null = null;
@@ -143,7 +161,8 @@ export class UsersComponent implements OnInit {
     private entregaDotacionService: EntregaDotacionService,
     private supplyInventoryService: SupplyInventoryService,
     private retiredAssociatesService: RetiredAssociatesService,
-    private http: HttpClient
+    private http: HttpClient,
+    public authService: AuthService
   ) {
     // Configurar el adaptador de fechas para usar el formato español
     this.dateAdapter.setLocale('es-ES');

@@ -4,17 +4,21 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map } from 'rxjs/operators';
 import { getApiBaseUrl } from '../config/api.config';
+import { UserPermissions } from './user-role.interface';
 
 export interface User {
   id: number;
   username: string;
-  email: string;
-  role: 'admin';
+  email?: string;
+  role: 'admin' | 'delivery_user';
+  fechaIngreso: Date;
   lastLogin?: Date;
+  permissions: UserPermissions;
 }
 
 export interface LoginCredentials {
-  username: string;
+  username?: string;
+  email?: string;
   password: string;
 }
 
@@ -26,6 +30,44 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
   
   private readonly baseUrl = getApiBaseUrl();
+  
+  // Usuarios de prueba para desarrollo
+  private mockUsers = {
+    'admin': { 
+      id: 1, 
+      username: 'admin', 
+      email: 'admin@coraza.com', 
+      password: 'admin123', 
+      role: 'admin' as const,
+      fechaIngreso: new Date('2024-01-01'),
+      permissions: {
+        canViewInventory: true,
+        canEditInventory: true,
+        canViewAssociates: true,
+        canEditAssociates: true,
+        canMakeDeliveries: true,
+        canViewReports: true,
+        canManageUsers: true,
+      }
+    },
+    'entregador': { 
+      id: 2, 
+      username: 'entregador', 
+      email: 'entregador@coraza.com', 
+      password: 'entrega123', 
+      role: 'delivery_user' as const,
+      fechaIngreso: new Date('2024-01-15'),
+      permissions: {
+        canViewInventory: true,
+        canEditInventory: false,
+        canViewAssociates: true,
+        canEditAssociates: false,
+        canMakeDeliveries: true,
+        canViewReports: false,
+        canManageUsers: false,
+      }
+    }
+  };
   
   constructor(
     private router: Router,
@@ -39,6 +81,7 @@ export class AuthService {
    * Iniciar sesión
    */
   login(credentials: LoginCredentials): Observable<{ success: boolean; user?: User; error?: string }> {
+    // Primero intentar con el backend
     return this.http.post<any>(`${this.baseUrl}/auth/login`, credentials).pipe(
       map(response => {
         if (response.success && response.user) {
@@ -58,23 +101,64 @@ export class AuthService {
         }
       }),
       catchError(error => {
-        console.error('Error en login:', error);
-        let errorMessage = 'Error de conexión con el servidor';
+        console.error('Error en login con backend, intentando con usuarios locales:', error);
         
-        if (error.error && error.error.error) {
-          errorMessage = error.error.error;
-        } else if (error.status === 401) {
-          errorMessage = 'Credenciales incorrectas';
-        } else if (error.status === 0) {
-          errorMessage = 'No se puede conectar al servidor';
-        }
-        
-        return of({ 
-          success: false, 
-          error: errorMessage 
-        });
+        // Si falla el backend, intentar con usuarios locales
+        return this.tryLocalLogin(credentials);
       })
     );
+  }
+
+  /**
+   * Intentar login con usuarios locales (fallback)
+   */
+  private tryLocalLogin(credentials: LoginCredentials): Observable<{ success: boolean; user?: User; error?: string }> {
+    console.log('Intentando login local con:', credentials);
+    console.log('Usuarios disponibles:', this.mockUsers);
+    
+    const user = Object.values(this.mockUsers).find(u => {
+      const emailMatch = u.email === credentials.email;
+      const usernameMatch = u.username === credentials.username;
+      const passwordMatch = u.password === credentials.password;
+      
+      console.log(`Verificando usuario ${u.username}:`, {
+        emailMatch,
+        usernameMatch, 
+        passwordMatch,
+        userEmail: u.email,
+        credentialsEmail: credentials.email,
+        userPassword: u.password,
+        credentialsPassword: credentials.password
+      });
+      
+      return (emailMatch || usernameMatch) && passwordMatch;
+    });
+
+    if (user) {
+      console.log('Usuario encontrado:', user);
+      // Crear una copia del usuario sin la contraseña para la sesión
+      const userForSession: User = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        permissions: user.permissions,
+        fechaIngreso: user.fechaIngreso
+      };
+
+      this.setCurrentUser(userForSession);
+      this.saveSession(userForSession);
+
+      return of({
+        success: true,
+        user: userForSession
+      });
+    } else {
+      console.log('Usuario no encontrado con las credenciales proporcionadas');
+      return of({
+        success: false,
+        error: 'Credenciales incorrectas'
+      });
+    }
   }
 
   /**
@@ -207,5 +291,66 @@ export class AuthService {
     else if (score >= 3) strength = 'medium';
 
     return { strength, score, feedback };
+  }
+
+  /**
+   * Verificar si el usuario tiene un permiso específico
+   */
+  hasPermission(permission: keyof UserPermissions): boolean {
+    const user = this.getCurrentUser();
+    if (!user?.permissions) return false;
+    return (user.permissions as any)[permission] || false;
+  }
+
+  /**
+   * Verificar si el usuario es administrador
+   */
+  isAdmin(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'admin';
+  }
+
+  /**
+   * Verificar si el usuario es de entregas
+   */
+  isDeliveryUser(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'delivery_user';
+  }
+
+  /**
+   * Obtener lista de permisos del usuario actual
+   */
+  getUserPermissions(): UserPermissions | null {
+    const user = this.getCurrentUser();
+    return user?.permissions || null;
+  }
+
+  /**
+   * Verificar si puede realizar entregas
+   */
+  canMakeDeliveries(): boolean {
+    return this.hasPermission('canMakeDeliveries');
+  }
+
+  /**
+   * Verificar si puede editar inventario
+   */
+  canEditInventory(): boolean {
+    return this.hasPermission('canEditInventory');
+  }
+
+  /**
+   * Verificar si puede gestionar usuarios
+   */
+  canManageUsers(): boolean {
+    return this.hasPermission('canManageUsers');
+  }
+
+  /**
+   * Verificar si puede editar asociados
+   */
+  canEditAssociates(): boolean {
+    return this.hasPermission('canEditAssociates');
   }
 }

@@ -20,6 +20,12 @@ import {
   updateEntrega, 
   deleteEntrega 
 } from './entregaDotacionService';
+import { 
+  authenticateUser, 
+  getUserWithPermissions, 
+  createAuthUser,
+  verifyToken 
+} from './authService';
 
 const app = express();
 const PORT = process.env["PORT"] || 3000;
@@ -31,6 +37,81 @@ app.use(cors({
 
 app.use(cors());
 app.use(express.json());
+
+// =====================================
+// ENDPOINTS DE AUTENTICACIÓN
+// =====================================
+
+// Login endpoint
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+  try {
+    const credentials = req.body;
+    const result = await authenticateUser(credentials);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(401).json(result);
+    }
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    });
+  }
+});
+
+// Verificar token y obtener usuario
+app.get('/api/auth/me', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Token no proporcionado' });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      res.status(401).json({ error: 'Token inválido' });
+      return;
+    }
+
+    const user = await getUserWithPermissions(decoded.id);
+    if (!user) {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+      return;
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Error verificando token:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Crear nuevo usuario (solo para administradores)
+app.post('/api/auth/users', async (req: Request, res: Response) => {
+  try {
+    const userData = req.body;
+    const newUser = await createAuthUser(userData);
+    
+    if (newUser) {
+      res.status(201).json(newUser);
+    } else {
+      res.status(400).json({ error: 'Error al crear usuario' });
+    }
+  } catch (error) {
+    console.error('Error creando usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// =====================================
+// ENDPOINTS EXISTENTES
+// =====================================
 
 // Endpoint para historial de dotación por asociado
 app.get('/api/associates/:id/supply-history', async (req: Request, res: Response) => {
