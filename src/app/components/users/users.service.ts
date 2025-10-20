@@ -197,7 +197,7 @@ export class UsersService {
       cedula: apiUser.cedula || '',
       zona: apiUser.zona || 0,
       cargo: apiUser.cargo || '',
-      fechaIngreso: apiUser.fecha_ingreso ? new Date(apiUser.fecha_ingreso) : new Date()
+      fechaIngreso: apiUser.fechaIngreso ? new Date(apiUser.fechaIngreso) : new Date()
     };
   }
 
