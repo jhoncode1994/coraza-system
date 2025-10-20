@@ -19,6 +19,7 @@ import { SupplyInventoryService } from '../../services/supply-inventory.service'
 import { InventoryMovementsService } from '../../services/inventory-movements.service';
 import { SupplyItem } from '../../interfaces/supply-item.interface';
 import { AddStockDialogComponent, AddStockDialogData } from './add-stock-dialog.component';
+import { requiereTalla } from '../../config/tallas.config';
 
 @Component({
   selector: 'app-supply-inventory',
@@ -202,5 +203,9 @@ export class SupplyInventoryComponent implements OnInit {
         });
       }
     });
+  }
+
+  requiereTalla(category: string): boolean {
+    return requiereTalla(category);
   }
 }
