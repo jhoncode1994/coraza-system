@@ -65,6 +65,21 @@
     min-width: 35px;
     text-align: center;
     display: inline-block;
+    position: relative;
+
+    .genero-badge {
+      margin-left: 4px;
+      font-size: 14px;
+      font-weight: bold;
+      
+      &.femenino {
+        color: #e91e63; // Rosa para femenino
+      }
+      
+      &.masculino {
+        color: #2196f3; // Azul para masculino
+      }
+    }
   }
 
   .no-talla {

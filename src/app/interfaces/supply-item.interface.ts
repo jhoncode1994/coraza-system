@@ -8,6 +8,7 @@ export interface SupplyItem {
   code: string;
   category: string;
   talla?: string;  // Nueva propiedad para talla
+  genero?: 'M' | 'F' | null;  // Género para botas: M=Hombre, F=Mujer
   // API response fields (snake_case)
   minimum_quantity?: number;
   last_update?: string;

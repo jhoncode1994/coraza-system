@@ -91,6 +91,10 @@
           <td mat-cell *matCellDef="let element">
             <span *ngIf="element.talla" class="talla-badge">
               {{ element.talla }}
+              <span *ngIf="element.genero" class="genero-badge" 
+                    [ngClass]="element.genero === 'F' ? 'femenino' : 'masculino'">
+                {{ element.genero === 'F' ? '♀' : '♂' }}
+              </span>
             </span>
             <span *ngIf="!element.talla" class="no-talla">
               {{ requiereTalla(element.category) ? 'Sin especificar' : 'No aplica' }}

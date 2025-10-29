@@ -19,6 +19,7 @@ export interface AddStockResult {
   reason: string;
   notes?: string;
   talla?: string;
+  genero?: 'M' | 'F';
 }
 
 @Component({
@@ -70,6 +71,19 @@ export interface AddStockResult {
           </mat-error>
         </mat-form-field>
 
+        <!-- Campo de género (solo para botas) -->
+        <mat-form-field appearance="outline" *ngIf="requiereGenero()">
+          <mat-label>Género</mat-label>
+          <mat-select formControlName="genero">
+            <mat-option value="F">👩 Mujer</mat-option>
+            <mat-option value="M">👨 Hombre</mat-option>
+          </mat-select>
+          <mat-icon matSuffix>wc</mat-icon>
+          <mat-error *ngIf="addStockForm.get('genero')?.hasError('required')">
+            El género es requerido
+          </mat-error>
+        </mat-form-field>
+
         <mat-form-field appearance="outline">
           <mat-label>Motivo de entrada</mat-label>
           <mat-select formControlName="reason">
@@ -99,6 +113,7 @@ export interface AddStockResult {
           <p><strong>Stock actual:</strong> {{data.supply.quantity}} unidades</p>
           <p><strong>Cantidad a agregar:</strong> +{{addStockForm.get('quantity')?.value}} unidades</p>
           <p *ngIf="requiereSeleccionTalla()"><strong>Talla:</strong> {{addStockForm.get('talla')?.value}}</p>
+          <p *ngIf="requiereGenero()"><strong>Género:</strong> {{addStockForm.get('genero')?.value === 'F' ? 'Mujer' : 'Hombre'}}</p>
           <p><strong>Stock resultante:</strong> 
             <span class="new-stock">{{data.supply.quantity + addStockForm.get('quantity')?.value}} unidades</span>
           </p>
@@ -226,7 +241,8 @@ export class AddStockDialogComponent {
       quantity: [1, [Validators.required, Validators.min(1)]],
       reason: ['', Validators.required],
       notes: [''],
-      talla: ['']
+      talla: [''],
+      genero: ['']
     });
 
     // Si el elemento requiere talla, hacer el campo obligatorio
@@ -235,6 +251,29 @@ export class AddStockDialogComponent {
       this.addStockForm.get('talla')?.setValidators([Validators.required]);
       this.addStockForm.get('talla')?.updateValueAndValidity();
     }
+
+    // Si es calzado, hacer el género obligatorio
+    if (this.requiereGenero()) {
+      console.log('Elemento requiere género, haciendo campo obligatorio');
+      this.addStockForm.get('genero')?.setValidators([Validators.required]);
+      this.addStockForm.get('genero')?.updateValueAndValidity();
+    }
+  }
+
+  esCalzado(): boolean {
+    const nombreLower = this.data.supply.name.toLowerCase();
+    const categoria = this.data.supply.category.toLowerCase();
+    return categoria === 'calzado' || 
+           nombreLower.includes('bota') || 
+           nombreLower.includes('zapato');
+  }
+
+  requiereGenero(): boolean {
+    const nombreLower = this.data.supply.name.toLowerCase();
+    return nombreLower.includes('pantalón') || 
+           nombreLower.includes('pantalon') ||
+           nombreLower.includes('camisa') ||
+           this.esCalzado();
   }
 
   requiereSeleccionTalla(): boolean {
