@@ -195,8 +195,7 @@ async function initializeDatabase() {
   }
 }
 
-// Initialize database on startup
-initializeDatabase();
+// NOTE: Database initialization moved to after server startup (see bottom of file)
 
 // Authentication functions
 async function validateCredentials(username, password) {
@@ -2065,6 +2064,11 @@ const server = app.listen(port, () => {
     PGHOST: process.env.PGHOST ? 'Set' : 'Not set',
     PGDATABASE: process.env.PGDATABASE ? 'Set' : 'Not set',
     PGUSER: process.env.PGUSER ? 'Set' : 'Not set'
+  });
+  
+  // Initialize database AFTER server is listening (non-blocking)
+  initializeDatabase().catch(err => {
+    console.error('Database initialization failed, but server is still running:', err);
   });
 });
 
