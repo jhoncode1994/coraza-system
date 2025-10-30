@@ -21,6 +21,9 @@ export interface EntregaDotacionItem {
   elemento: string;
   cantidad: number;
   stockDisponible: number;
+  codigo?: string;
+  talla?: string;
+  genero?: 'M' | 'F' | null;
 }
 
 export interface EntregaDotacion {
@@ -48,8 +51,13 @@ export interface EntregaDotacion {
             <mat-form-field>
               <mat-label>Elemento de dotación</mat-label>
               <mat-select formControlName="elemento" (selectionChange)="onElementSelected($event.value)">
-                <mat-option *ngFor="let item of getAvailableItems()" [value]="item.name">
-                  {{item.name | uppercase}} - Disponible: {{item.quantity}}
+                <mat-option *ngFor="let item of getAvailableItems()" [value]="item.code">
+                  {{item.name | uppercase}}
+                  <span *ngIf="item.talla"> - Talla {{item.talla}}</span>
+                  <span *ngIf="item.genero" [style.color]="item.genero === 'F' ? '#e91e63' : '#2196f3'">
+                    {{item.genero === 'F' ? ' ♀ Mujer' : ' ♂ Hombre'}}
+                  </span>
+                  - Disponible: {{item.quantity}}
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -82,7 +90,14 @@ export interface EntregaDotacion {
           <mat-list-item *ngFor="let elemento of selectedElements; let i = index">
             <div class="element-item">
               <div class="element-info">
-                <span class="element-name">{{elemento.elemento | uppercase}}</span>
+                <span class="element-name">
+                  {{elemento.elemento | uppercase}}
+                  <span *ngIf="elemento.talla" class="talla-info"> - Talla {{elemento.talla}}</span>
+                  <span *ngIf="elemento.genero" class="genero-info" 
+                        [style.color]="elemento.genero === 'F' ? '#e91e63' : '#2196f3'">
+                    {{elemento.genero === 'F' ? ' ♀' : ' ♂'}}
+                  </span>
+                </span>
                 <span class="element-quantity">Cantidad: {{elemento.cantidad}}</span>
               </div>
               <button mat-icon-button color="warn" (click)="removeElement(i)" matTooltip="Eliminar">
@@ -199,6 +214,18 @@ export interface EntregaDotacion {
     .element-name {
       font-weight: 500;
       font-size: 16px;
+    }
+    
+    .talla-info {
+      color: #666;
+      font-weight: normal;
+      font-size: 14px;
+    }
+    
+    .genero-info {
+      font-weight: bold;
+      font-size: 16px;
+      margin-left: 4px;
     }
     
     .element-quantity {
@@ -333,14 +360,14 @@ export class EntregaDotacionDialogComponent implements OnInit {
 
   getAvailableItems(): SupplyItem[] {
     // Filtrar elementos que ya están seleccionados
-    const selectedElementNames = this.selectedElements.map(el => el.elemento);
+    const selectedElementCodes = this.selectedElements.map(el => el.codigo);
     return this.availableItems.filter(item => 
-      !selectedElementNames.includes(item.name) && item.quantity > 0
+      !selectedElementCodes.includes(item.code) && item.quantity > 0
     );
   }
 
-  onElementSelected(elementName: string): void {
-    const selectedItem = this.availableItems.find(item => item.name === elementName);
+  onElementSelected(elementCode: string): void {
+    const selectedItem = this.availableItems.find(item => item.code === elementCode);
     if (selectedItem) {
       this.selectedItemStock = selectedItem.quantity;
       // Actualizar la validación de cantidad máxima
@@ -369,15 +396,18 @@ export class EntregaDotacionDialogComponent implements OnInit {
 
   addElement(): void {
     if (this.canAddElement()) {
-      const elemento = this.elementForm.get('elemento')?.value;
+      const elementCode = this.elementForm.get('elemento')?.value;
       const cantidad = this.elementForm.get('cantidad')?.value;
-      const selectedItem = this.availableItems.find(item => item.name === elemento);
+      const selectedItem = this.availableItems.find(item => item.code === elementCode);
       
       if (selectedItem) {
         this.selectedElements.push({
-          elemento: elemento,
+          elemento: selectedItem.name,
+          codigo: selectedItem.code,
           cantidad: cantidad,
-          stockDisponible: selectedItem.quantity
+          stockDisponible: selectedItem.quantity,
+          talla: selectedItem.talla,
+          genero: selectedItem.genero
         });
 
         // Resetear el formulario de elemento
