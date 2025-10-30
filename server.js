@@ -882,17 +882,42 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
         const generoSuffix = genero ? `-${genero}` : '';
         const newCode = `${baseCode}-${talla}${generoSuffix}`;
         
-        console.log(`Creando nuevo registro con talla y género: ${name} - Talla ${talla} - Género ${genero || 'N/A'} - Código: ${newCode}`);
+        console.log(`Verificando si existe registro: ${name} - Talla ${talla} - Género ${genero || 'N/A'} - Código: ${newCode}`);
         
-        // Crear nuevo registro con talla y genero
-        const insertResult = await client.query(
-          'INSERT INTO supply_inventory (name, category, quantity, minimum_quantity, code, talla, genero, last_update) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) RETURNING id',
-          [name, category, quantity, minimum_quantity, newCode, talla, genero]
+        // Verificar si ya existe un registro con este código
+        const existingCheck = await client.query(
+          'SELECT id, quantity FROM supply_inventory WHERE code = $1',
+          [newCode]
         );
         
-        targetInventoryId = insertResult.rows[0].id;
-        previousQuantity = 0;
-        newQuantity = quantity;
+        if (existingCheck.rows.length > 0) {
+          // Si existe, usar ese registro
+          console.log(`Registro existente encontrado con código ${newCode}, usando ID ${existingCheck.rows[0].id}`);
+          targetInventoryId = existingCheck.rows[0].id;
+          previousQuantity = existingCheck.rows[0].quantity;
+          newQuantity = previousQuantity + quantity;
+          
+          await client.query(
+            'UPDATE supply_inventory SET quantity = $1, last_update = CURRENT_TIMESTAMP WHERE id = $2',
+            [newQuantity, targetInventoryId]
+          );
+        } else {
+          // Si no existe, crear nuevo registro
+          console.log(`Creando nuevo registro con talla y género: ${name} - Talla ${talla} - Género ${genero || 'N/A'} - Código: ${newCode}`);
+          
+          const insertResult = await client.query(
+            'INSERT INTO supply_inventory (name, category, quantity, minimum_quantity, code, talla, genero, last_update) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) RETURNING id',
+            [name, category, quantity, minimum_quantity, newCode, talla, genero]
+          );
+          
+          targetInventoryId = insertResult.rows[0].id;
+          previousQuantity = 0;
+          newQuantity = quantity;
+        }
+          targetInventoryId = insertResult.rows[0].id;
+          previousQuantity = 0;
+          newQuantity = quantity;
+        }
         
       } else if (currentResult.rows.length === 0) {
         await client.query('ROLLBACK');
