@@ -512,7 +512,7 @@ app.get('/api/users/:id', async (req, res) => {
 app.get('/api/supply-inventory', async (req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM supply_inventory ORDER BY category, name');
+    const result = await client.query('SELECT * FROM supply_inventory ORDER BY category, name, genero, talla');
     client.release();
     
     res.json(result.rows);
@@ -610,15 +610,16 @@ app.get('/api/supply-inventory/available-sizes/:element/:category', async (req, 
     
     const client = await pool.connect();
     
-    // Buscar por nombre exacto del elemento con stock > 0
+    // Buscar por nombre exacto del elemento con stock > 0, incluyendo genero
     const result = await client.query(`
-      SELECT talla, quantity, code, name
+      SELECT talla, quantity, code, name, genero
       FROM supply_inventory 
       WHERE LOWER(name) = LOWER($1)
         AND category = $2 
         AND talla IS NOT NULL 
         AND quantity > 0
       ORDER BY 
+        genero DESC NULLS LAST,
         CASE talla
           WHEN '28' THEN 1
           WHEN '30' THEN 2  
@@ -640,7 +641,8 @@ app.get('/api/supply-inventory/available-sizes/:element/:category', async (req, 
       talla: row.talla,
       quantity: row.quantity,
       code: row.code,
-      name: row.name
+      name: row.name,
+      genero: row.genero
     }));
     
     console.log(`✅ Available sizes for "${element}" in ${category}:`, availableSizes);
@@ -812,7 +814,7 @@ app.put('/api/users/:id', async (req, res) => {
 // Add stock to inventory item with movement tracking
 app.post('/api/inventory-movements/add-stock', async (req, res) => {
   try {
-    const { supplyId, quantity, reason, notes, talla } = req.body;
+    const { supplyId, quantity, reason, notes, talla, genero } = req.body;
     
     if (!supplyId || !quantity || !reason) {
       return res.status(400).json({ 
@@ -829,15 +831,16 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
       let inventoryQuery, inventoryParams;
       
       if (talla) {
-        // Para elementos con talla, buscar el registro específico por talla
+        // Para elementos con talla, buscar el registro específico por talla y género
         inventoryQuery = `
           SELECT id, quantity, name, category 
           FROM supply_inventory 
           WHERE (id = $1 OR (name = (SELECT name FROM supply_inventory WHERE id = $1) 
                             AND category = (SELECT category FROM supply_inventory WHERE id = $1)))
             AND talla = $2
+            AND (genero = $3 OR (genero IS NULL AND $3 IS NULL))
         `;
-        inventoryParams = [supplyId, talla];
+        inventoryParams = [supplyId, talla, genero];
       } else {
         // Para elementos sin talla, buscar el registro normal
         inventoryQuery = 'SELECT id, quantity, name, category FROM supply_inventory WHERE id = $1 AND talla IS NULL';
@@ -877,14 +880,15 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
         // Extraer el código base (sin tallas) para evitar códigos concatenados
         // Tomar solo la primera parte antes del primer guión para asegurar código limpio
         const baseCode = code.split('-')[0];
-        const newCode = `${baseCode}-${talla}`;
+        const generoSuffix = genero ? `-${genero}` : '';
+        const newCode = `${baseCode}-${talla}${generoSuffix}`;
         
-        console.log(`Creando nuevo registro con talla: ${name} - Talla ${talla} - Código: ${newCode}`);
+        console.log(`Creando nuevo registro con talla y género: ${name} - Talla ${talla} - Género ${genero || 'N/A'} - Código: ${newCode}`);
         
-        // Crear nuevo registro con talla
+        // Crear nuevo registro con talla y genero
         const insertResult = await client.query(
-          'INSERT INTO supply_inventory (name, category, quantity, minimum_quantity, code, talla, last_update) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) RETURNING id',
-          [name, category, quantity, minimum_quantity, newCode, talla]
+          'INSERT INTO supply_inventory (name, category, quantity, minimum_quantity, code, talla, genero, last_update) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) RETURNING id',
+          [name, category, quantity, minimum_quantity, newCode, talla, genero]
         );
         
         targetInventoryId = insertResult.rows[0].id;
@@ -1409,7 +1413,7 @@ app.use((err, req, res, next) => {
 app.post('/api/delivery', async (req, res) => {
   let client;
   try {
-    const { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url } = req.body;
+    const { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url, genero } = req.body;
     
     console.log('=== INICIANDO PROCESO DE ENTREGA ===');
     console.log('Datos recibidos:', {
@@ -1419,7 +1423,8 @@ app.post('/api/delivery', async (req, res) => {
       cantidad,
       fechaEntrega,
       observaciones: observaciones ? 'Presente' : 'Ausente',
-      firma_url: firma_url ? 'Presente' : 'Ausente'
+      firma_url: firma_url ? 'Presente' : 'Ausente',
+      genero: genero || 'N/A'
     });
     
     // Validar datos requeridos
@@ -1440,22 +1445,24 @@ app.post('/api/delivery', async (req, res) => {
     let findQuery;
     let findParams;
     
-    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}"`);
+    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}" y género: "${genero || 'N/A'}"`);
     
     if (talla) {
-      // Buscar por nombre del elemento y talla específica
+      // Buscar por nombre del elemento, talla y género específicos
       findQuery = `
-        SELECT id, name, quantity, talla 
+        SELECT id, name, quantity, talla, genero 
         FROM supply_inventory 
-        WHERE LOWER(name) LIKE LOWER($1) AND talla = $2
+        WHERE LOWER(name) LIKE LOWER($1) 
+          AND talla = $2
+          AND (genero = $3 OR (genero IS NULL AND $3 IS NULL))
         ORDER BY quantity DESC
         LIMIT 1
       `;
-      findParams = [`%${elemento}%`, talla];
+      findParams = [`%${elemento}%`, talla, genero];
     } else {
       // Buscar solo por nombre del elemento
       findQuery = `
-        SELECT id, name, quantity, talla 
+        SELECT id, name, quantity, talla, genero
         FROM supply_inventory 
         WHERE LOWER(name) LIKE LOWER($1) AND (talla IS NULL OR talla = '')
         ORDER BY quantity DESC
@@ -1475,7 +1482,7 @@ app.post('/api/delivery', async (req, res) => {
     }
     
     if (inventoryResult.rows.length === 0) {
-      throw new Error(`No se encontró el elemento "${elemento}"${talla ? ` con talla "${talla}"` : ''} en el inventario. Verifica que el elemento exista y tenga stock disponible.`);
+      throw new Error(`No se encontró el elemento "${elemento}"${talla ? ` con talla "${talla}"` : ''}${genero ? ` y género "${genero}"` : ''} en el inventario. Verifica que el elemento exista y tenga stock disponible.`);
     }
     
     const inventoryItem = inventoryResult.rows[0];
@@ -1494,12 +1501,12 @@ app.post('/api/delivery', async (req, res) => {
     
     console.log(`Stock actualizado: ${elemento}${talla ? ` (${talla})` : ''} - Cantidad anterior: ${inventoryItem.quantity}, Nueva cantidad: ${newQuantity}`);
     
-    // 3. Registrar la entrega en entrega_dotacion
+    // 3. Registrar la entrega en entrega_dotacion con género
     const result = await client.query(`
-      INSERT INTO entrega_dotacion ("userId", elemento, talla, cantidad, "fechaEntrega", "firma_url", observaciones)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO entrega_dotacion ("userId", elemento, talla, cantidad, "fechaEntrega", "firma_url", observaciones, genero_talla)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
-    `, [userId, elemento, talla, cantidad, fechaEntrega || new Date(), firma_url, observaciones]);
+    `, [userId, elemento, talla, cantidad, fechaEntrega || new Date(), firma_url, observaciones, genero]);
     
     // 4. Registrar el movimiento en inventory_movements
     await client.query(`
@@ -1996,7 +2003,7 @@ app.put('/api/update-code', async (req, res) => {
 // Add new supply inventory item
 app.post('/api/supply-inventory', async (req, res) => {
   try {
-    const { code, name, category, quantity, minimum_quantity, description } = req.body;
+    const { code, name, category, quantity, minimum_quantity, description, talla, genero } = req.body;
     
     if (!code || !name || !category) {
       return res.status(400).json({ error: 'Code, name, and category are required' });
@@ -2011,10 +2018,10 @@ app.post('/api/supply-inventory', async (req, res) => {
       return res.status(400).json({ error: `Code ${code} already exists` });
     }
     
-    // Insert new item
+    // Insert new item with talla and genero
     const result = await client.query(
-      'INSERT INTO supply_inventory (code, name, category, quantity, minimum_quantity, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [code, name, category, quantity || 0, minimum_quantity || 10, description]
+      'INSERT INTO supply_inventory (code, name, category, quantity, minimum_quantity, description, talla, genero) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [code, name, category, quantity || 0, minimum_quantity || 10, description, talla, genero]
     );
     
     client.release();
