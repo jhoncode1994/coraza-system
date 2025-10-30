@@ -101,11 +101,15 @@ interface ElementoEntrega {
                     <mat-form-field appearance="outline" 
                                     class="talla-field" 
                                     *ngIf="requiereTalla(elemento.get('categoria')?.value)">
-                      <mat-label>Talla</mat-label>
+                      <mat-label>Talla y Género</mat-label>
                       <mat-select formControlName="talla" (selectionChange)="onTallaChange(i)">
-                        <mat-option *ngFor="let talla of getTallasDisponibles(elemento.get('categoria')?.value)" 
-                                    [value]="talla">
-                          {{ talla }}
+                        <mat-option *ngFor="let item of getItemsConTalla(elemento.get('categoria')?.value)" 
+                                    [value]="item.code">
+                          Talla {{ item.talla }}
+                          <span *ngIf="item.genero" [style.color]="item.genero === 'F' ? '#e91e63' : '#2196f3'">
+                            {{ item.genero === 'F' ? ' ♀ Mujer' : ' ♂ Hombre' }}
+                          </span>
+                          (Stock: {{ item.quantity }})
                         </mat-option>
                       </mat-select>
                     </mat-form-field>
@@ -453,17 +457,21 @@ export class EntregaConTallasDialogComponent implements OnInit {
   async updateStock(index: number) {
     const elementoGroup = this.elementosFormArray.at(index);
     const categoriaValue = elementoGroup.get('categoria')?.value;
-    const talla = elementoGroup.get('talla')?.value;
+    const tallaValue = elementoGroup.get('talla')?.value; // Ahora es código del item
     
     if (categoriaValue) {
-      const key = `${categoriaValue}-${talla || 'null'}`;
+      const key = `${categoriaValue}-${tallaValue || 'null'}`;
       
       const { nombre, categoria } = this.parseElementoValue(categoriaValue);
       
-      if (talla) {
-        // Si hay talla específica, obtener stock específico por talla
-        const stock = this.supplyInventoryService.getStockEspecificoPorTalla(nombre, categoria, talla);
-        this.stockCache.set(key, stock);
+      if (tallaValue) {
+        // Si se seleccionó con código completo (incluye género), buscar por código
+        const selectedItem = this.availableItems.find(item => item.code === tallaValue);
+        if (selectedItem) {
+          this.stockCache.set(key, selectedItem.quantity);
+        } else {
+          this.stockCache.set(key, 0);
+        }
       } else {
         // Si no hay talla específica, obtener el stock total del elemento agrupado
         const selectedItem = this.availableItems.find(item => 
@@ -531,6 +539,28 @@ export class EntregaConTallasDialogComponent implements OnInit {
     
     // Retornar lo que tengamos en cache (puede ser array vacío)
     return this.tallasCache.get(cacheKey) || [];
+  }
+
+  getItemsConTalla(categoriaValue: string): SupplyItem[] {
+    if (!categoriaValue) return [];
+    
+    const { nombre, categoria } = this.parseElementoValue(categoriaValue);
+    
+    // Filtrar elementos que coincidan con nombre y categoría, y que tengan stock
+    return this.availableItems.filter(item => 
+      item.name === nombre && 
+      item.category === categoria && 
+      item.quantity > 0 &&
+      item.talla !== null &&
+      item.talla !== undefined
+    ).sort((a, b) => {
+      // Ordenar por género (F primero) y luego por talla
+      if (a.genero !== b.genero) {
+        if (a.genero === 'F') return -1;
+        if (b.genero === 'M') return 1;
+      }
+      return parseInt(a.talla || '0') - parseInt(b.talla || '0');
+    });
   }
 
   onSignatureChange(signatureUrl: string | null): void {
