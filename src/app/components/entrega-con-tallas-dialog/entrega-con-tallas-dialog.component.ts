@@ -247,10 +247,18 @@ interface ElementoEntrega {
 
     .elemento-row {
       display: grid;
-      grid-template-columns: 2fr 1fr 100px auto auto;
+      grid-template-columns: 2fr 2fr 100px auto auto;
       gap: 15px;
       align-items: center;
       margin-bottom: 10px;
+    }
+
+    .talla-field {
+      min-width: 250px;
+    }
+
+    .talla-field .mat-mdc-select-value {
+      font-size: 14px;
     }
 
     .stock-info {
@@ -299,6 +307,7 @@ interface ElementoEntrega {
 export class EntregaConTallasDialogComponent implements OnInit {
   entregaForm: FormGroup;
   availableItems: SupplyItem[] = [];
+  allItems: SupplyItem[] = []; // Todos los items sin agrupar (para tallas con género)
   saving = false;
   signature: string | null = null;
   stockCache = new Map<string, number>();
@@ -330,6 +339,9 @@ export class EntregaConTallasDialogComponent implements OnInit {
   loadAvailableItems() {
     this.supplyInventoryService.getAllSupplies().subscribe({
       next: (items) => {
+        // Guardar TODOS los items sin filtrar (para tallas con género)
+        this.allItems = items.filter(item => item.quantity > 0);
+        
         // Filtrar solo elementos con stock disponible
         const itemsConStock = items.filter(item => item.quantity > 0);
         
@@ -352,6 +364,7 @@ export class EntregaConTallasDialogComponent implements OnInit {
         
         this.availableItems = Array.from(elementosAgrupados.values());
         console.log('Elementos disponibles agrupados:', this.availableItems);
+        console.log('Todos los items (sin agrupar):', this.allItems);
         
         // Precargar tallas para elementos que las requieren
         this.precargarTallas();
@@ -465,8 +478,8 @@ export class EntregaConTallasDialogComponent implements OnInit {
       const { nombre, categoria } = this.parseElementoValue(categoriaValue);
       
       if (tallaValue) {
-        // Si se seleccionó con código completo (incluye género), buscar por código
-        const selectedItem = this.availableItems.find(item => item.code === tallaValue);
+        // Si se seleccionó con código completo (incluye género), buscar por código en allItems
+        const selectedItem = this.allItems.find(item => item.code === tallaValue);
         if (selectedItem) {
           this.stockCache.set(key, selectedItem.quantity);
         } else {
@@ -546,19 +559,25 @@ export class EntregaConTallasDialogComponent implements OnInit {
     
     const { nombre, categoria } = this.parseElementoValue(categoriaValue);
     
-    // Filtrar elementos que coincidan con nombre y categoría, y que tengan stock
-    return this.availableItems.filter(item => 
+    // Filtrar elementos de TODOS los items (no agrupados) que coincidan con nombre y categoría
+    const items = this.allItems.filter(item => 
       item.name === nombre && 
       item.category === categoria && 
       item.quantity > 0 &&
       item.talla !== null &&
       item.talla !== undefined
-    ).sort((a, b) => {
-      // Ordenar por género (F primero) y luego por talla
+    );
+    
+    console.log(`Items con talla para ${nombre}:`, items);
+    
+    // Ordenar por género (F primero) y luego por talla
+    return items.sort((a, b) => {
+      // Ordenar por género (F primero)
       if (a.genero !== b.genero) {
         if (a.genero === 'F') return -1;
         if (b.genero === 'M') return 1;
       }
+      // Luego por talla numérica
       return parseInt(a.talla || '0') - parseInt(b.talla || '0');
     });
   }
