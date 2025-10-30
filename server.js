@@ -914,10 +914,8 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
           previousQuantity = 0;
           newQuantity = quantity;
         }
-          targetInventoryId = insertResult.rows[0].id;
-          previousQuantity = 0;
-          newQuantity = quantity;
-        }
+        
+      } else if (currentResult.rows.length === 0) {
         
       } else if (currentResult.rows.length === 0) {
         await client.query('ROLLBACK');
