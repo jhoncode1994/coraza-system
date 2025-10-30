@@ -215,6 +215,11 @@ export interface AddStockResult {
 })
 export class AddStockDialogComponent {
   addStockForm: FormGroup;
+  
+  // Cache para evitar recalcular en cada ciclo de detección de cambios
+  readonly requiereTalla: boolean;
+  readonly requiereGeneroSeleccion: boolean;
+  readonly tallasDisponibles: string[];
 
   private reasonTexts: Record<string, string> = {
     'compra': 'Compra',
@@ -230,11 +235,16 @@ export class AddStockDialogComponent {
     public dialogRef: MatDialogRef<AddStockDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: AddStockDialogData
   ) {
+    // Calcular SOLO UNA VEZ en el constructor
+    this.requiereTalla = this.calcularRequiereTalla();
+    this.requiereGeneroSeleccion = this.calcularRequiereGenero();
+    this.tallasDisponibles = this.calcularTallasDisponibles();
+    
     console.log('AddStockDialog - Datos del elemento:', {
       name: this.data.supply.name,
       category: this.data.supply.category,
-      requiereTalla: this.requiereSeleccionTalla(),
-      tallasDisponibles: this.getTallasDisponiblesParaElemento()
+      requiereTalla: this.requiereTalla,
+      tallasDisponibles: this.tallasDisponibles
     });
 
     this.addStockForm = this.fb.group({
@@ -246,29 +256,27 @@ export class AddStockDialogComponent {
     });
 
     // Si el elemento requiere talla, hacer el campo obligatorio
-    if (this.requiereSeleccionTalla()) {
+    if (this.requiereTalla) {
       console.log('Elemento requiere talla, haciendo campo obligatorio');
       this.addStockForm.get('talla')?.setValidators([Validators.required]);
       this.addStockForm.get('talla')?.updateValueAndValidity();
     }
 
     // Si es calzado, hacer el género obligatorio
-    if (this.requiereGenero()) {
+    if (this.requiereGeneroSeleccion) {
       console.log('Elemento requiere género, haciendo campo obligatorio');
       this.addStockForm.get('genero')?.setValidators([Validators.required]);
       this.addStockForm.get('genero')?.updateValueAndValidity();
     }
   }
 
-  esCalzado(): boolean {
-    const nombreLower = this.data.supply.name.toLowerCase();
-    const categoria = this.data.supply.category.toLowerCase();
-    return categoria === 'calzado' || 
-           nombreLower.includes('bota') || 
-           nombreLower.includes('zapato');
+  private calcularRequiereTalla(): boolean {
+    const porCategoria = requiereTalla(this.data.supply.category);
+    const porNombre = requiereTalla(this.data.supply.name);
+    return porCategoria || porNombre;
   }
 
-  requiereGenero(): boolean {
+  private calcularRequiereGenero(): boolean {
     const nombreLower = this.data.supply.name.toLowerCase();
     return nombreLower.includes('pantalón') || 
            nombreLower.includes('pantalon') ||
@@ -276,20 +284,7 @@ export class AddStockDialogComponent {
            this.esCalzado();
   }
 
-  requiereSeleccionTalla(): boolean {
-    // Verificar por categoría primero
-    const porCategoria = requiereTalla(this.data.supply.category);
-    
-    // Si no funciona por categoría, verificar por nombre
-    const porNombre = requiereTalla(this.data.supply.name);
-    
-    const resultado = porCategoria || porNombre;
-    console.log(`¿Requiere talla? Categoría: "${this.data.supply.category}" -> ${porCategoria}, Nombre: "${this.data.supply.name}" -> ${porNombre}, Final: ${resultado}`);
-    return resultado;
-  }
-
-  getTallasDisponiblesParaElemento(): string[] {
-    // Función para detectar tipo de talla basado en nombre
+  private calcularTallasDisponibles(): string[] {
     const detectarTipoTalla = (nombre: string) => {
       const nombreLower = nombre.toLowerCase();
       if (nombreLower.includes('pantalon') || nombreLower.includes('pantalón')) return 'pantalon';
@@ -300,19 +295,36 @@ export class AddStockDialogComponent {
       return null;
     };
 
-    // Intentar por categoría primero
-    let tallas = getTallasDisponibles(this.data.supply.category);
-    
-    // Si la categoría es genérica (como "uniforme"), usar el nombre del elemento
-    if (tallas.length === 0) {
-      const tipoDetectado = detectarTipoTalla(this.data.supply.name);
-      if (tipoDetectado) {
-        tallas = getTallasDisponibles(tipoDetectado);
-      }
+    const tipo = detectarTipoTalla(this.data.supply.name);
+    if (tipo) {
+      const tallas = getTallasDisponibles(tipo);
+      console.log(`Tallas para "${this.data.supply.name}" (Cat: "${this.data.supply.category}"):`, tallas);
+      return tallas;
     }
     
-    console.log(`Tallas para "${this.data.supply.name}" (Cat: "${this.data.supply.category}"):`, tallas);
-    return tallas;
+    return [];
+  }
+
+  esCalzado(): boolean {
+    const nombreLower = this.data.supply.name.toLowerCase();
+    const categoria = this.data.supply.category.toLowerCase();
+    return categoria === 'calzado' || 
+           nombreLower.includes('bota') || 
+           nombreLower.includes('zapato');
+  }
+
+  // Métodos deprecados - ahora usamos las propiedades readonly calculadas una sola vez
+  // Mantenidos para compatibilidad con código existente
+  requiereGenero(): boolean {
+    return this.requiereGeneroSeleccion;
+  }
+
+  requiereSeleccionTalla(): boolean {
+    return this.requiereTalla;
+  }
+
+  getTallasDisponiblesParaElemento(): string[] {
+    return this.tallasDisponibles;
   }
 
   getReasonText(reason: string): string {
