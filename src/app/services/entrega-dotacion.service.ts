@@ -9,6 +9,7 @@ export interface EntregaHistorial {
   userId: number;
   elemento: string;
   talla?: string;  // Nueva propiedad para talla
+  genero?: 'M' | 'F' | null;  // Nueva propiedad para género
   cantidad: number;
   fechaEntrega: Date;
   observaciones?: string;
@@ -47,6 +48,7 @@ export class EntregaDotacionService {
       userId: entrega.userId,
       elemento: entrega.elemento,
       talla: entrega.talla,  // Incluir talla
+      genero: entrega.genero,  // Incluir género
       cantidad: entrega.cantidad,
       fechaEntrega: entrega.fechaEntrega,
       observaciones: entrega.observaciones,

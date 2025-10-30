@@ -482,6 +482,8 @@ export class UsersComponent implements OnInit {
           const registroEntrega = {
             userId: user.id,
             elemento: elemento.elemento,
+            talla: elemento.talla,
+            genero: elemento.genero,
             cantidad: elemento.cantidad,
             fechaEntrega: entrega.fechaEntrega,
             observaciones: entrega.observaciones || '',
@@ -558,6 +560,7 @@ export class UsersComponent implements OnInit {
           userId: user.id,
           elemento: elemento.categoria,
           talla: elemento.talla || null,
+          genero: elemento.genero || null,
           cantidad: elemento.cantidad,
           fechaEntrega: new Date(),
           observaciones: entregaData.observaciones || '',
