@@ -4,6 +4,7 @@ dotenv.config();
 // server.ts - Servidor Express para exponer la lógica de negocio
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
 import { getAllUsers, getUserById, createUser, updateUser } from './userService';
 import { getSupplyHistoryByAssociate } from './supplyHistoryService';
 import { 
@@ -314,6 +315,22 @@ app.delete('/api/delivery/:id', async (req: Request, res: Response) => {
 // Endpoint raíz
 app.get('/', (req: Request, res: Response) => {
   res.send('API corriendo');
+});
+
+// Servir archivos estáticos de Angular (build)
+const distPath = path.join(__dirname, '../../../dist');
+console.log('Sirviendo archivos estáticos desde:', distPath);
+app.use(express.static(distPath));
+
+// Catch-all para Angular routing (SPA)
+app.get('*', (req: Request, res: Response): void => {
+  // No servir archivos de API como HTML
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'API endpoint not found' });
+    return;
+  }
+  
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
