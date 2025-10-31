@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.query = void 0;
+exports.getPool = exports.query = void 0;
 // db.ts - Configuración de conexión a PostgreSQL (Neon)
 const pg_1 = require("pg");
 const pool = new pg_1.Pool({
@@ -9,4 +9,6 @@ const pool = new pg_1.Pool({
 });
 const query = (text, params) => pool.query(text, params);
 exports.query = query;
+const getPool = () => pool;
+exports.getPool = getPool;
 //# sourceMappingURL=db.js.map

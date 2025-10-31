@@ -318,7 +318,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Servir archivos estáticos de Angular (build)
-const distPath = path.join(__dirname, '../../../dist');
+const distPath = path.join(__dirname, '../../../../dist');
 console.log('Sirviendo archivos estáticos desde:', distPath);
 app.use(express.static(distPath));
 

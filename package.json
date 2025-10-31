@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "npm run backend:build && node ./src/services/dist/server.js",
+    "start": "node ./src/services/dist/server.js",
     "dev": "ng serve --proxy-config proxy.conf.json",
     "build": "npx --yes @angular/cli@16.2.16 build --configuration production",
     "build:prod": "ng build --configuration production",

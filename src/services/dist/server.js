@@ -6,6 +6,7 @@ dotenv_1.default.config();
 // server.ts - Servidor Express para exponer la lógica de negocio
 const express_1 = tslib_1.__importDefault(require("express"));
 const cors_1 = tslib_1.__importDefault(require("cors"));
+const path_1 = tslib_1.__importDefault(require("path"));
 const userService_1 = require("./userService");
 const supplyHistoryService_1 = require("./supplyHistoryService");
 const retiredAssociatesService_1 = require("./retiredAssociatesService");
@@ -243,12 +244,20 @@ app.get('/api/delivery/user/:userId', async (req, res) => {
 app.post('/api/delivery', async (req, res) => {
     try {
         const entregaData = req.body;
-        const nuevaEntrega = await (0, entregaDotacionService_1.createEntrega)(entregaData);
-        res.status(201).json(nuevaEntrega);
+        // Si tiene elementos (array), usar la nueva función
+        if (entregaData.elementos && Array.isArray(entregaData.elementos)) {
+            const nuevaEntrega = await (0, entregaDotacionService_1.createEntregaConTallas)(entregaData);
+            res.status(201).json(nuevaEntrega);
+        }
+        else {
+            // Si no, usar la función antigua para compatibilidad
+            const nuevaEntrega = await (0, entregaDotacionService_1.createEntrega)(entregaData);
+            res.status(201).json(nuevaEntrega);
+        }
     }
     catch (error) {
         console.error('Error creando entrega:', error);
-        res.status(500).json({ error: 'Error al crear entrega' });
+        res.status(500).json({ error: 'Error al crear entrega', details: error instanceof Error ? error.message : 'Unknown error' });
     }
 });
 // Actualizar entrega
@@ -279,6 +288,19 @@ app.delete('/api/delivery/:id', async (req, res) => {
 // Endpoint raíz
 app.get('/', (req, res) => {
     res.send('API corriendo');
+});
+// Servir archivos estáticos de Angular (build)
+const distPath = path_1.default.join(__dirname, '../../../../dist');
+console.log('Sirviendo archivos estáticos desde:', distPath);
+app.use(express_1.default.static(distPath));
+// Catch-all para Angular routing (SPA)
+app.get('*', (req, res) => {
+    // No servir archivos de API como HTML
+    if (req.path.startsWith('/api/')) {
+        res.status(404).json({ error: 'API endpoint not found' });
+        return;
+    }
+    res.sendFile(path_1.default.join(distPath, 'index.html'));
 });
 app.listen(PORT, () => {
     console.log(`Servidor backend escuchando en el puerto ${PORT}`);
