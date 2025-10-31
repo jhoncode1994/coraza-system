@@ -1,5 +1,5 @@
 // entregaDotacionService.ts - Servicio para gestión de entregas de dotación
-import { query } from './db';
+import { query, getPool } from './db';
 
 export interface EntregaDotacion {
   id?: number;
@@ -81,12 +81,7 @@ export async function deleteEntrega(id: number) {
 }
 
 export async function createEntregaConTallas(entrega: EntregaConTallas) {
-  const { Pool } = require('pg');
-  const pool = new Pool({
-    connectionString: process.env["DATABASE_URL"],
-    ssl: process.env["NODE_ENV"] === 'production' ? { rejectUnauthorized: false } : false
-  });
-  
+  const pool = getPool();
   const client = await pool.connect();
   
   try {
