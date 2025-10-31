@@ -104,7 +104,7 @@ interface ElementoEntrega {
                       <mat-label>Talla y Género</mat-label>
                       <mat-select formControlName="talla" (selectionChange)="onTallaChange(i)">
                         <mat-option *ngFor="let item of getItemsConTalla(elemento.get('categoria')?.value)" 
-                                    [value]="item.code">
+                                    [value]="item.talla">
                           Talla {{ item.talla }}
                           <span *ngIf="item.genero" [style.color]="item.genero === 'F' ? '#e91e63' : '#2196f3'">
                             {{ item.genero === 'F' ? ' ♀ Mujer' : ' ♂ Hombre' }}
@@ -312,6 +312,7 @@ export class EntregaConTallasDialogComponent implements OnInit {
   signature: string | null = null;
   stockCache = new Map<string, number>();
   tallasCache = new Map<string, string[]>(); // Cache para tallas disponibles
+  itemsConTallaCache = new Map<string, SupplyItem[]>(); // Cache para items con talla
 
   constructor(
     private fb: FormBuilder,
@@ -470,7 +471,7 @@ export class EntregaConTallasDialogComponent implements OnInit {
   async updateStock(index: number) {
     const elementoGroup = this.elementosFormArray.at(index);
     const categoriaValue = elementoGroup.get('categoria')?.value;
-    const tallaValue = elementoGroup.get('talla')?.value; // Ahora es código del item
+    const tallaValue = elementoGroup.get('talla')?.value; // Ahora es solo el número de talla
     
     if (categoriaValue) {
       const key = `${categoriaValue}-${tallaValue || 'null'}`;
@@ -478,8 +479,12 @@ export class EntregaConTallasDialogComponent implements OnInit {
       const { nombre, categoria } = this.parseElementoValue(categoriaValue);
       
       if (tallaValue) {
-        // Si se seleccionó con código completo (incluye género), buscar por código en allItems
-        const selectedItem = this.allItems.find(item => item.code === tallaValue);
+        // Buscar item por nombre de categoria y talla
+        const selectedItem = this.allItems.find(item => 
+          item.name === nombre && 
+          item.category === categoria && 
+          item.talla === tallaValue
+        );
         if (selectedItem) {
           this.stockCache.set(key, selectedItem.quantity);
         } else {
@@ -557,6 +562,11 @@ export class EntregaConTallasDialogComponent implements OnInit {
   getItemsConTalla(categoriaValue: string): SupplyItem[] {
     if (!categoriaValue) return [];
     
+    // Revisar cache primero
+    if (this.itemsConTallaCache.has(categoriaValue)) {
+      return this.itemsConTallaCache.get(categoriaValue)!;
+    }
+    
     const { nombre, categoria } = this.parseElementoValue(categoriaValue);
     
     // Filtrar elementos de TODOS los items (no agrupados) que coincidan con nombre y categoría
@@ -568,10 +578,8 @@ export class EntregaConTallasDialogComponent implements OnInit {
       item.talla !== undefined
     );
     
-    console.log(`Items con talla para ${nombre}:`, items);
-    
     // Ordenar por género (F primero) y luego por talla
-    return items.sort((a, b) => {
+    const sortedItems = items.sort((a, b) => {
       // Ordenar por género (F primero)
       if (a.genero !== b.genero) {
         if (a.genero === 'F') return -1;
@@ -580,6 +588,11 @@ export class EntregaConTallasDialogComponent implements OnInit {
       // Luego por talla numérica
       return parseInt(a.talla || '0') - parseInt(b.talla || '0');
     });
+    
+    // Guardar en cache
+    this.itemsConTallaCache.set(categoriaValue, sortedItems);
+    
+    return sortedItems;
   }
 
   onSignatureChange(signatureUrl: string | null): void {
