@@ -313,7 +313,7 @@ app.delete('/api/delivery/:id', async (req: Request, res: Response) => {
 });
 
 // Servir archivos estáticos de Angular (build)
-const distPath = path.join(__dirname, '../../../../dist');
+const distPath = path.join(__dirname, '../../../../dist/coraza-system-angular');
 console.log('Sirviendo archivos estáticos desde:', distPath);
 app.use(express.static(distPath));
 

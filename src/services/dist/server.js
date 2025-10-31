@@ -286,7 +286,7 @@ app.delete('/api/delivery/:id', async (req, res) => {
     }
 });
 // Servir archivos estáticos de Angular (build)
-const distPath = path_1.default.join(__dirname, '../../../../dist');
+const distPath = path_1.default.join(__dirname, '../../../../dist/coraza-system-angular');
 console.log('Sirviendo archivos estáticos desde:', distPath);
 app.use(express_1.default.static(distPath));
 // Catch-all para Angular routing (SPA)
