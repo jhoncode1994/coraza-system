@@ -87,14 +87,20 @@ export async function createEntregaConTallas(entrega: EntregaConTallas) {
   try {
     await client.query('BEGIN');
     
+    console.log('📦 Creando entrega con tallas:', JSON.stringify(entrega, null, 2));
+    
     const fechaEntrega = new Date();
     const insertedRows = [];
     
     // Insertar cada elemento como un registro separado
     for (const elemento of entrega.elementos) {
+      console.log('  🔹 Procesando elemento:', elemento);
+      
       const elementoStr = elemento.talla 
         ? `${elemento.categoria} - Talla ${elemento.talla}`
         : elemento.categoria;
+      
+      console.log('  📝 Insertando en entrega_dotacion:', elementoStr);
       
       const result = await client.query(
         `INSERT INTO entrega_dotacion ("userId", elemento, cantidad, "fechaEntrega", observaciones, "firma_url")
@@ -110,21 +116,37 @@ export async function createEntregaConTallas(entrega: EntregaConTallas) {
         ]
       );
       insertedRows.push(result.rows[0]);
+      console.log('  ✅ Registro de entrega creado:', result.rows[0].id);
       
       // Actualizar el stock del elemento
       if (elemento.talla) {
+        console.log('  🔍 Buscando stock para:', {
+          name: elemento.categoria,
+          category: elemento.categoriaOriginal,
+          talla: elemento.talla,
+          tallaType: typeof elemento.talla
+        });
+        
         // Buscar el código del elemento con esa talla
         const stockResult = await client.query(
-          `SELECT code FROM supply WHERE name = $1 AND category = $2 AND talla = $3`,
+          `SELECT code, quantity FROM supply WHERE name = $1 AND category = $2 AND talla = $3`,
           [elemento.categoria, elemento.categoriaOriginal, elemento.talla]
         );
         
+        console.log('  📊 Resultados de búsqueda:', stockResult.rows);
+        
         if (stockResult.rows.length > 0) {
           const code = stockResult.rows[0].code;
+          const currentQty = stockResult.rows[0].quantity;
+          console.log(`  📦 Stock actual: ${currentQty}, descontando: ${elemento.cantidad}`);
+          
           await client.query(
             `UPDATE supply SET quantity = quantity - $1 WHERE code = $2`,
             [elemento.cantidad, code]
           );
+          console.log(`  ✅ Stock actualizado para código: ${code}`);
+        } else {
+          console.log('  ⚠️ No se encontró item con esa talla en supply');
         }
       } else {
         // Sin talla, actualizar todos los items de esa categoría proporcionalmente
@@ -138,8 +160,11 @@ export async function createEntregaConTallas(entrega: EntregaConTallas) {
     
     await client.query('COMMIT');
     client.release();
+    console.log('✅ Entrega completada exitosamente');
     return insertedRows;
   } catch (error) {
+    console.error('❌ Error en createEntregaConTallas:', error);
+    console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
     await client.query('ROLLBACK');
     client.release();
     throw error;
