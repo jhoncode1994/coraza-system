@@ -18,7 +18,8 @@ import {
   getEntregasByUser, 
   createEntrega, 
   updateEntrega, 
-  deleteEntrega 
+  deleteEntrega,
+  createEntregaConTallas 
 } from './entregaDotacionService';
 import { 
   authenticateUser, 
@@ -269,11 +270,19 @@ app.get('/api/delivery/user/:userId', async (req: Request, res: Response) => {
 app.post('/api/delivery', async (req: Request, res: Response) => {
   try {
     const entregaData = req.body;
-    const nuevaEntrega = await createEntrega(entregaData);
-    res.status(201).json(nuevaEntrega);
+    
+    // Si tiene elementos (array), usar la nueva función
+    if (entregaData.elementos && Array.isArray(entregaData.elementos)) {
+      const nuevaEntrega = await createEntregaConTallas(entregaData);
+      res.status(201).json(nuevaEntrega);
+    } else {
+      // Si no, usar la función antigua para compatibilidad
+      const nuevaEntrega = await createEntrega(entregaData);
+      res.status(201).json(nuevaEntrega);
+    }
   } catch (error) {
     console.error('Error creando entrega:', error);
-    res.status(500).json({ error: 'Error al crear entrega' });
+    res.status(500).json({ error: 'Error al crear entrega', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
