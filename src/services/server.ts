@@ -312,11 +312,6 @@ app.delete('/api/delivery/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Endpoint raíz
-app.get('/', (req: Request, res: Response) => {
-  res.send('API corriendo');
-});
-
 // Servir archivos estáticos de Angular (build)
 const distPath = path.join(__dirname, '../../../../dist');
 console.log('Sirviendo archivos estáticos desde:', distPath);

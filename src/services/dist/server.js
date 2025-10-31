@@ -285,10 +285,6 @@ app.delete('/api/delivery/:id', async (req, res) => {
         res.status(500).json({ error: 'Error al eliminar entrega' });
     }
 });
-// Endpoint raíz
-app.get('/', (req, res) => {
-    res.send('API corriendo');
-});
 // Servir archivos estáticos de Angular (build)
 const distPath = path_1.default.join(__dirname, '../../../../dist');
 console.log('Sirviendo archivos estáticos desde:', distPath);
