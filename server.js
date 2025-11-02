@@ -1472,12 +1472,13 @@ app.post('/api/delivery', async (req, res) => {
     let findQuery;
     let findParams;
     
-    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}" y género: "${genero || 'sin género'}"`);
+    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}" y género: "${genero || 'cualquier género'}"`);
     
     if (talla) {
       // Buscar por nombre del elemento y talla
-      // Si genero es null, buscar cualquier registro con esa talla (priorizando los sin género)
       if (genero === null) {
+        // Si no se especifica género, buscar cualquier registro disponible con esa talla
+        // Priorizar: 1) sin género, 2) con más stock
         findQuery = `
           SELECT id, name, quantity, talla, genero 
           FROM supply_inventory 
@@ -1490,6 +1491,7 @@ app.post('/api/delivery', async (req, res) => {
           LIMIT 1
         `;
         findParams = [`%${elemento}%`, talla];
+        console.log('🔍 Búsqueda sin género específico - se seleccionará el primero disponible');
       } else {
         // Buscar con género específico
         findQuery = `
@@ -1503,6 +1505,7 @@ app.post('/api/delivery', async (req, res) => {
           LIMIT 1
         `;
         findParams = [`%${elemento}%`, talla, genero];
+        console.log(`🔍 Búsqueda con género específico: ${genero}`);
       }
     } else {
       // Buscar solo por nombre del elemento
