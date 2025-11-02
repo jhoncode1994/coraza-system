@@ -1435,7 +1435,12 @@ app.use((err, req, res, next) => {
 app.post('/api/delivery', async (req, res) => {
   let client;
   try {
-    const { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url, genero } = req.body;
+    let { userId, elemento, talla, cantidad, fechaEntrega, observaciones, firma_url, genero } = req.body;
+    
+    // Normalizar genero: convertir 'N/A' o strings vacíos a null
+    if (genero === 'N/A' || genero === '' || genero === undefined) {
+      genero = null;
+    }
     
     console.log('=== INICIANDO PROCESO DE ENTREGA ===');
     console.log('Datos recibidos:', {
@@ -1467,20 +1472,38 @@ app.post('/api/delivery', async (req, res) => {
     let findQuery;
     let findParams;
     
-    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}" y género: "${genero || 'N/A'}"`);
+    console.log(`Buscando elemento: "${elemento}" con talla: "${talla || 'sin talla'}" y género: "${genero || 'sin género'}"`);
     
     if (talla) {
-      // Buscar por nombre del elemento, talla y género específicos
-      findQuery = `
-        SELECT id, name, quantity, talla, genero 
-        FROM supply_inventory 
-        WHERE LOWER(name) LIKE LOWER($1) 
-          AND talla = $2
-          AND (genero = $3 OR (genero IS NULL AND $3 IS NULL))
-        ORDER BY quantity DESC
-        LIMIT 1
-      `;
-      findParams = [`%${elemento}%`, talla, genero];
+      // Buscar por nombre del elemento y talla
+      // Si genero es null, buscar cualquier registro con esa talla (priorizando los sin género)
+      if (genero === null) {
+        findQuery = `
+          SELECT id, name, quantity, talla, genero 
+          FROM supply_inventory 
+          WHERE LOWER(name) LIKE LOWER($1) 
+            AND talla = $2
+            AND quantity > 0
+          ORDER BY 
+            CASE WHEN genero IS NULL THEN 0 ELSE 1 END,
+            quantity DESC
+          LIMIT 1
+        `;
+        findParams = [`%${elemento}%`, talla];
+      } else {
+        // Buscar con género específico
+        findQuery = `
+          SELECT id, name, quantity, talla, genero 
+          FROM supply_inventory 
+          WHERE LOWER(name) LIKE LOWER($1) 
+            AND talla = $2
+            AND genero = $3
+            AND quantity > 0
+          ORDER BY quantity DESC
+          LIMIT 1
+        `;
+        findParams = [`%${elemento}%`, talla, genero];
+      }
     } else {
       // Buscar solo por nombre del elemento
       findQuery = `
