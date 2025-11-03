@@ -7,6 +7,7 @@ import { SupplyInventoryComponent } from './components/supply-inventory/supply-i
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { LoginComponent } from './components/login/login.component';
 import { RetiredAssociatesComponent } from './components/retired-associates/retired-associates.component';
+import { InventoryMovementsComponent } from './components/inventory-movements/inventory-movements.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
   { path: 'inventory', component: SupplyInventoryComponent, canActivate: [AuthGuard] },
+  { path: 'inventory-movements', component: InventoryMovementsComponent, canActivate: [AuthGuard] },
   { path: 'retired-associates', component: RetiredAssociatesComponent, canActivate: [AuthGuard] },
   { path: '**', redirectTo: '' }
 ];

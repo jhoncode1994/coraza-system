@@ -3,6 +3,7 @@ const path = require('path');
 const cors = require('cors');
 // Implementación simple de hash sin dependencias externas
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 // Coraza System - Server v1.0.2 - Railway Deploy
 console.log('🚀 Iniciando Coraza System Server...');
@@ -26,6 +27,14 @@ function hashPassword(password) {
 
 function verifyPassword(password, storedHash) {
   if (!storedHash) return false;
+  
+  // Verificar si el hash es de bcrypt (empieza con $2b$)
+  if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
+    // Usar bcrypt para verificar
+    return bcrypt.compareSync(password, storedHash);
+  }
+  
+  // Soporte legacy para hashes antiguos con crypto
   const [salt, hash] = storedHash.split(':');
   if (!salt || !hash) return false;
   
@@ -202,11 +211,12 @@ async function validateCredentials(username, password) {
   try {
     const client = await pool.connect();
     
+    // Buscar por username O email
     const result = await client.query(`
       SELECT id, username, email, password_hash, role, is_active, 
              failed_login_attempts, locked_until, last_login
       FROM admin_users 
-      WHERE username = $1 AND is_active = true
+      WHERE (username = $1 OR email = $1) AND is_active = true
     `, [username]);
     
     if (result.rows.length === 0) {

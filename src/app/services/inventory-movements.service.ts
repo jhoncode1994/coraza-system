@@ -8,13 +8,14 @@ export interface InventoryMovement {
   id?: number;
   supply_id: number;
   supply_name: string;
+  supply_code?: string;
   movement_type: 'entrada' | 'salida';
   quantity: number;
   previous_quantity: number;
   new_quantity: number;
   reason: string;
-  user_name: string;
-  movement_date: Date | string;
+  user_name?: string;
+  created_at: Date | string;
   notes?: string;
 }
 
