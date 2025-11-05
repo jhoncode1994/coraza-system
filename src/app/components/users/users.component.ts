@@ -259,8 +259,17 @@ export class UsersComponent implements OnInit {
             },
             error: (error) => {
               console.error('Error al actualizar usuario:', error);
-              this.snackBar.open('Error al actualizar usuario', 'Cerrar', {
-                duration: 3000,
+              let errorMessage = 'Error al actualizar usuario';
+              
+              // Extraer mensaje específico del error
+              if (error?.error?.error) {
+                errorMessage = error.error.error;
+              } else if (error?.message) {
+                errorMessage = error.message;
+              }
+              
+              this.snackBar.open(errorMessage, 'Cerrar', {
+                duration: 5000,
                 panelClass: ['error-snackbar']
               });
             }
@@ -286,8 +295,17 @@ export class UsersComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error al agregar usuario:', error);
-            this.snackBar.open('Error al agregar usuario', 'Cerrar', {
-              duration: 3000,
+            let errorMessage = 'Error al agregar usuario';
+            
+            // Extraer mensaje específico del error
+            if (error?.error?.error) {
+              errorMessage = error.error.error;
+            } else if (error?.message) {
+              errorMessage = error.message;
+            }
+            
+            this.snackBar.open(errorMessage, 'Cerrar', {
+              duration: 5000,
               panelClass: ['error-snackbar']
             });
           }

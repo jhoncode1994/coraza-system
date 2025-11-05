@@ -101,7 +101,11 @@ export class UsersService {
       tap(response => {
         console.log('UsersService.addUser - Respuesta del servidor:', response);
       }),
-      map(user => this.mapApiUserToAppUser(user)),
+      map(response => {
+        // El backend ahora devuelve { success, message, user }
+        const user = response.user || response;
+        return this.mapApiUserToAppUser(user);
+      }),
       tap(newUser => {
         const updatedUsers = [...this.currentUsers, newUser];
         this.usersSubject.next(updatedUsers);
@@ -130,7 +134,11 @@ export class UsersService {
     console.log('Datos mapeados para la API:', apiUser);
     
     return this.http.put<any>(`${this.apiUrl}/${id}`, apiUser).pipe(
-      map(user => this.mapApiUserToAppUser(user)),
+      map(response => {
+        // El backend ahora devuelve { success, message, user }
+        const user = response.user || response;
+        return this.mapApiUserToAppUser(user);
+      }),
       tap(updatedUser => {
         const users = this.currentUsers;
         const index = users.findIndex(u => u.id === id);
