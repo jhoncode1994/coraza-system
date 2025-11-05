@@ -759,11 +759,7 @@ app.post('/api/users', async (req, res) => {
       updatedAt: user.updated_at
     };
     
-    res.status(201).json({
-      success: true,
-      message: 'Usuario registrado con éxito',
-      user: mappedUser
-    });
+    res.status(201).json(mappedUser);
   } catch (error) {
     console.error('Error creating user:', error);
     console.error('Error details:', error.message);
@@ -771,14 +767,9 @@ app.post('/api/users', async (req, res) => {
     
     // Manejar errores específicos de PostgreSQL
     if (error.code === '23505') { // Unique constraint violation
-      if (error.constraint === 'users_cedula_key') {
-        return res.status(400).json({ 
-          error: 'Ya existe un usuario con esta cédula',
-          cedula: req.body.cedula
-        });
-      }
       return res.status(400).json({ 
-        error: 'Este registro ya existe en el sistema'
+        error: 'La cédula ya está registrada',
+        details: 'Ya existe un usuario con esta cédula'
       });
     }
     
@@ -819,22 +810,9 @@ app.put('/api/users/:id', async (req, res) => {
       updatedAt: user.updated_at
     };
     
-    res.json({
-      success: true,
-      message: 'Usuario actualizado con éxito',
-      user: mappedUser
-    });
+    res.json(mappedUser);
   } catch (error) {
     console.error('Error updating user:', error);
-    
-    // Manejar error de cédula duplicada
-    if (error.code === '23505' && error.constraint === 'users_cedula_key') {
-      return res.status(400).json({ 
-        error: 'Ya existe otro usuario con esta cédula',
-        cedula: req.body.cedula
-      });
-    }
-    
     res.status(500).json({ 
       error: 'Error al actualizar usuario',
       details: error.message
