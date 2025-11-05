@@ -2134,7 +2134,10 @@ const server = app.listen(port, () => {
 // Handle server errors
 server.on('error', (error) => {
   console.error('Server error:', error);
-  process.exit(1);
+  // Don't exit on server errors in production to allow Render to restart
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
 });
 
 // Graceful shutdown
