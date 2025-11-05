@@ -1566,11 +1566,22 @@ app.post('/api/delivery', async (req, res) => {
       RETURNING id
     `, [userId, elemento, talla, cantidad, fechaEntrega || new Date(), firma_url, observaciones, genero]);
     
-    // 4. Registrar el movimiento en inventory_movements
+    // 4. Obtener cédula del usuario para el motivo
+    const userInfoResult = await client.query(
+      'SELECT cedula FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    let userIdentifier = `usuario ${userId}`;
+    if (userInfoResult.rows.length > 0) {
+      userIdentifier = `cédula ${userInfoResult.rows[0].cedula}`;
+    }
+    
+    // 5. Registrar el movimiento en inventory_movements
     await client.query(`
       INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, previous_quantity, new_quantity)
       VALUES ($1, 'salida', $2, $3, $4, $5)
-    `, [inventoryItem.id, cantidad, `Entrega a usuario ${userId}: ${elemento}${talla ? ` (${talla})` : ''}`, previousQuantity, newQuantity]);
+    `, [inventoryItem.id, cantidad, `Entrega a ${userIdentifier}: ${elemento}${talla ? ` (${talla})` : ''}`, previousQuantity, newQuantity]);
     
     // Confirmar transacción
     await client.query('COMMIT');
