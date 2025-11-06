@@ -1756,8 +1756,8 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
       `, [
         inventoryItem.id,
         entrega.cantidad,
+        motivo,
         `Reversión de entrega a ${userIdentifier}`,
-        `MOTIVO DE REVERSIÓN: ${motivo}`,
         inventoryItem.quantity,
         newQuantity
       ]);
