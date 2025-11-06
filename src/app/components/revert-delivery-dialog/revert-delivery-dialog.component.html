@@ -1,0 +1,52 @@
+<div class="revert-dialog">
+  <h2 mat-dialog-title>
+    <mat-icon class="warning-icon">warning</mat-icon>
+    Revertir Entrega
+  </h2>
+  
+  <mat-dialog-content>
+    <div class="entrega-info">
+      <p><strong>Elemento:</strong> {{ data.entrega.elemento }}</p>
+      <p><strong>Cantidad:</strong> {{ data.entrega.cantidad }}</p>
+      <p><strong>Talla:</strong> {{ data.entrega.talla || 'N/A' }}</p>
+      <p><strong>Fecha de Entrega:</strong> {{ data.entrega.fechaEntrega | date:'dd/MM/yyyy' }}</p>
+    </div>
+
+    <div class="warning-message">
+      <mat-icon>info</mat-icon>
+      <p>Esta acción devolverá el stock al inventario y quedará registrada en los movimientos.</p>
+    </div>
+
+    <form [formGroup]="revertForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Motivo de la reversión *</mat-label>
+        <textarea 
+          matInput 
+          formControlName="motivo"
+          rows="4"
+          placeholder="Explique detalladamente el motivo de la reversión (mínimo 10 caracteres)"></textarea>
+        <mat-hint>{{ revertForm.get('motivo')?.value?.length || 0 }} / 10 caracteres mínimo</mat-hint>
+        <mat-error *ngIf="revertForm.get('motivo')?.hasError('required')">
+          El motivo es obligatorio
+        </mat-error>
+        <mat-error *ngIf="revertForm.get('motivo')?.hasError('minlength')">
+          El motivo debe tener al menos 10 caracteres
+        </mat-error>
+      </mat-form-field>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">
+      Cancelar
+    </button>
+    <button 
+      mat-raised-button 
+      color="warn" 
+      (click)="onConfirm()"
+      [disabled]="revertForm.invalid">
+      <mat-icon>undo</mat-icon>
+      Revertir Entrega
+    </button>
+  </mat-dialog-actions>
+</div>

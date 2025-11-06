@@ -1638,7 +1638,10 @@ app.get('/api/delivery/user/:userId', async (req, res) => {
     const client = await pool.connect();
     
     const result = await client.query(`
-      SELECT * FROM entrega_dotacion 
+      SELECT 
+        *,
+        COALESCE(estado, 'activa') as estado
+      FROM entrega_dotacion 
       WHERE "userId" = $1 
       ORDER BY "fechaEntrega" DESC
     `, [userId]);
@@ -1672,6 +1675,137 @@ app.get('/api/delivery', async (req, res) => {
   } catch (error) {
     console.error('Error obteniendo entregas:', error);
     res.status(500).json({ error: 'Error al obtener entregas' });
+  }
+});
+
+// Revertir una entrega (marcar como revertida con motivo obligatorio)
+app.post('/api/delivery/:id/revert', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const entregaId = req.params.id;
+    const { motivo, revertidoPor } = req.body;
+    
+    if (!motivo || motivo.trim().length < 10) {
+      return res.status(400).json({ 
+        error: 'El motivo es obligatorio y debe tener al menos 10 caracteres' 
+      });
+    }
+    
+    console.log(`Revirtiendo entrega ${entregaId}, motivo: ${motivo}`);
+    
+    await client.query('BEGIN');
+    
+    // Verificar si la columna 'estado' existe
+    const columnCheckResult = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'entrega_dotacion' AND column_name = 'estado'
+    `);
+    
+    const hasEstadoColumn = columnCheckResult.rows.length > 0;
+    
+    // Obtener datos de la entrega (con o sin columna estado)
+    let entregaResult;
+    if (hasEstadoColumn) {
+      entregaResult = await client.query(
+        'SELECT * FROM entrega_dotacion WHERE id = $1 AND (estado = $2 OR estado IS NULL)',
+        [entregaId, 'activa']
+      );
+    } else {
+      entregaResult = await client.query(
+        'SELECT * FROM entrega_dotacion WHERE id = $1',
+        [entregaId]
+      );
+    }
+    
+    if (entregaResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Entrega no encontrada o ya está revertida' });
+    }
+    
+    const entrega = entregaResult.rows[0];
+    
+    // Buscar el item en el inventario
+    const inventoryResult = await client.query(
+      `SELECT id, quantity FROM supply_inventory 
+       WHERE LOWER(name) LIKE LOWER($1) AND (talla = $2 OR (talla IS NULL AND $2 IS NULL))
+       LIMIT 1`,
+      [`%${entrega.elemento}%`, entrega.talla]
+    );
+    
+    if (inventoryResult.rows.length > 0) {
+      const inventoryItem = inventoryResult.rows[0];
+      const newQuantity = inventoryItem.quantity + entrega.cantidad;
+      
+      // Devolver stock al inventario
+      await client.query(
+        'UPDATE supply_inventory SET quantity = $1 WHERE id = $2',
+        [newQuantity, inventoryItem.id]
+      );
+      
+      // Obtener cédula del usuario
+      const userInfoResult = await client.query(
+        'SELECT cedula, nombre, apellido FROM users WHERE id = $1',
+        [entrega.userId]
+      );
+      
+      let userIdentifier = userInfoResult.rows.length > 0 
+        ? `${userInfoResult.rows[0].nombre} ${userInfoResult.rows[0].apellido} (Cédula: ${userInfoResult.rows[0].cedula})` 
+        : `usuario ID ${entrega.userId}`;
+      
+      // Registrar el movimiento de reversión
+      await client.query(`
+        INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity)
+        VALUES ($1, 'entrada', $2, $3, $4, $5, $6)
+      `, [
+        inventoryItem.id,
+        entrega.cantidad,
+        `Reversión de entrega a ${userIdentifier}`,
+        `MOTIVO DE REVERSIÓN: ${motivo}`,
+        inventoryItem.quantity,
+        newQuantity
+      ]);
+      
+      console.log(`✅ Stock devuelto: ${entrega.cantidad} unidades de ${entrega.elemento}`);
+    }
+    
+    // Marcar la entrega como revertida o eliminarla (según si existen las columnas)
+    if (hasEstadoColumn) {
+      // Si existe la columna estado, marcar como revertida
+      await client.query(`
+        UPDATE entrega_dotacion 
+        SET estado = 'revertida',
+            revertida_fecha = CURRENT_TIMESTAMP,
+            revertida_por = $1,
+            motivo_reversion = $2
+        WHERE id = $3
+      `, [revertidoPor || 'admin', motivo, entregaId]);
+      console.log(`✅ Entrega marcada como revertida (ID: ${entregaId})`);
+    } else {
+      // Si NO existe la columna, eliminar la entrega (comportamiento anterior)
+      await client.query('DELETE FROM entrega_dotacion WHERE id = $1', [entregaId]);
+      console.log(`✅ Entrega eliminada (ID: ${entregaId}) - Modo retrocompatible`);
+    }
+    
+    await client.query('COMMIT');
+    
+    res.json({
+      success: true,
+      message: 'Entrega revertida correctamente',
+      stockDevuelto: entrega.cantidad,
+      motivo: motivo
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error revirtiendo entrega:', error);
+    res.status(500).json({ 
+      error: 'Error al revertir entrega',
+      details: error.message 
+    });
+  } finally {
+    client.release();
   }
 });
 

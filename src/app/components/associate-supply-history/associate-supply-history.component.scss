@@ -45,3 +45,67 @@
   font-size: 0.9em;
   font-weight: 500;
 }
+
+// Estilos para entregas revertidas
+.revertida {
+  text-decoration: line-through;
+  opacity: 0.6;
+  color: #999 !important;
+}
+
+.row-revertida {
+  background-color: #ffebee !important;
+  
+  &:hover {
+    background-color: #ffcdd2 !important;
+  }
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.revertida-badge {
+  background-color: #f44336;
+  color: white;
+}
+
+.reversion-info {
+  margin-top: 4px;
+  
+  small {
+    color: #d32f2f;
+    font-weight: 500;
+    font-size: 0.85em;
+  }
+}
+
+.motivo-reversion {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #fff3e0;
+  border-left: 3px solid #ff9800;
+  border-radius: 4px;
+  font-size: 0.9em;
+  
+  strong {
+    color: #e65100;
+    display: block;
+    margin-bottom: 4px;
+  }
+}
+
+.revertida-por {
+  color: #666;
+  font-style: italic;
+  
+  small {
+    font-size: 0.85em;
+  }
+}

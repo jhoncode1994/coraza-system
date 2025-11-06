@@ -8,13 +8,17 @@ export interface EntregaHistorial {
   id: number;
   userId: number;
   elemento: string;
-  talla?: string;  // Nueva propiedad para talla
-  genero?: 'M' | 'F' | null;  // Nueva propiedad para género
+  talla?: string;
+  genero?: 'M' | 'F' | null;
   cantidad: number;
   fechaEntrega: Date;
   observaciones?: string;
   tipo: 'entrega' | 'devolucion';
   firma_url?: string;
+  estado?: 'activa' | 'revertida';
+  revertida_fecha?: Date;
+  revertida_por?: string;
+  motivo_reversion?: string;
 }
 
 @Injectable({
@@ -60,6 +64,13 @@ export class EntregaDotacionService {
 
   getHistorialByUser(userId: number): Observable<EntregaHistorial[]> {
     return this.getEntregasByUser(userId);
+  }
+
+  revertEntrega(entregaId: number, motivo: string, revertidoPor?: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/delivery/${entregaId}/revert`, { 
+      motivo, 
+      revertidoPor: revertidoPor || 'admin' 
+    });
   }
 
   private loadFromAPI(): void {
