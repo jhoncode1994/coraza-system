@@ -1631,27 +1631,32 @@ app.post('/api/delivery', async (req, res) => {
 
 // Obtener historial de entregas por usuario
 app.get('/api/delivery/user/:userId', async (req, res) => {
+  const client = await pool.connect();
   try {
     const userId = Number(req.params.userId);
     console.log('Obteniendo historial de entregas para usuario:', userId);
     
-    const client = await pool.connect();
-    
     const result = await client.query(`
-      SELECT 
-        *,
-        COALESCE(estado, 'activa') as estado
-      FROM entrega_dotacion 
+      SELECT * FROM entrega_dotacion 
       WHERE "userId" = $1 
       ORDER BY "fechaEntrega" DESC
     `, [userId]);
     
-    client.release();
+    // Agregar estado por defecto si no existe
+    const rows = result.rows.map(row => ({
+      ...row,
+      estado: row.estado || 'activa'
+    }));
     
-    res.json(result.rows);
+    res.json(rows);
   } catch (error) {
     console.error('Error obteniendo historial:', error);
-    res.status(500).json({ error: 'Error al obtener historial' });
+    res.status(500).json({ 
+      error: 'Error al obtener historial',
+      details: error.message 
+    });
+  } finally {
+    client.release();
   }
 });
 
@@ -1680,51 +1685,41 @@ app.get('/api/delivery', async (req, res) => {
 
 // Revertir una entrega (marcar como revertida con motivo obligatorio)
 app.post('/api/delivery/:id/revert', async (req, res) => {
+  const entregaId = req.params.id;
+  const { motivo, revertidoPor } = req.body;
+  
+  // Validación antes de conectar
+  if (!motivo || motivo.trim().length < 10) {
+    return res.status(400).json({ 
+      error: 'El motivo es obligatorio y debe tener al menos 10 caracteres' 
+    });
+  }
+  
+  console.log(`Revirtiendo entrega ${entregaId}, motivo: ${motivo}`);
+  
   const client = await pool.connect();
   
   try {
-    const entregaId = req.params.id;
-    const { motivo, revertidoPor } = req.body;
-    
-    if (!motivo || motivo.trim().length < 10) {
-      return res.status(400).json({ 
-        error: 'El motivo es obligatorio y debe tener al menos 10 caracteres' 
-      });
-    }
-    
-    console.log(`Revirtiendo entrega ${entregaId}, motivo: ${motivo}`);
-    
     await client.query('BEGIN');
     
-    // Verificar si la columna 'estado' existe
-    const columnCheckResult = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'entrega_dotacion' AND column_name = 'estado'
-    `);
-    
-    const hasEstadoColumn = columnCheckResult.rows.length > 0;
-    
-    // Obtener datos de la entrega (con o sin columna estado)
-    let entregaResult;
-    if (hasEstadoColumn) {
-      entregaResult = await client.query(
-        'SELECT * FROM entrega_dotacion WHERE id = $1 AND (estado = $2 OR estado IS NULL)',
-        [entregaId, 'activa']
-      );
-    } else {
-      entregaResult = await client.query(
-        'SELECT * FROM entrega_dotacion WHERE id = $1',
-        [entregaId]
-      );
-    }
+    // Obtener datos de la entrega
+    const entregaResult = await client.query(
+      'SELECT * FROM entrega_dotacion WHERE id = $1',
+      [entregaId]
+    );
     
     if (entregaResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Entrega no encontrada o ya está revertida' });
+      return res.status(404).json({ error: 'Entrega no encontrada' });
     }
     
     const entrega = entregaResult.rows[0];
+    
+    // Verificar si ya está revertida (si existe la columna estado)
+    if (entrega.estado === 'revertida') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Esta entrega ya está revertida' });
+    }
     
     // Buscar el item en el inventario
     const inventoryResult = await client.query(
@@ -1770,9 +1765,8 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
       console.log(`✅ Stock devuelto: ${entrega.cantidad} unidades de ${entrega.elemento}`);
     }
     
-    // Marcar la entrega como revertida o eliminarla (según si existen las columnas)
-    if (hasEstadoColumn) {
-      // Si existe la columna estado, marcar como revertida
+    // Intentar marcar como revertida, si falla, eliminar (retrocompatible)
+    try {
       await client.query(`
         UPDATE entrega_dotacion 
         SET estado = 'revertida',
@@ -1782,8 +1776,9 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
         WHERE id = $3
       `, [revertidoPor || 'admin', motivo, entregaId]);
       console.log(`✅ Entrega marcada como revertida (ID: ${entregaId})`);
-    } else {
-      // Si NO existe la columna, eliminar la entrega (comportamiento anterior)
+    } catch (updateError) {
+      // Si el UPDATE falla (columnas no existen), eliminar la entrega
+      console.log(`⚠️ Columnas de reversión no existen, eliminando entrega...`);
       await client.query('DELETE FROM entrega_dotacion WHERE id = $1', [entregaId]);
       console.log(`✅ Entrega eliminada (ID: ${entregaId}) - Modo retrocompatible`);
     }
@@ -1798,7 +1793,11 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
     });
     
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error en rollback:', rollbackError);
+    }
     console.error('Error revirtiendo entrega:', error);
     res.status(500).json({ 
       error: 'Error al revertir entrega',
