@@ -1765,23 +1765,10 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
       console.log(`✅ Stock devuelto: ${entrega.cantidad} unidades de ${entrega.elemento}`);
     }
     
-    // Intentar marcar como revertida, si falla, eliminar (retrocompatible)
-    try {
-      await client.query(`
-        UPDATE entrega_dotacion 
-        SET estado = 'revertida',
-            revertida_fecha = CURRENT_TIMESTAMP,
-            revertida_por = $1,
-            motivo_reversion = $2
-        WHERE id = $3
-      `, [revertidoPor || 'admin', motivo, entregaId]);
-      console.log(`✅ Entrega marcada como revertida (ID: ${entregaId})`);
-    } catch (updateError) {
-      // Si el UPDATE falla (columnas no existen), eliminar la entrega
-      console.log(`⚠️ Columnas de reversión no existen, eliminando entrega...`);
-      await client.query('DELETE FROM entrega_dotacion WHERE id = $1', [entregaId]);
-      console.log(`✅ Entrega eliminada (ID: ${entregaId}) - Modo retrocompatible`);
-    }
+    // Por ahora simplemente eliminamos la entrega (retrocompatible)
+    // Cuando se ejecute la migración, se podrá marcar como revertida
+    await client.query('DELETE FROM entrega_dotacion WHERE id = $1', [entregaId]);
+    console.log(`✅ Entrega eliminada (ID: ${entregaId})`);
     
     await client.query('COMMIT');
     
