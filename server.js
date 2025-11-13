@@ -738,45 +738,57 @@ app.post('/api/users', async (req, res) => {
     });
     
     const client = await pool.connect();
-    const result = await client.query(
-      'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso, cargo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [nombre, apellido, cedula, zonaInt, fechaFormatted, cargo]
-    );
-    client.release();
     
-    console.log('User inserted successfully:', result.rows[0]);
-    
-    const user = result.rows[0];
-    const mappedUser = {
-      id: user.id,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      cedula: user.cedula,
-      zona: user.zona,
-      cargo: user.cargo,
-      fechaIngreso: user.fecha_ingreso,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at
-    };
-    
-    res.status(201).json(mappedUser);
-  } catch (error) {
-    console.error('Error creating user:', error);
-    console.error('Error details:', error.message);
-    console.error('Error code:', error.code);
-    
-    // Manejar errores específicos de PostgreSQL
-    if (error.code === '23505') { // Unique constraint violation
-      return res.status(400).json({ 
-        error: 'La cédula ya está registrada',
-        details: 'Ya existe un usuario con esta cédula'
+    try {
+      const result = await client.query(
+        'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso, cargo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [nombre, apellido, cedula, zonaInt, fechaFormatted, cargo]
+      );
+      
+      console.log('User inserted successfully:', result.rows[0]);
+      
+      const user = result.rows[0];
+      const mappedUser = {
+        id: user.id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        cedula: user.cedula,
+        zona: user.zona,
+        cargo: user.cargo,
+        fechaIngreso: user.fecha_ingreso,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at
+      };
+      
+      res.status(201).json(mappedUser);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      console.error('Error details:', error.message);
+      console.error('Error code:', error.code);
+      
+      // Manejar errores específicos de PostgreSQL
+      if (error.code === '23505') { // Unique constraint violation
+        return res.status(400).json({ 
+          error: 'La cédula ya está registrada',
+          details: 'Ya existe un usuario con esta cédula'
+        });
+      }
+      
+      res.status(500).json({ 
+        error: 'Error al crear usuario',
+        details: error.message
+      });
+    } finally {
+      client.release();
+    }
+  } catch (outerError) {
+    console.error('Error en endpoint de creación:', outerError);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Error al crear usuario',
+        details: outerError.message
       });
     }
-    
-    res.status(500).json({ 
-      error: 'Error al crear usuario',
-      details: error.message
-    });
   }
 });
 
