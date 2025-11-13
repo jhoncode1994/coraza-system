@@ -211,10 +211,13 @@ interface ElementoEntrega {
   `,
   styles: [`
     .entrega-dialog-container {
-      min-width: 700px;
-      max-width: 900px;
+      width: 100%;
       max-height: 90vh;
       overflow-y: auto;
+    }
+    
+    ::ng-deep .mat-mdc-dialog-content {
+      padding: 12px 16px !important;
     }
 
     .entrega-form {
