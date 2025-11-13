@@ -426,8 +426,10 @@ export class UsersComponent implements OnInit {
     };
 
     const dialogRef = this.dialog.open(EntregaConTallasDialogComponent, {
-      width: '800px',
-      maxWidth: '90vw',
+      width: '1000px',
+      maxWidth: '95vw',
+      minHeight: '600px',
+      maxHeight: '90vh',
       data: userData
     });
 
