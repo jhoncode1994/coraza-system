@@ -851,4 +851,217 @@ export class PdfReportService {
       }
     });
   }
+
+  /**
+   * Genera PDF del reporte de movimientos de inventario
+   */
+  async generateInventoryMovementsReport(movements: any[], filters?: { type?: string, search?: string }): Promise<void> {
+    try {
+      console.log('📄 Iniciando generación de reporte de movimientos de inventario...');
+      const jsPDF = await this.loadPdfLibraries();
+      const doc = new jsPDF();
+      
+      // Configurar fuente
+      doc.setFont('helvetica');
+      
+      // Añadir encabezado
+      const startY = await this.addHeader(doc, 'REPORTE DE MOVIMIENTOS DE INVENTARIO');
+      
+      // Información del reporte
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, 20, startY);
+      
+      let infoY = startY + 10;
+      
+      // Mostrar filtros aplicados si existen
+      if (filters) {
+        if (filters.type && filters.type !== 'all') {
+          doc.text(`Tipo de movimiento: ${filters.type === 'entrada' ? 'ENTRADAS' : 'SALIDAS'}`, 20, infoY);
+          infoY += 10;
+        }
+        if (filters.search && filters.search.trim()) {
+          doc.text(`Búsqueda: "${filters.search}"`, 20, infoY);
+          infoY += 10;
+        }
+      }
+      
+      doc.text(`Total de movimientos: ${movements.length}`, 20, infoY);
+      
+      // Calcular estadísticas
+      const totalEntradas = movements.filter(m => m.movement_type === 'entrada').reduce((sum, m) => sum + m.quantity, 0);
+      const totalSalidas = movements.filter(m => m.movement_type === 'salida').reduce((sum, m) => sum + m.quantity, 0);
+      
+      doc.text(`Total entradas: ${totalEntradas} unidades`, 20, infoY + 10);
+      doc.text(`Total salidas: ${totalSalidas} unidades`, 20, infoY + 20);
+      
+      // Línea separadora
+      doc.setLineWidth(0.5);
+      doc.line(20, infoY + 30, 190, infoY + 30);
+      
+      if (movements.length === 0) {
+        doc.setFontSize(12);
+        doc.text('No hay movimientos registrados con los filtros aplicados.', 20, infoY + 45);
+      } else {
+        // Crear tabla de movimientos
+        this.createInventoryMovementsTable(doc, movements, infoY + 40);
+      }
+      
+      // Pie de página
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text('Sistema de Control de Dotaciones - Coraza', 105, pageHeight - 10, { align: 'center' });
+      
+      // Generar nombre de archivo
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filterSuffix = filters?.type && filters.type !== 'all' ? `_${filters.type}` : '';
+      
+      doc.save(`Reporte_Movimientos_Inventario${filterSuffix}_${timestamp}.pdf`);
+      
+      // Limpiar referencias
+      await this.finalizePdfGeneration(doc);
+      
+    } catch (error) {
+      console.error('Error generando PDF de movimientos:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crea tabla manual para movimientos de inventario
+   */
+  private createInventoryMovementsTable(doc: any, movements: any[], startY: number): void {
+    const headers = ['Fecha', 'Elemento', 'Tipo', 'Cantidad', 'Stock Ant.', 'Stock Nuevo', 'Motivo'];
+    const rowHeight = 8;
+    const colWidths = [30, 40, 20, 18, 18, 20, 24]; // Total: 170mm
+    let currentY = startY;
+    
+    // Dibujar encabezados
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    
+    let currentX = 20;
+    headers.forEach((header, index) => {
+      doc.setFillColor(44, 62, 80);
+      doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text(header, currentX + 2, currentY + 5);
+      doc.setDrawColor(100, 100, 100);
+      doc.setLineWidth(0.1);
+      doc.rect(currentX, currentY, colWidths[index], rowHeight, 'S');
+      currentX += colWidths[index];
+    });
+    
+    currentY += rowHeight;
+    
+    // Dibujar filas de datos
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    
+    movements.forEach((movement, rowIndex) => {
+      // Formatear fecha
+      const fecha = new Date(movement.created_at).toLocaleDateString('es-CO', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // Tipo con indicador visual
+      const tipo = movement.movement_type === 'entrada' ? '+E' : '-S';
+      
+      // Cantidad con signo
+      const cantidad = movement.movement_type === 'entrada' 
+        ? `+${movement.quantity}` 
+        : `-${movement.quantity}`;
+      
+      const rowData = [
+        fecha,
+        movement.supply_name,
+        tipo,
+        cantidad,
+        movement.previous_quantity.toString(),
+        movement.new_quantity.toString(),
+        movement.reason || '-'
+      ];
+      
+      // Color de fondo alternado
+      const rowFillColor: [number, number, number] = rowIndex % 2 === 0 
+        ? [250, 250, 250] 
+        : [255, 255, 255];
+      
+      currentX = 20;
+      rowData.forEach((data, colIndex) => {
+        doc.setFillColor(rowFillColor[0], rowFillColor[1], rowFillColor[2]);
+        doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'F');
+        
+        // Color de texto según tipo de movimiento para columnas específicas
+        if (colIndex === 2 || colIndex === 3) {
+          if (movement.movement_type === 'entrada') {
+            doc.setTextColor(0, 128, 0); // Verde para entradas
+          } else {
+            doc.setTextColor(220, 0, 0); // Rojo para salidas
+          }
+        } else {
+          doc.setTextColor(0, 0, 0);
+        }
+        
+        // Truncar texto si es muy largo
+        let text = data.toString();
+        if (colIndex === 1 && text.length > 15) { // Elemento
+          text = text.substring(0, 12) + '...';
+        }
+        if (colIndex === 6 && text.length > 10) { // Motivo
+          text = text.substring(0, 7) + '...';
+        }
+        
+        doc.text(text, currentX + 1, currentY + 5);
+        currentX += colWidths[colIndex];
+      });
+      
+      // Dibujar bordes
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.1);
+      currentX = 20;
+      rowData.forEach((_, colIndex) => {
+        doc.rect(currentX, currentY, colWidths[colIndex], rowHeight, 'S');
+        currentX += colWidths[colIndex];
+      });
+      
+      currentY += rowHeight;
+      
+      // Nueva página si es necesario
+      if (currentY > 270) {
+        doc.addPage();
+        currentY = 20;
+        
+        // Redibujar encabezados
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        currentX = 20;
+        headers.forEach((header, index) => {
+          doc.setFillColor(44, 62, 80);
+          doc.rect(currentX, currentY, colWidths[index], rowHeight, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.text(header, currentX + 2, currentY + 5);
+          doc.setDrawColor(100, 100, 100);
+          doc.setLineWidth(0.1);
+          doc.rect(currentX, currentY, colWidths[index], rowHeight, 'S');
+          currentX += colWidths[index];
+        });
+        
+        currentY += rowHeight;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+      }
+    });
+  }
 }

@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { InventoryMovementsService, InventoryMovement } from '../../services/inventory-movements.service';
 import { AuthService } from '../../services/auth.service';
 import { RevertIngresoDialogComponent } from '../revert-ingreso-dialog/revert-ingreso-dialog.component';
+import { PdfReportService } from '../../services/pdf-report.service';
 
 @Component({
   selector: 'app-inventory-movements',
@@ -67,7 +68,8 @@ export class InventoryMovementsComponent implements OnInit {
     private movementsService: InventoryMovementsService,
     private authService: AuthService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private pdfReportService: PdfReportService
   ) {
     this.dataSource = new MatTableDataSource<InventoryMovement>([]);
   }
@@ -182,5 +184,43 @@ export class InventoryMovementsComponent implements OnInit {
         });
       }
     });
+  }
+
+  downloadPDF(): void {
+    try {
+      // Obtener los movimientos actualmente filtrados/mostrados
+      const movementsToExport = this.dataSource.data;
+      
+      if (movementsToExport.length === 0) {
+        this.snackBar.open(
+          'No hay movimientos para exportar',
+          'Cerrar',
+          { duration: 3000 }
+        );
+        return;
+      }
+
+      // Preparar filtros para incluir en el PDF
+      const filters = {
+        type: this.selectedMovementType,
+        search: this.searchText
+      };
+
+      // Generar PDF
+      this.pdfReportService.generateInventoryMovementsReport(movementsToExport, filters);
+      
+      this.snackBar.open(
+        `PDF generado con ${movementsToExport.length} movimiento(s)`,
+        'Cerrar',
+        { duration: 3000, panelClass: ['success-snackbar'] }
+      );
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      this.snackBar.open(
+        'Error al generar el PDF',
+        'Cerrar',
+        { duration: 5000, panelClass: ['error-snackbar'] }
+      );
+    }
   }
 }
