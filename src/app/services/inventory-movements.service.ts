@@ -93,4 +93,14 @@ export class InventoryMovementsService {
   getCurrentMovements(): InventoryMovement[] {
     return this.movementsSubject.getValue();
   }
+
+  // Revertir un movimiento de ingreso
+  revertMovement(movementId: number, motivo: string, revertidoPor?: string): Observable<any> {
+    return this.http.post<any>(`${getApiBaseUrl()}/inventory-movements/${movementId}/revert`, {
+      motivo,
+      revertidoPor
+    }).pipe(
+      tap(() => this.loadMovements())
+    );
+  }
 }

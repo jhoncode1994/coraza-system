@@ -1064,6 +1064,113 @@ app.get('/api/inventory-movements/supply/:supplyId', async (req, res) => {
   }
 });
 
+// Revert inventory movement (ingreso)
+app.post('/api/inventory-movements/:id/revert', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const { motivo, revertidoPor } = req.body;
+
+    // Validación del motivo
+    if (!motivo || motivo.trim().length < 10) {
+      return res.status(400).json({
+        error: 'El motivo debe tener al menos 10 caracteres'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // Obtener el movimiento original
+    const movementResult = await client.query(
+      `SELECT im.*, si.name as supply_name, si.quantity as current_quantity
+       FROM inventory_movements im
+       JOIN supply_inventory si ON im.supply_id = si.id
+       WHERE im.id = $1`,
+      [id]
+    );
+
+    if (movementResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Movimiento no encontrado' });
+    }
+
+    const originalMovement = movementResult.rows[0];
+
+    // Validar que sea un movimiento de tipo 'entrada'
+    if (originalMovement.movement_type !== 'entrada') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Solo se pueden revertir movimientos de tipo "entrada"'
+      });
+    }
+
+    // Verificar que hay suficiente stock para revertir
+    const currentStock = originalMovement.current_quantity;
+    const quantityToRevert = originalMovement.quantity;
+
+    if (currentStock < quantityToRevert) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'No hay suficiente stock para revertir este ingreso',
+        details: `Stock actual: ${currentStock}, Cantidad a revertir: ${quantityToRevert}`
+      });
+    }
+
+    // Calcular nuevo stock
+    const newStock = currentStock - quantityToRevert;
+
+    // Actualizar el stock en supply_inventory
+    await client.query(
+      `UPDATE supply_inventory 
+       SET quantity = $1, last_update = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [newStock, originalMovement.supply_id]
+    );
+
+    // Crear el movimiento de reversión con cantidad negativa
+    const notes = `Reversión de ingreso #${id}. Motivo: ${motivo}${revertidoPor ? `. Revertido por: ${revertidoPor}` : ''}`;
+    
+    await client.query(
+      `INSERT INTO inventory_movements 
+       (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        originalMovement.supply_id,
+        'salida',
+        quantityToRevert,
+        motivo,
+        notes,
+        currentStock,
+        newStock
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      message: 'Ingreso revertido exitosamente',
+      originalMovement: {
+        id: originalMovement.id,
+        supply_name: originalMovement.supply_name,
+        quantity: originalMovement.quantity
+      },
+      newStock: newStock,
+      previousStock: currentStock
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error reverting movement:', error);
+    res.status(500).json({
+      error: 'Error al revertir el ingreso',
+      details: error.message
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Delete user
 app.delete('/api/users/:id', async (req, res) => {
   try {

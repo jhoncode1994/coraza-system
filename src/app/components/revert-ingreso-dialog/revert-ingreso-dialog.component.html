@@ -1,0 +1,80 @@
+<div class="revert-dialog">
+  <h2 mat-dialog-title>
+    <mat-icon color="warn">undo</mat-icon>
+    Revertir Ingreso de Inventario
+  </h2>
+
+  <mat-dialog-content>
+    <div class="movement-details">
+      <h3>Detalles del Ingreso</h3>
+      <div class="detail-row">
+        <strong>Elemento:</strong>
+        <span>{{ data.movement.supply_name }}</span>
+      </div>
+      <div class="detail-row">
+        <strong>Cantidad ingresada:</strong>
+        <span class="quantity-badge">{{ data.movement.quantity }} unidades</span>
+      </div>
+      <div class="detail-row">
+        <strong>Fecha del ingreso:</strong>
+        <span>{{ formatDate(data.movement.created_at) }}</span>
+      </div>
+      <div class="detail-row" *ngIf="data.movement.reason">
+        <strong>Motivo original:</strong>
+        <span>{{ data.movement.reason }}</span>
+      </div>
+      <div class="detail-row">
+        <strong>Stock resultante:</strong>
+        <span>{{ data.movement.previous_quantity }} → {{ data.movement.new_quantity }}</span>
+      </div>
+    </div>
+
+    <div class="warning-section">
+      <mat-icon color="warn">warning</mat-icon>
+      <div class="warning-text">
+        <p><strong>Importante:</strong></p>
+        <ul>
+          <li>Se restarán <strong>{{ data.movement.quantity }} unidades</strong> del inventario actual</li>
+          <li>Se creará un registro de movimiento tipo "reversión_ingreso"</li>
+          <li>Esta acción quedará registrada en el historial</li>
+        </ul>
+      </div>
+    </div>
+
+    <form [formGroup]="revertForm" class="revert-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Motivo de la reversión</mat-label>
+        <textarea 
+          matInput 
+          formControlName="motivo"
+          placeholder="Ej: Se ingresó por error en talla/género incorrecto, ingreso duplicado, etc."
+          rows="4"
+          required>
+        </textarea>
+        <mat-hint>Mínimo 10 caracteres. Explica por qué se revierte este ingreso.</mat-hint>
+        <mat-error *ngIf="revertForm.get('motivo')?.hasError('required')">
+          El motivo es obligatorio
+        </mat-error>
+        <mat-error *ngIf="revertForm.get('motivo')?.hasError('minlength')">
+          El motivo debe tener al menos 10 caracteres
+        </mat-error>
+      </mat-form-field>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()" class="cancel-button">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+    <button 
+      mat-raised-button 
+      color="warn" 
+      (click)="onConfirm()"
+      [disabled]="!revertForm.valid"
+      class="revert-button">
+      <mat-icon>undo</mat-icon>
+      Revertir Ingreso
+    </button>
+  </mat-dialog-actions>
+</div>

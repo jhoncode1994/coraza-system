@@ -11,7 +11,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
 import { FormsModule } from '@angular/forms';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { InventoryMovementsService, InventoryMovement } from '../../services/inventory-movements.service';
+import { AuthService } from '../../services/auth.service';
+import { RevertIngresoDialogComponent } from '../revert-ingreso-dialog/revert-ingreso-dialog.component';
 
 @Component({
   selector: 'app-inventory-movements',
@@ -28,7 +33,10 @@ import { InventoryMovementsService, InventoryMovement } from '../../services/inv
     MatProgressSpinnerModule,
     MatSortModule,
     MatChipsModule,
-    FormsModule
+    FormsModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatTooltipModule
   ],
   templateUrl: './inventory-movements.component.html',
   styleUrls: ['./inventory-movements.component.scss']
@@ -42,7 +50,8 @@ export class InventoryMovementsComponent implements OnInit {
     'quantity',
     'previous_quantity',
     'new_quantity',
-    'reason'
+    'reason',
+    'actions'
   ];
 
   isLoading = false;
@@ -54,8 +63,17 @@ export class InventoryMovementsComponent implements OnInit {
 
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private movementsService: InventoryMovementsService) {
+  constructor(
+    private movementsService: InventoryMovementsService,
+    private authService: AuthService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) {
     this.dataSource = new MatTableDataSource<InventoryMovement>([]);
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
   }
 
   ngOnInit() {
@@ -123,6 +141,46 @@ export class InventoryMovementsComponent implements OnInit {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  }
+
+  canRevertMovement(movement: InventoryMovement): boolean {
+    // Solo admin puede revertir y solo movimientos de tipo 'entrada'
+    return this.isAdmin && movement.movement_type === 'entrada';
+  }
+
+  revertIngreso(movement: InventoryMovement): void {
+    const dialogRef = this.dialog.open(RevertIngresoDialogComponent, {
+      width: '600px',
+      data: { movement }
+    });
+
+    dialogRef.afterClosed().subscribe((motivo: string) => {
+      if (motivo) {
+        this.isLoading = true;
+        const currentUser = this.authService.getCurrentUser();
+        const revertidoPor = currentUser?.username || 'Administrador';
+
+        this.movementsService.revertMovement(movement.id!, motivo, revertidoPor).subscribe({
+          next: (response) => {
+            this.snackBar.open(
+              `Ingreso revertido exitosamente. Stock actualizado: ${response.newStock}`,
+              'Cerrar',
+              { duration: 5000, panelClass: ['success-snackbar'] }
+            );
+            this.loadMovements();
+          },
+          error: (error) => {
+            console.error('Error al revertir ingreso:', error);
+            this.snackBar.open(
+              error.error?.error || 'Error al revertir el ingreso',
+              'Cerrar',
+              { duration: 5000, panelClass: ['error-snackbar'] }
+            );
+            this.isLoading = false;
+          }
+        });
+      }
     });
   }
 }

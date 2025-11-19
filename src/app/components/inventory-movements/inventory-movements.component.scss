@@ -148,6 +148,27 @@ mat-chip {
   }
 }
 
+.actions-column {
+  width: 80px;
+  text-align: center;
+}
+
+.actions-cell {
+  text-align: center;
+
+  .revert-button {
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    mat-icon {
+      font-size: 20px;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .movements-container {
     padding: 10px;
