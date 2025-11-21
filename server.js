@@ -1086,7 +1086,8 @@ app.post('/api/inventory-movements/:id/revert', async (req, res) => {
       `SELECT im.*, si.name as supply_name, si.quantity as current_quantity
        FROM inventory_movements im
        JOIN supply_inventory si ON im.supply_id = si.id
-       WHERE im.id = $1`,
+       WHERE im.id = $1
+       FOR UPDATE OF si`,
       [id]
     );
 
@@ -1618,6 +1619,7 @@ app.post('/api/delivery', async (req, res) => {
             CASE WHEN genero IS NULL THEN 0 ELSE 1 END,
             quantity DESC
           LIMIT 1
+          FOR UPDATE
         `;
         findParams = [`%${elemento}%`, talla];
         console.log('🔍 Búsqueda sin género específico - se seleccionará el primero disponible');
@@ -1632,6 +1634,7 @@ app.post('/api/delivery', async (req, res) => {
             AND quantity > 0
           ORDER BY quantity DESC
           LIMIT 1
+          FOR UPDATE
         `;
         findParams = [`%${elemento}%`, talla, genero];
         console.log(`🔍 Búsqueda con género específico: ${genero}`);
@@ -1644,6 +1647,7 @@ app.post('/api/delivery', async (req, res) => {
         WHERE LOWER(name) LIKE LOWER($1) AND (talla IS NULL OR talla = '')
         ORDER BY quantity DESC
         LIMIT 1
+        FOR UPDATE
       `;
       findParams = [`%${elemento}%`];
     }
@@ -1844,7 +1848,8 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
     const inventoryResult = await client.query(
       `SELECT id, quantity FROM supply_inventory 
        WHERE LOWER(name) LIKE LOWER($1) AND (talla = $2 OR (talla IS NULL AND $2 IS NULL))
-       LIMIT 1`,
+       LIMIT 1
+       FOR UPDATE`,
       [`%${entrega.elemento}%`, entrega.talla]
     );
     
