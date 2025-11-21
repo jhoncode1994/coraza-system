@@ -1856,20 +1856,47 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
     
     const entrega = entregaResult.rows[0];
     
+    console.log('📦 DATOS DE LA ENTREGA A REVERTIR:');
+    console.log('  - ID:', entrega.id);
+    console.log('  - Elemento:', entrega.elemento);
+    console.log('  - Talla:', entrega.talla);
+    console.log('  - Género guardado (genero_talla):', entrega.genero_talla);
+    console.log('  - Cantidad:', entrega.cantidad);
+    
     // Verificar si ya está revertida (si existe la columna estado)
     if (entrega.estado === 'revertida') {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Esta entrega ya está revertida' });
     }
     
-    // Buscar el item en el inventario
+    // Buscar el item en el inventario (considerando género)
+    console.log('🔍 BUSCANDO EN INVENTARIO:');
+    console.log('  - Patrón nombre:', `%${entrega.elemento}%`);
+    console.log('  - Talla:', entrega.talla);
+    console.log('  - Género:', entrega.genero_talla || 'NULL');
+    
     const inventoryResult = await client.query(
-      `SELECT id, quantity FROM supply_inventory 
-       WHERE LOWER(name) LIKE LOWER($1) AND (talla = $2 OR (talla IS NULL AND $2 IS NULL))
+      `SELECT id, name, quantity, talla, genero FROM supply_inventory 
+       WHERE LOWER(name) LIKE LOWER($1) 
+       AND (talla = $2 OR (talla IS NULL AND $2 IS NULL))
+       AND (genero = $3 OR (genero IS NULL AND $3 IS NULL))
+       ORDER BY 
+         CASE WHEN genero = $3 THEN 0 ELSE 1 END,
+         id ASC
        LIMIT 1
        FOR UPDATE`,
-      [`%${entrega.elemento}%`, entrega.talla]
+      [`%${entrega.elemento}%`, entrega.talla, entrega.genero_talla]
     );
+    
+    console.log(`📊 REGISTROS ENCONTRADOS: ${inventoryResult.rows.length}`);
+    if (inventoryResult.rows.length > 0) {
+      inventoryResult.rows.forEach((row, idx) => {
+        console.log(`  [${idx}] ID: ${row.id}, Talla: ${row.talla}, Género: ${row.genero}, Stock: ${row.quantity}`);
+      });
+      console.log(`✅ SELECCIONADO: ID ${inventoryResult.rows[0].id} (Género: ${inventoryResult.rows[0].genero})`);
+    } else {
+      console.log('❌ NO SE ENCONTRÓ NINGÚN REGISTRO');
+    }
     
     if (inventoryResult.rows.length > 0) {
       const inventoryItem = inventoryResult.rows[0];
