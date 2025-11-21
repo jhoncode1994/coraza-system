@@ -974,10 +974,18 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
         );
       }
       
-      // Record movement
+      // Record movement with detailed element info
+      let elementoDetalle = currentResult.rows.length > 0 ? currentResult.rows[0].name : 'elemento';
+      if (talla) {
+        elementoDetalle += ` Talla ${talla}`;
+        if (genero) {
+          elementoDetalle += genero === 'M' ? ' Hombre' : genero === 'F' ? ' Mujer' : '';
+        }
+      }
+      
       await client.query(
         'INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [targetInventoryId, 'entrada', quantity, reason, notes, previousQuantity, newQuantity]
+        [targetInventoryId, 'entrada', quantity, reason, notes || `Ingreso de ${quantity} unidades de ${elementoDetalle}`, previousQuantity, newQuantity]
       );
       
       // Commit transaction
@@ -1099,9 +1107,9 @@ app.post('/api/inventory-movements/:id/revert', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Obtener el movimiento original
+    // Obtener el movimiento original con información completa
     const movementResult = await client.query(
-      `SELECT im.*, si.name as supply_name, si.quantity as current_quantity
+      `SELECT im.*, si.name as supply_name, si.quantity as current_quantity, si.talla, si.genero
        FROM inventory_movements im
        JOIN supply_inventory si ON im.supply_id = si.id
        WHERE im.id = $1
@@ -1147,8 +1155,16 @@ app.post('/api/inventory-movements/:id/revert', async (req, res) => {
       [newStock, originalMovement.supply_id]
     );
 
-    // Crear el movimiento de reversión con cantidad negativa
-    const notes = `Reversión de ingreso #${id}. Motivo: ${motivo}${revertidoPor ? `. Revertido por: ${revertidoPor}` : ''}`;
+    // Crear el movimiento de reversión con descripción detallada
+    let elementoDetalle = originalMovement.supply_name;
+    if (originalMovement.talla) {
+      elementoDetalle += ` Talla ${originalMovement.talla}`;
+      if (originalMovement.genero) {
+        elementoDetalle += originalMovement.genero === 'M' ? ' Hombre' : originalMovement.genero === 'F' ? ' Mujer' : '';
+      }
+    }
+    
+    const notes = `Reversión de ingreso #${id} (${elementoDetalle}). Motivo: ${motivo}${revertidoPor ? `. Revertido por: ${revertidoPor}` : ''}`;
     
     await client.query(
       `INSERT INTO inventory_movements 
@@ -1718,11 +1734,19 @@ app.post('/api/delivery', async (req, res) => {
       userIdentifier = `cédula ${userInfoResult.rows[0].cedula}`;
     }
     
-    // 5. Registrar el movimiento en inventory_movements
+    // 5. Registrar el movimiento en inventory_movements con información completa
+    let elementoDetalle = elemento;
+    if (talla) {
+      elementoDetalle += ` Talla ${talla}`;
+      if (genero) {
+        elementoDetalle += genero === 'M' ? ' Hombre' : genero === 'F' ? ' Mujer' : '';
+      }
+    }
+    
     await client.query(`
       INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, previous_quantity, new_quantity)
       VALUES ($1, 'salida', $2, $3, $4, $5)
-    `, [inventoryItem.id, cantidad, `Entrega a ${userIdentifier}: ${elemento}${talla ? ` (${talla})` : ''}`, previousQuantity, newQuantity]);
+    `, [inventoryItem.id, cantidad, `Entrega a ${userIdentifier}: ${elementoDetalle}`, previousQuantity, newQuantity]);
     
     // Confirmar transacción
     await client.query('COMMIT');
@@ -1875,18 +1899,48 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
     console.log('  - Talla:', entrega.talla);
     console.log('  - Género:', entrega.genero_talla || 'NULL');
     
-    const inventoryResult = await client.query(
-      `SELECT id, name, quantity, talla, genero FROM supply_inventory 
-       WHERE LOWER(name) LIKE LOWER($1) 
-       AND (talla = $2 OR (talla IS NULL AND $2 IS NULL))
-       AND (genero = $3 OR (genero IS NULL AND $3 IS NULL))
-       ORDER BY 
-         CASE WHEN genero = $3 THEN 0 ELSE 1 END,
-         id ASC
-       LIMIT 1
-       FOR UPDATE`,
-      [`%${entrega.elemento}%`, entrega.talla, entrega.genero_talla]
-    );
+    // Construir query dinámicamente según si hay género o no
+    let inventoryQuery;
+    let inventoryParams;
+    
+    if (entrega.talla && entrega.genero_talla) {
+      // Caso 1: Tiene talla Y género específico (ej: Botas 37 M)
+      inventoryQuery = `
+        SELECT id, name, quantity, talla, genero FROM supply_inventory 
+        WHERE LOWER(name) LIKE LOWER($1) 
+        AND talla = $2
+        AND genero = $3
+        LIMIT 1
+        FOR UPDATE
+      `;
+      inventoryParams = [`%${entrega.elemento}%`, entrega.talla, entrega.genero_talla];
+      console.log('  → Búsqueda EXACTA con talla y género');
+    } else if (entrega.talla && !entrega.genero_talla) {
+      // Caso 2: Tiene talla pero NO género (ej: entregas antiguas o elementos sin género)
+      inventoryQuery = `
+        SELECT id, name, quantity, talla, genero FROM supply_inventory 
+        WHERE LOWER(name) LIKE LOWER($1) 
+        AND talla = $2
+        AND genero IS NULL
+        LIMIT 1
+        FOR UPDATE
+      `;
+      inventoryParams = [`%${entrega.elemento}%`, entrega.talla];
+      console.log('  → Búsqueda con talla, SIN género (genero IS NULL)');
+    } else {
+      // Caso 3: NO tiene talla (elemento sin talla como carnets)
+      inventoryQuery = `
+        SELECT id, name, quantity, talla, genero FROM supply_inventory 
+        WHERE LOWER(name) LIKE LOWER($1) 
+        AND talla IS NULL
+        LIMIT 1
+        FOR UPDATE
+      `;
+      inventoryParams = [`%${entrega.elemento}%`];
+      console.log('  → Búsqueda SIN talla');
+    }
+    
+    const inventoryResult = await client.query(inventoryQuery, inventoryParams);
     
     console.log(`📊 REGISTROS ENCONTRADOS: ${inventoryResult.rows.length}`);
     if (inventoryResult.rows.length > 0) {
@@ -1918,7 +1972,15 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
         ? `${userInfoResult.rows[0].nombre} ${userInfoResult.rows[0].apellido} (Cédula: ${userInfoResult.rows[0].cedula})` 
         : `usuario ID ${entrega.userId}`;
       
-      // Registrar el movimiento de reversión
+      // Registrar el movimiento de reversión con información completa
+      let elementoDetalle = entrega.elemento;
+      if (entrega.talla) {
+        elementoDetalle += ` Talla ${entrega.talla}`;
+        if (entrega.genero_talla) {
+          elementoDetalle += entrega.genero_talla === 'M' ? ' Hombre' : entrega.genero_talla === 'F' ? ' Mujer' : '';
+        }
+      }
+      
       await client.query(`
         INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity)
         VALUES ($1, 'entrada', $2, $3, $4, $5, $6)
@@ -1926,7 +1988,7 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
         inventoryItem.id,
         entrega.cantidad,
         motivo,
-        `Reversión de entrega a ${userIdentifier}`,
+        `Reversión de entrega a ${userIdentifier}: ${elementoDetalle}`,
         inventoryItem.quantity,
         newQuantity
       ]);
