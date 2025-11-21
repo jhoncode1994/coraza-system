@@ -104,7 +104,7 @@ interface ElementoEntrega {
                       <mat-label>Talla y Género</mat-label>
                       <mat-select formControlName="talla" (selectionChange)="onTallaChange(i)">
                         <mat-option *ngFor="let item of getItemsConTalla(elemento.get('categoria')?.value)" 
-                                    [value]="item.talla">
+                                    [value]="item.talla + '|' + (item.genero || 'N/A')">
                           Talla {{ item.talla }}
                           <span *ngIf="item.genero" [style.color]="item.genero === 'F' ? '#e91e63' : '#2196f3'">
                             {{ item.genero === 'F' ? ' ♀ Mujer' : ' ♂ Hombre' }}
@@ -474,7 +474,7 @@ export class EntregaConTallasDialogComponent implements OnInit {
   async updateStock(index: number) {
     const elementoGroup = this.elementosFormArray.at(index);
     const categoriaValue = elementoGroup.get('categoria')?.value;
-    const tallaValue = elementoGroup.get('talla')?.value; // Ahora es solo el número de talla
+    const tallaValue = elementoGroup.get('talla')?.value; // Ahora es "talla|genero"
     
     if (categoriaValue) {
       const key = `${categoriaValue}-${tallaValue || 'null'}`;
@@ -482,11 +482,17 @@ export class EntregaConTallasDialogComponent implements OnInit {
       const { nombre, categoria } = this.parseElementoValue(categoriaValue);
       
       if (tallaValue) {
-        // Buscar item por nombre de categoria y talla
+        // Separar talla y género
+        const tallaParts = tallaValue.split('|');
+        const talla = tallaParts[0];
+        const genero = tallaParts[1] !== 'N/A' ? tallaParts[1] : null;
+        
+        // Buscar item por nombre de categoria, talla y género
         const selectedItem = this.allItems.find(item => 
           item.name === nombre && 
           item.category === categoria && 
-          item.talla === tallaValue
+          item.talla === talla &&
+          item.genero === genero
         );
         if (selectedItem) {
           this.stockCache.set(key, selectedItem.quantity);
@@ -638,10 +644,21 @@ export class EntregaConTallasDialogComponent implements OnInit {
           const { nombre, categoria } = this.parseElementoValue(elemento.categoria);
           console.log(`  parseElementoValue("${elemento.categoria}") ->`, { nombre, categoria });
           
+          // Separar talla y género si vienen en formato "talla|genero"
+          let talla = null;
+          let genero = null;
+          
+          if (elemento.talla) {
+            const tallaParts = elemento.talla.split('|');
+            talla = tallaParts[0];
+            genero = tallaParts[1] !== 'N/A' ? tallaParts[1] : null;
+          }
+          
           const result = {
             categoria: nombre, // Guardar el nombre específico del elemento (ej: "pantalón")
             categoriaOriginal: categoria, // Mantener la categoría original por si es necesaria
-            talla: elemento.talla || null,
+            talla: talla,
+            genero: genero,
             cantidad: elemento.cantidad
           };
           console.log(`  resultado final:`, result);
