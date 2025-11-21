@@ -536,6 +536,8 @@ app.get('/api/supply-inventory', async (req, res) => {
 
 // Update supply quantity (main operation since items are fixed)
 app.put('/api/supply-inventory/:id/quantity', async (req, res) => {
+  const client = await pool.connect();
+  
   try {
     const { quantity } = req.body;
     const { id } = req.params;
@@ -544,24 +546,39 @@ app.put('/api/supply-inventory/:id/quantity', async (req, res) => {
       return res.status(400).json({ error: 'La cantidad no puede ser negativa' });
     }
     
-    const client = await pool.connect();
+    await client.query('BEGIN');
+    
+    // Leer cantidad actual con bloqueo
+    const currentResult = await client.query(
+      'SELECT id, quantity FROM supply_inventory WHERE id = $1 FOR UPDATE',
+      [id]
+    );
+    
+    if (currentResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Elemento no encontrado' });
+    }
+    
+    const previousQuantity = currentResult.rows[0].quantity;
+    
+    // Actualizar cantidad
     const result = await client.query(
       'UPDATE supply_inventory SET quantity = $1, last_update = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
       [quantity, id]
     );
-    client.release();
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Elemento no encontrado' });
-    }
+    await client.query('COMMIT');
     
     res.json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error updating quantity:', error);
     res.status(500).json({ 
       error: 'Error al actualizar cantidad',
       details: error.message
     });
+  } finally {
+    client.release();
   }
 });
 
@@ -860,11 +877,12 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
                             AND category = (SELECT category FROM supply_inventory WHERE id = $1)))
             AND talla = $2
             AND (genero = $3 OR (genero IS NULL AND $3 IS NULL))
+          FOR UPDATE
         `;
         inventoryParams = [supplyId, talla, genero];
       } else {
         // Para elementos sin talla, buscar el registro normal
-        inventoryQuery = 'SELECT id, quantity, name, category FROM supply_inventory WHERE id = $1 AND talla IS NULL';
+        inventoryQuery = 'SELECT id, quantity, name, category FROM supply_inventory WHERE id = $1 AND talla IS NULL FOR UPDATE';
         inventoryParams = [supplyId];
       }
       
@@ -908,7 +926,7 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
         
         // Verificar si ya existe un registro con este código
         const existingCheck = await client.query(
-          'SELECT id, quantity FROM supply_inventory WHERE code = $1',
+          'SELECT id, quantity FROM supply_inventory WHERE code = $1 FOR UPDATE',
           [newCode]
         );
         
