@@ -66,13 +66,18 @@
       <th mat-header-cell *matHeaderCellDef> Acciones </th>
       <td mat-cell *matCellDef="let item" [class.revertida]="isRevertida(item)">
         <button 
-          *ngIf="isAdmin && !isRevertida(item)"
+          *ngIf="isAdmin && puedeRevertir(item)"
           mat-icon-button 
           color="warn"
           (click)="revertEntrega(item)"
           matTooltip="Revertir entrega (devolver al inventario)">
           <mat-icon>undo</mat-icon>
         </button>
+        <span *ngIf="isAdmin && !puedeRevertir(item) && !isRevertida(item)" 
+              class="tiempo-expirado"
+              matTooltip="Han pasado más de 24 horas. No se puede revertir.">
+          <mat-icon color="disabled">schedule</mat-icon>
+        </span>
         <span *ngIf="isRevertida(item)" class="revertida-por">
           <small>Por: {{item.revertida_por}}</small>
         </span>

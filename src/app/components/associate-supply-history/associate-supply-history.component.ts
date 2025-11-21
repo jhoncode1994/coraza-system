@@ -112,4 +112,18 @@ export class AssociateSupplyHistoryComponent implements OnInit {
   isRevertida(entrega: EntregaHistorial): boolean {
     return entrega.estado === 'revertida';
   }
+
+  puedeRevertir(entrega: EntregaHistorial): boolean {
+    // No se puede revertir si ya está revertida
+    if (this.isRevertida(entrega)) {
+      return false;
+    }
+    
+    // Validar que no hayan pasado más de 24 horas
+    const fechaEntrega = new Date(entrega.fechaEntrega);
+    const ahora = new Date();
+    const diferenciaHoras = (ahora.getTime() - fechaEntrega.getTime()) / (1000 * 60 * 60);
+    
+    return diferenciaHoras <= 24;
+  }
 }

@@ -1131,6 +1131,19 @@ app.post('/api/inventory-movements/:id/revert', async (req, res) => {
         error: 'Solo se pueden revertir movimientos de tipo "entrada"'
       });
     }
+    
+    // Validar que no hayan pasado más de 24 horas desde el movimiento
+    const fechaMovimiento = new Date(originalMovement.created_at);
+    const ahora = new Date();
+    const diferenciaHoras = (ahora - fechaMovimiento) / (1000 * 60 * 60);
+    
+    if (diferenciaHoras > 24) {
+      await client.query('ROLLBACK');
+      const horasTranscurridas = Math.floor(diferenciaHoras);
+      return res.status(400).json({ 
+        error: `No se puede revertir este ingreso. Han transcurrido ${horasTranscurridas} horas desde el registro. Solo se pueden revertir ingresos realizados en las últimas 24 horas.` 
+      });
+    }
 
     // Verificar que hay suficiente stock para revertir
     const currentStock = originalMovement.current_quantity;
@@ -1886,11 +1899,30 @@ app.post('/api/delivery/:id/revert', async (req, res) => {
     console.log('  - Talla:', entrega.talla);
     console.log('  - Género guardado (genero_talla):', entrega.genero_talla);
     console.log('  - Cantidad:', entrega.cantidad);
+    console.log('  - Fecha de entrega:', entrega.fechaEntrega);
     
     // Verificar si ya está revertida (si existe la columna estado)
     if (entrega.estado === 'revertida') {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Esta entrega ya está revertida' });
+    }
+    
+    // Validar que no hayan pasado más de 24 horas
+    const fechaEntrega = new Date(entrega.fechaEntrega);
+    const ahora = new Date();
+    const diferenciaHoras = (ahora - fechaEntrega) / (1000 * 60 * 60);
+    
+    console.log('⏰ VALIDACIÓN DE TIEMPO:');
+    console.log('  - Fecha de entrega:', fechaEntrega);
+    console.log('  - Fecha actual:', ahora);
+    console.log('  - Horas transcurridas:', diferenciaHoras.toFixed(2));
+    
+    if (diferenciaHoras > 24) {
+      await client.query('ROLLBACK');
+      const horasTranscurridas = Math.floor(diferenciaHoras);
+      return res.status(400).json({ 
+        error: `No se puede revertir esta entrega. Han transcurrido ${horasTranscurridas} horas desde la entrega. Solo se pueden revertir entregas realizadas en las últimas 24 horas.` 
+      });
     }
     
     // Buscar el item en el inventario (considerando género)

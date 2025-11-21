@@ -148,7 +148,16 @@ export class InventoryMovementsComponent implements OnInit {
 
   canRevertMovement(movement: InventoryMovement): boolean {
     // Solo admin puede revertir y solo movimientos de tipo 'entrada'
-    return this.isAdmin && movement.movement_type === 'entrada';
+    if (!this.isAdmin || movement.movement_type !== 'entrada') {
+      return false;
+    }
+    
+    // Validar que no hayan pasado más de 24 horas
+    const fechaMovimiento = new Date(movement.created_at!);
+    const ahora = new Date();
+    const diferenciaHoras = (ahora.getTime() - fechaMovimiento.getTime()) / (1000 * 60 * 60);
+    
+    return diferenciaHoras <= 24;
   }
 
   revertIngreso(movement: InventoryMovement): void {
