@@ -1049,7 +1049,9 @@ app.get('/api/inventory-movements', async (req, res) => {
       SELECT 
         im.*,
         si.name as supply_name,
-        si.code as supply_code
+        si.code as supply_code,
+        si.talla as supply_talla,
+        si.genero as supply_genero
       FROM inventory_movements im
       JOIN supply_inventory si ON im.supply_id = si.id
       ORDER BY im.created_at DESC

@@ -146,6 +146,23 @@ export class InventoryMovementsComponent implements OnInit {
     });
   }
 
+  getElementoCompleto(movement: InventoryMovement): string {
+    let nombre = movement.supply_name || 'Elemento';
+    
+    // Agregar talla si existe
+    if ((movement as any).supply_talla) {
+      nombre += ` Talla ${(movement as any).supply_talla}`;
+      
+      // Agregar género si existe
+      if ((movement as any).supply_genero) {
+        const genero = (movement as any).supply_genero;
+        nombre += genero === 'M' ? ' Hombre' : genero === 'F' ? ' Mujer' : '';
+      }
+    }
+    
+    return nombre;
+  }
+
   canRevertMovement(movement: InventoryMovement): boolean {
     // Solo admin puede revertir y solo movimientos de tipo 'entrada'
     if (!this.isAdmin || movement.movement_type !== 'entrada') {

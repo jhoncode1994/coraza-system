@@ -67,7 +67,7 @@
           <ng-container matColumnDef="supply_name">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>Elemento</th>
             <td mat-cell *matCellDef="let movement">
-              <strong>{{ movement.supply_name }}</strong>
+              <strong>{{ getElementoCompleto(movement) }}</strong>
             </td>
           </ng-container>
 
