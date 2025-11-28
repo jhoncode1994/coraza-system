@@ -983,9 +983,12 @@ app.post('/api/inventory-movements/add-stock', async (req, res) => {
         }
       }
       
+      // Agregar detalle del elemento al motivo para que sea visible en la tabla
+      const reasonDetallado = `${reason} - ${elementoDetalle}`;
+      
       await client.query(
         'INSERT INTO inventory_movements (supply_id, movement_type, quantity, reason, notes, previous_quantity, new_quantity) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [targetInventoryId, 'entrada', quantity, reason, notes || `Ingreso de ${quantity} unidades de ${elementoDetalle}`, previousQuantity, newQuantity]
+        [targetInventoryId, 'entrada', quantity, reasonDetallado, notes || `Ingreso de ${quantity} unidades de ${elementoDetalle}`, previousQuantity, newQuantity]
       );
       
       // Commit transaction
