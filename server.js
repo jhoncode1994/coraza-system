@@ -751,18 +751,29 @@ app.post('/api/users', async (req, res) => {
       apellido,
       cedula,
       zona: zonaInt,
-      fechaIngreso: fechaFormatted
+      fechaIngreso: fechaFormatted,
+      cargo
     });
+    
+    console.log('🔍 FECHA DE INGRESO - VALIDACIÓN:');
+    console.log('  - Recibido del frontend:', fechaIngreso);
+    console.log('  - Tipo:', typeof fechaIngreso);
+    console.log('  - Procesado/formateado:', fechaFormatted);
+    console.log('  - A enviar a la BD:', fechaFormatted);
     
     const client = await pool.connect();
     
     try {
+      console.log('📝 Ejecutando INSERT con valores:', [nombre, apellido, cedula, zonaInt, fechaFormatted, cargo]);
+      
       const result = await client.query(
         'INSERT INTO users (nombre, apellido, cedula, zona, fecha_ingreso, cargo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
         [nombre, apellido, cedula, zonaInt, fechaFormatted, cargo]
       );
       
-      console.log('User inserted successfully:', result.rows[0]);
+      console.log('✅ User inserted successfully');
+      console.log('  - fecha_ingreso guardada en BD:', result.rows[0].fecha_ingreso);
+      console.log('  - Registro completo:', result.rows[0]);
       
       const user = result.rows[0];
       const mappedUser = {
