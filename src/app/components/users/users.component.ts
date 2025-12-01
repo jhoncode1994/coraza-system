@@ -218,18 +218,34 @@ export class UsersComponent implements OnInit {
     if (this.userForm.valid) {
       console.log('Formulario válido', this.userForm.value);
       
-      // Procesar la fecha para asegurar el formato correcto
+      // Procesar la fecha SIN conversión a UTC (evitar problema de zona horaria)
       let fechaIngreso;
       if (this.userForm.value.fechaIngreso instanceof Date) {
-        // Formatear fecha como YYYY-MM-DD para PostgreSQL
-        fechaIngreso = this.userForm.value.fechaIngreso.toISOString().split('T')[0];
+        // Formatear fecha local como YYYY-MM-DD (sin conversión UTC)
+        const year = this.userForm.value.fechaIngreso.getFullYear();
+        const month = String(this.userForm.value.fechaIngreso.getMonth() + 1).padStart(2, '0');
+        const day = String(this.userForm.value.fechaIngreso.getDate()).padStart(2, '0');
+        fechaIngreso = `${year}-${month}-${day}`;
       } else if (this.userForm.value.fechaIngreso) {
-        // Si es string, convertir a Date y luego formatear
+        // Si es string, convertir a Date y luego formatear SIN UTC
         const date = new Date(this.userForm.value.fechaIngreso);
-        fechaIngreso = date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        fechaIngreso = `${year}-${month}-${day}`;
       } else {
-        fechaIngreso = new Date().toISOString().split('T')[0]; // Fecha actual como fallback
+        // Fecha actual como fallback (también sin UTC)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        fechaIngreso = `${year}-${month}-${day}`;
       }
+      
+      console.log('🔍 DEBUG FECHA:', {
+        valorFormulario: this.userForm.value.fechaIngreso,
+        fechaProcesada: fechaIngreso
+      });
       
       const userData = {
         nombre: this.userForm.value.nombre,
@@ -320,13 +336,21 @@ export class UsersComponent implements OnInit {
     }
   }
 
-  editUser(index: number) {
-    this.editIndex = index;
+  editUser(user: User) {
+    // Buscar el índice real del usuario en el array completo por ID
+    const realIndex = this.users.findIndex(u => u.id === user.id);
+    
+    if (realIndex === -1) {
+      console.error('Usuario no encontrado:', user);
+      this.snackBar.open('Error: Usuario no encontrado', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    
+    this.editIndex = realIndex;
     // Reset del formulario antes de cargarlo con datos nuevos para evitar conflictos
     this.userForm.reset();
     
     // Asegurarse de que la fecha es un objeto Date para el datepicker
-    const user = this.users[index];
     const fechaIngreso = user.fechaIngreso instanceof Date 
       ? user.fechaIngreso 
       : new Date(user.fechaIngreso);
@@ -341,12 +365,13 @@ export class UsersComponent implements OnInit {
       cargo: user.cargo
     });
     
-    console.log('Editando usuario:', this.users[index]);
+    console.log('✏️ Editando usuario:', user);
+    console.log('  - ID:', user.id);
+    console.log('  - Índice real en array:', realIndex);
     this.showForm = true; // Mostrar el formulario al editar
   }
 
-  retireUser(index: number) {
-    const user = this.users[index];
+  retireUser(user: User) {
     if (user && user.id) {
       // Abrir diálogo de confirmación para retirar asociado
       const dialogRef = this.dialog.open(RetireAssociateDialogComponent, {
@@ -379,7 +404,8 @@ export class UsersComponent implements OnInit {
               this.usersService.loadUsers();
               
               // Si estábamos editando este usuario, limpiar el formulario
-              if (this.editIndex === index) {
+              const userIndex = this.users.findIndex(u => u.id === user.id);
+              if (this.editIndex === userIndex) {
                 this.editIndex = null;
                 this.userForm.reset();
                 this.showForm = false;
