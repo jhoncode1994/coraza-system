@@ -379,10 +379,18 @@ export class UsersComponent implements OnInit {
     // Reset del formulario antes de cargarlo con datos nuevos para evitar conflictos
     this.userForm.reset();
     
-    // Asegurarse de que la fecha es un objeto Date para el datepicker
-    const fechaIngreso = user.fechaIngreso instanceof Date 
-      ? user.fechaIngreso 
-      : new Date(user.fechaIngreso);
+    // Convertir fecha UTC a Date local para el datepicker
+    // La BD guarda "2025-12-06T00:00:00.000Z" (medianoche UTC)
+    // Necesitamos crear un Date que represente 2025-12-06 en hora local
+    let fechaIngreso: Date;
+    if (user.fechaIngreso instanceof Date) {
+      fechaIngreso = user.fechaIngreso;
+    } else {
+      // Extraer solo la parte de la fecha (YYYY-MM-DD) y crear Date local
+      const fechaStr = user.fechaIngreso.toString();
+      const [year, month, day] = fechaStr.split('T')[0].split('-');
+      fechaIngreso = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
       
     // Cargar los datos del usuario a editar en el formulario
     this.userForm.patchValue({
