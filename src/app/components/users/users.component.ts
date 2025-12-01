@@ -220,32 +220,61 @@ export class UsersComponent implements OnInit {
       
       // Procesar la fecha SIN conversión a UTC (evitar problema de zona horaria)
       let fechaIngreso;
-      if (this.userForm.value.fechaIngreso instanceof Date) {
-        // Formatear fecha local como YYYY-MM-DD (sin conversión UTC)
-        const year = this.userForm.value.fechaIngreso.getFullYear();
-        const month = String(this.userForm.value.fechaIngreso.getMonth() + 1).padStart(2, '0');
-        const day = String(this.userForm.value.fechaIngreso.getDate()).padStart(2, '0');
+      const valorFecha = this.userForm.value.fechaIngreso;
+      
+      console.log('🔍 DEBUG FECHA INICIAL:', {
+        valor: valorFecha,
+        tipo: typeof valorFecha,
+        esDate: valorFecha instanceof Date
+      });
+      
+      if (valorFecha instanceof Date) {
+        // Es un objeto Date del datepicker
+        const year = valorFecha.getFullYear();
+        const month = String(valorFecha.getMonth() + 1).padStart(2, '0');
+        const day = String(valorFecha.getDate()).padStart(2, '0');
         fechaIngreso = `${year}-${month}-${day}`;
-      } else if (this.userForm.value.fechaIngreso) {
-        // Si es string, convertir a Date y luego formatear SIN UTC
-        const date = new Date(this.userForm.value.fechaIngreso);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        fechaIngreso = `${year}-${month}-${day}`;
+        
+        console.log('📅 Procesado como Date:', {
+          year, month, day,
+          resultado: fechaIngreso
+        });
+      } else if (typeof valorFecha === 'string') {
+        // Es string - puede ser YYYY-MM-DD o formato ISO
+        if (valorFecha.includes('T')) {
+          // Formato ISO, extraer solo fecha
+          fechaIngreso = valorFecha.split('T')[0];
+          console.log('📅 String ISO detectado:', fechaIngreso);
+        } else if (valorFecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          // Ya está en formato YYYY-MM-DD
+          fechaIngreso = valorFecha;
+          console.log('📅 String YYYY-MM-DD directo:', fechaIngreso);
+        } else {
+          // Intentar parsear - AGREGAR HORARIO MEDIO DÍA para evitar problema zona horaria
+          const parts = valorFecha.split('-');
+          if (parts.length === 3) {
+            fechaIngreso = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          } else {
+            // Crear Date con hora 12:00 para evitar problema de zona
+            const date = new Date(valorFecha + 'T12:00:00');
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            fechaIngreso = `${year}-${month}-${day}`;
+          }
+          console.log('📅 String parseado con mediodía:', fechaIngreso);
+        }
       } else {
-        // Fecha actual como fallback (también sin UTC)
+        // Fecha actual como fallback
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         fechaIngreso = `${year}-${month}-${day}`;
+        console.log('📅 Usando fecha actual:', fechaIngreso);
       }
       
-      console.log('🔍 DEBUG FECHA:', {
-        valorFormulario: this.userForm.value.fechaIngreso,
-        fechaProcesada: fechaIngreso
-      });
+      console.log('✅ FECHA FINAL A ENVIAR:', fechaIngreso);
       
       const userData = {
         nombre: this.userForm.value.nombre,
