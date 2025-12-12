@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const compression = require('compression');
 // Implementación simple de hash sin dependencias externas
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -43,6 +44,17 @@ function verifyPassword(password, storedHash) {
 }
 
 const app = express();
+
+// Enable compression (gzip)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6 // Balance entre velocidad y compresión
+}));
 
 // Enable CORS
 app.use(cors());
