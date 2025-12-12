@@ -10,7 +10,7 @@ export interface User {
   id: number;
   username: string;
   email?: string;
-  role: 'admin' | 'delivery_user';
+  role: 'admin' | 'delivery_user' | 'gerencia';
   fechaIngreso: Date;
   lastLogin?: Date;
   permissions: UserPermissions;
@@ -64,6 +64,23 @@ export class AuthService {
         canEditAssociates: false,
         canMakeDeliveries: true,
         canViewReports: false,
+        canManageUsers: false,
+      }
+    },
+    'gerencia': { 
+      id: 3, 
+      username: 'gerencia', 
+      email: 'gerencia@coraza.com', 
+      password: 'gerencia123', 
+      role: 'gerencia' as const,
+      fechaIngreso: new Date('2024-01-20'),
+      permissions: {
+        canViewInventory: true,
+        canEditInventory: false,
+        canViewAssociates: true,
+        canEditAssociates: false,
+        canMakeDeliveries: false,
+        canViewReports: true,
         canManageUsers: false,
       }
     }

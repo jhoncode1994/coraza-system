@@ -10,7 +10,7 @@ export interface AuthUser {
   id: number;
   username: string;
   email: string;
-  role: 'admin' | 'delivery_user';
+  role: 'admin' | 'delivery_user' | 'gerencia';
   fechaIngreso: Date;
   permissions: {
     canViewInventory: boolean;

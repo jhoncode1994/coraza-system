@@ -1,7 +1,7 @@
 export interface UserRole {
   id: number;
   username: string;
-  role: 'admin' | 'delivery_user';
+  role: 'admin' | 'delivery_user' | 'gerencia';
   permissions: {
     canViewInventory: boolean;
     canEditInventory: boolean;
@@ -30,6 +30,15 @@ export const DEFAULT_PERMISSIONS = {
     canEditAssociates: false,
     canMakeDeliveries: true,
     canViewReports: false,
+    canManageUsers: false,
+  },
+  gerencia: {
+    canViewInventory: true,
+    canEditInventory: false,
+    canViewAssociates: true,
+    canEditAssociates: false,
+    canMakeDeliveries: false,
+    canViewReports: true,
     canManageUsers: false,
   }
 };
