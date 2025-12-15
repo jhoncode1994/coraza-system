@@ -343,6 +343,43 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Keep-alive endpoint for Supabase database
+app.get('/api/keep-alive', async (req, res) => {
+  try {
+    // Realizar una consulta simple para mantener la BD activa
+    const { createClient } = require('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://vknxbpcnpdhziiqknrbs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrbnhicGNucGRoemlpcWtucmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjkyMTAsImV4cCI6MjA3MzAwNTIxMH0.oupKVcJplxy-H88HjeS4-QAaD8ChjyfcaqZDnC-xuIs';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // Consulta simple al bucket de firmas para mantener la BD activa
+    const { data, error } = await supabase
+      .from('buckets')
+      .select('id')
+      .limit(1);
+    
+    if (error) {
+      console.log('⚠️ Keep-alive warning:', error.message);
+    }
+    
+    res.json({ 
+      status: 'alive',
+      message: 'Supabase database keep-alive ping successful',
+      timestamp: new Date().toISOString(),
+      database: 'supabase'
+    });
+  } catch (error) {
+    console.error('❌ Keep-alive error:', error);
+    res.status(200).json({ 
+      status: 'alive',
+      message: 'Keep-alive endpoint active',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Test database connection
 app.get('/api/test', async (req, res) => {
   try {

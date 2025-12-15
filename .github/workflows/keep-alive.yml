@@ -1,0 +1,61 @@
+name: Keep Supabase Database Alive
+
+on:
+  schedule:
+    # Ejecutar cada 5 días a las 3:00 AM UTC (evita los 7 días de inactividad)
+    # Formato: minuto hora día-del-mes mes día-de-la-semana
+    - cron: '0 3 */5 * *'
+  
+  # Permitir ejecución manual desde GitHub Actions
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Ping Supabase Database
+        run: |
+          echo "🔄 Enviando ping a Supabase para mantener la base de datos activa..."
+          
+          # Realizar ping al endpoint keep-alive del servidor
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            --retry 3 \
+            --retry-delay 5 \
+            https://coraza-system-production.up.railway.app/api/keep-alive)
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Ping exitoso! Base de datos Supabase activa (HTTP $response)"
+          else
+            echo "⚠️ Respuesta inesperada: HTTP $response"
+            echo "ℹ️ Intentando ping alternativo directo a Supabase..."
+            
+            # Ping alternativo directo a Supabase usando la API REST
+            supabase_response=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 30 \
+              -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrbnhicGNucGRoemlpcWtucmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjkyMTAsImV4cCI6MjA3MzAwNTIxMH0.oupKVcJplxy-H88HjeS4-QAaD8ChjyfcaqZDnC-xuIs" \
+              -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrbnhicGNucGRoemlpcWtucmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjkyMTAsImV4cCI6MjA3MzAwNTIxMH0.oupKVcJplxy-H88HjeS4-QAaD8ChjyfcaqZDnC-xuIs" \
+              "https://vknxbpcnpdhziiqknrbs.supabase.co/rest/v1/rpc/health")
+            
+            if [ "$supabase_response" = "200" ] || [ "$supabase_response" = "204" ]; then
+              echo "✅ Ping directo a Supabase exitoso (HTTP $supabase_response)"
+            else
+              echo "⚠️ Ambos métodos fallaron, pero el workflow continuará"
+            fi
+          fi
+          
+          echo "📅 Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "🎯 Próxima ejecución programada en 5 días"
+      
+      - name: Report Status
+        if: always()
+        run: |
+          echo "📊 Estado del Keep-Alive:"
+          echo "   • Base de datos: Supabase"
+          echo "   • Objetivo: Prevenir pausa por inactividad (7 días)"
+          echo "   • Frecuencia: Cada 5 días"
+          echo "   • Método: Ping HTTP a endpoint + API REST backup"
