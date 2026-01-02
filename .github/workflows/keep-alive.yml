@@ -2,12 +2,16 @@ name: Keep Supabase Database Alive
 
 on:
   schedule:
-    # Ejecutar cada 5 días a las 3:00 AM UTC (evita los 7 días de inactividad)
-    # Formato: minuto hora día-del-mes mes día-de-la-semana
-    - cron: '0 3 */5 * *'
+    # Ejecutar cada 3 días a las 3:00 AM UTC (más frecuente para mayor seguridad)
+    # IMPORTANTE: GitHub puede desactivar workflows en repos sin actividad
+    - cron: '0 3 */3 * *'
   
   # Permitir ejecución manual desde GitHub Actions
   workflow_dispatch:
+
+# Permisos necesarios para hacer commits automáticos
+permissions:
+  contents: write
 
 jobs:
   keep-alive:
@@ -16,46 +20,104 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Ping Supabase Database
+      - name: Ping Supabase Database Directly
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          echo "🔄 Enviando ping a Supabase para mantener la base de datos activa..."
+          echo "🔄 Enviando ping DIRECTO a Supabase para mantener la base de datos activa..."
+          echo "📅 Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
           
-          # Realizar ping al endpoint keep-alive del servidor
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 \
-            --retry 3 \
-            --retry-delay 5 \
-            https://coraza-system.onrender.com/api/keep-alive)
+          # Usar las variables de entorno o valores por defecto
+          ANON_KEY="${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrbnhicGNucGRoemlpcWtucmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjkyMTAsImV4cCI6MjA3MzAwNTIxMH0.oupKVcJplxy-H88HjeS4-QAaD8ChjyfcaqZDnC-xuIs}"
+          DB_URL="${SUPABASE_URL:-https://vknxbpcnpdhziiqknrbs.supabase.co}"
           
-          if [ "$response" = "200" ]; then
-            echo "✅ Ping exitoso! Base de datos Supabase activa (HTTP $response)"
+          # Método 1: Query directa a la base de datos (más confiable)
+          echo "📌 Método 1: Query directa a Supabase REST API..."
+          response=$(curl -s -w "\n%{http_code}" \
+            --max-time 60 \
+            --retry 5 \
+            --retry-delay 10 \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H "Content-Type: application/json" \
+            "${DB_URL}/rest/v1/usuarios?select=id&limit=1")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Ping directo a Supabase exitoso (HTTP $http_code)"
+            echo "   Respuesta: $body"
           else
-            echo "⚠️ Respuesta inesperada: HTTP $response"
-            echo "ℹ️ Intentando ping alternativo directo a Supabase..."
+            echo "⚠️ Primer intento falló (HTTP $http_code)"
             
-            # Ping alternativo directo a Supabase usando la API REST
-            supabase_response=$(curl -s -o /dev/null -w "%{http_code}" \
-              --max-time 30 \
-              -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrbnhicGNucGRoemlpcWtucmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjkyMTAsImV4cCI6MjA3MzAwNTIxMH0.oupKVcJplxy-H88HjeS4-QAaD8ChjyfcaqZDnC-xuIs" \
-              -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrbnhicGNucGRoemlpcWtucmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjkyMTAsImV4cCI6MjA3MzAwNTIxMH0.oupKVcJplxy-H88HjeS4-QAaD8ChjyfcaqZDnC-xuIs" \
-              "https://vknxbpcnpdhziiqknrbs.supabase.co/rest/v1/rpc/health")
+            # Método 2: Intentar con otra tabla
+            echo "📌 Método 2: Intentando con endpoint alternativo..."
+            alt_response=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 60 \
+              -H "apikey: $ANON_KEY" \
+              -H "Authorization: Bearer $ANON_KEY" \
+              "${DB_URL}/rest/v1/")
             
-            if [ "$supabase_response" = "200" ] || [ "$supabase_response" = "204" ]; then
-              echo "✅ Ping directo a Supabase exitoso (HTTP $supabase_response)"
+            if [ "$alt_response" = "200" ] || [ "$alt_response" = "204" ]; then
+              echo "✅ Ping alternativo exitoso (HTTP $alt_response)"
             else
-              echo "⚠️ Ambos métodos fallaron, pero el workflow continuará"
+              echo "❌ Todos los métodos fallaron - El proyecto puede estar pausado"
+              echo "   Por favor despause el proyecto en: https://supabase.com/dashboard"
             fi
           fi
           
-          echo "📅 Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-          echo "🎯 Próxima ejecución programada en 5 días"
+          # Método 3: También intentar despertar el servidor en Render
+          echo ""
+          echo "📌 Método 3: Despertando servidor en Render..."
+          render_response=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 120 \
+            --retry 2 \
+            https://coraza-system.onrender.com/api/keep-alive 2>/dev/null || echo "timeout")
+          
+          if [ "$render_response" = "200" ]; then
+            echo "✅ Servidor Render activo (HTTP $render_response)"
+          else
+            echo "ℹ️ Servidor Render: HTTP $render_response (puede estar iniciando)"
+          fi
+      
+      - name: Update Keep-Alive Timestamp
+        run: |
+          # Crear o actualizar archivo de timestamp para mantener actividad en el repo
+          echo "Last keep-alive: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" > .github/last-keepalive.txt
+          echo "Workflow run: ${{ github.run_number }}" >> .github/last-keepalive.txt
+          
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          git add .github/last-keepalive.txt
+          
+          # Solo hacer commit si hay cambios
+          if git diff --staged --quiet; then
+            echo "ℹ️ No hay cambios para commitear"
+          else
+            git commit -m "chore: keep-alive ping $(date -u +%Y-%m-%d) [skip ci]"
+            git push
+            echo "✅ Commit de keep-alive realizado para mantener el repo activo"
+          fi
       
       - name: Report Status
         if: always()
         run: |
-          echo "📊 Estado del Keep-Alive:"
-          echo "   • Base de datos: Supabase"
+          echo ""
+          echo "═══════════════════════════════════════════════════════"
+          echo "📊 RESUMEN DEL KEEP-ALIVE"
+          echo "═══════════════════════════════════════════════════════"
+          echo "   • Base de datos: Supabase (vknxbpcnpdhziiqknrbs)"
+          echo "   • Servidor: Render (coraza-system)"
           echo "   • Objetivo: Prevenir pausa por inactividad (7 días)"
-          echo "   • Frecuencia: Cada 5 días"
-          echo "   • Método: Ping HTTP a endpoint + API REST backup"
+          echo "   • Frecuencia: Cada 3 días"
+          echo "   • Método: Query directa a Supabase + commit automático"
+          echo ""
+          echo "⚠️  IMPORTANTE: Si recibes email de pausa, despausar en:"
+          echo "    https://supabase.com/dashboard/project/vknxbpcnpdhziiqknrbs"
+          echo "═══════════════════════════════════════════════════════"
