@@ -2148,6 +2148,7 @@ app.get('/api/delivery/associate/:userId/pdf-data', async (req, res) => {
       SELECT 
         TO_CHAR("fechaEntrega", 'DD/MM/YYYY') as fecha,
         elemento,
+        talla,
         cantidad,
         observaciones
       FROM entrega_dotacion
@@ -2198,6 +2199,7 @@ app.get('/api/delivery/elements-summary/pdf-data', async (req, res) => {
         SELECT 
           TO_CHAR(ed."fechaEntrega", 'DD/MM/YYYY') as fecha,
           ed.elemento,
+          ed.talla,
           ed.cantidad,
           ed.observaciones,
           CONCAT(u.nombre, ' ', u.apellido) as asociado,
@@ -2240,6 +2242,7 @@ app.get('/api/delivery/element/:elementName/pdf-data', async (req, res) => {
       SELECT 
         TO_CHAR(ed."fechaEntrega", 'DD/MM/YYYY') as fecha,
         ed.elemento,
+        ed.talla,
         ed.cantidad,
         ed.observaciones,
         CONCAT(u.nombre, ' ', u.apellido) as asociado,

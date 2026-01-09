@@ -652,8 +652,10 @@ export class PdfReportService {
               currentY = 20;
             }
             
+            // Formatear la información de la entrega incluyendo la talla si existe
+            const tallaInfo = entrega.talla ? ` - Talla: ${entrega.talla}` : '';
             doc.setFontSize(8);
-            doc.text(`${entrega.fecha} - ${entrega.asociado || 'N/A'} (${entrega.cedula || 'N/A'}) - Cantidad: ${entrega.cantidad}`, 25, currentY);
+            doc.text(`${entrega.fecha} - ${entrega.asociado || 'N/A'} (${entrega.cedula || 'N/A'})${tallaInfo} - Cantidad: ${entrega.cantidad}`, 25, currentY);
             currentY += 6;
           });
           
@@ -735,10 +737,10 @@ export class PdfReportService {
    * Crea una tabla manual para reportes de elementos
    */
   private createElementTable(doc: any, deliveries: DeliveryRecord[], startY: number): void {
-    const headers = ['Fecha', 'Asociado', 'Cédula', 'Cantidad', 'Observaciones'];
+    const headers = ['Fecha', 'Asociado', 'Cédula', 'Talla', 'Cantidad', 'Observaciones'];
     const rowHeight = 8;
     // Ajustar anchos para que quepan en el PDF (ancho útil: 170mm desde x=20 hasta x=190)
-    const colWidths = [30, 45, 25, 20, 50]; // Total: 170mm
+    const colWidths = [28, 40, 22, 18, 18, 44]; // Total: 170mm
     let currentY = startY;
     
     // Dibujar encabezados con mejor manejo de colores
@@ -774,6 +776,7 @@ export class PdfReportService {
         delivery.fecha,
         delivery.asociado || '-',
         delivery.cedula || '-',
+        delivery.talla || '-',
         delivery.cantidad.toString(),
         delivery.observaciones || '-'
       ];
@@ -799,7 +802,7 @@ export class PdfReportService {
         
         // Truncar texto si es muy largo
         let text = data.toString();
-        if (text.length > 12 && (colIndex === 1 || colIndex === 4)) { // Asociado o Observaciones
+        if (text.length > 12 && (colIndex === 1 || colIndex === 5)) { // Asociado o Observaciones
           text = text.substring(0, 9) + '...';
         }
         
