@@ -119,8 +119,18 @@ export class PdfReportService {
     // Verificar si jsPDF ya está disponible globalmente
     if (typeof window !== 'undefined' && (window as any).jsPDF) {
       console.log('✅ jsPDF ya está disponible globalmente');
-      // Siempre retornar la clase constructora, no una instancia
-      return (window as any).jsPDF;
+      const jsPDFGlobal = (window as any).jsPDF;
+      
+      // Extraer la clase constructora correctamente
+      if (typeof jsPDFGlobal === 'function') {
+        return jsPDFGlobal;
+      } else if (typeof jsPDFGlobal === 'object' && jsPDFGlobal.jsPDF) {
+        return jsPDFGlobal.jsPDF;
+      } else if (typeof jsPDFGlobal === 'object' && jsPDFGlobal.default) {
+        return jsPDFGlobal.default;
+      }
+      // Si no se puede extraer, recargar desde CDN
+      console.log('⚠️ jsPDF global no es válido, recargando desde CDN...');
     }
 
     // Para producción, usar solo CDN que es más confiable
@@ -176,7 +186,16 @@ export class PdfReportService {
     // Verificar si jsPDF ya está disponible globalmente
     if (typeof window !== 'undefined' && (window as any).jsPDF) {
       console.log('✅ jsPDF ya está disponible globalmente');
-      return (window as any).jsPDF;
+      const jsPDFGlobal = (window as any).jsPDF;
+      
+      // Extraer la clase constructora correctamente
+      if (typeof jsPDFGlobal === 'function') {
+        return jsPDFGlobal;
+      } else if (typeof jsPDFGlobal === 'object' && jsPDFGlobal.jsPDF) {
+        return jsPDFGlobal.jsPDF;
+      } else if (typeof jsPDFGlobal === 'object' && jsPDFGlobal.default) {
+        return jsPDFGlobal.default;
+      }
     }
 
     if (typeof window === 'undefined') {
