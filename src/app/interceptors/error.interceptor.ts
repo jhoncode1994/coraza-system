@@ -4,6 +4,7 @@ import { Observable, throwError, timer } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
@@ -75,8 +76,3 @@ export class ErrorInterceptor implements HttpInterceptor {
     );
   }
 }
-
-// Importar environment
-const environment = {
-  production: false // Se actualizará con el build
-};
